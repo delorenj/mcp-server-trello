@@ -146,6 +146,19 @@ Send a list to the archive.
 }
 ```
 
+### move_card
+Move a card to a different list.
+
+```typescript
+{
+  name: 'move_card',
+  arguments: {
+    cardId: string,  // ID of the card to move
+    listId: string   // ID of the destination list
+  }
+}
+```
+
 ### get_my_cards
 Fetch all cards assigned to the current user.
 
