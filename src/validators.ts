@@ -45,7 +45,9 @@ export function validateGetCardsListRequest(args: Record<string, unknown>): { li
   };
 }
 
-export function validateGetRecentActivityRequest(args: Record<string, unknown>): { limit?: number } {
+export function validateGetRecentActivityRequest(args: Record<string, unknown>): {
+  limit?: number;
+} {
   return {
     limit: validateOptionalNumber(args.limit),
   };
@@ -107,11 +109,34 @@ export function validateAddListRequest(args: Record<string, unknown>): { name: s
   };
 }
 
-export function validateArchiveListRequest(args: Record<string, unknown>): { listId: string } {
-  if (!args.listId) {
-    throw new McpError(ErrorCode.InvalidParams, 'listId is required');
+export function validateArchiveListRequest(params: unknown): { listId: string } {
+  if (!params || typeof params !== 'object') {
+    throw new McpError(ErrorCode.InvalidRequest, 'Invalid request parameters');
   }
-  return {
-    listId: validateString(args.listId, 'listId'),
-  };
+
+  const { listId } = params as { listId: unknown };
+
+  if (!listId || typeof listId !== 'string') {
+    throw new McpError(ErrorCode.InvalidRequest, 'listId must be a string');
+  }
+
+  return { listId };
+}
+
+export function validateMoveCardRequest(params: unknown): { cardId: string; listId: string } {
+  if (!params || typeof params !== 'object') {
+    throw new McpError(ErrorCode.InvalidRequest, 'Invalid request parameters');
+  }
+
+  const { cardId, listId } = params as { cardId: unknown; listId: unknown };
+
+  if (!cardId || typeof cardId !== 'string') {
+    throw new McpError(ErrorCode.InvalidRequest, 'cardId must be a string');
+  }
+
+  if (!listId || typeof listId !== 'string') {
+    throw new McpError(ErrorCode.InvalidRequest, 'listId must be a string');
+  }
+
+  return { cardId, listId };
 }

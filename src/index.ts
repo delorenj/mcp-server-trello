@@ -16,6 +16,7 @@ import {
   validateArchiveCardRequest,
   validateAddListRequest,
   validateArchiveListRequest,
+  validateMoveCardRequest,
 } from './validators.js';
 
 class TrelloServer {
@@ -28,7 +29,9 @@ class TrelloServer {
     const boardId = process.env.TRELLO_BOARD_ID;
 
     if (!apiKey || !token || !boardId) {
-      throw new Error('TRELLO_API_KEY, TRELLO_TOKEN, and TRELLO_BOARD_ID environment variables are required');
+      throw new Error(
+        'TRELLO_API_KEY, TRELLO_TOKEN, and TRELLO_BOARD_ID environment variables are required'
+      );
     }
 
     this.trelloClient = new TrelloClient({ apiKey, token, boardId });
@@ -46,9 +49,9 @@ class TrelloServer {
     );
 
     this.setupToolHandlers();
-    
+
     // Error handling
-    this.server.onerror = (error) => console.error('[MCP Error]', error);
+    this.server.onerror = error => console.error('[MCP Error]', error);
     process.on('SIGINT', async () => {
       await this.server.close();
       process.exit(0);
@@ -130,7 +133,7 @@ class TrelloServer {
         },
         {
           name: 'update_card_details',
-          description: 'Update an existing card\'s details',
+          description: "Update an existing card's details",
           inputSchema: {
             type: 'object',
             properties: {
@@ -204,6 +207,24 @@ class TrelloServer {
           },
         },
         {
+          name: 'move_card',
+          description: 'Move a card to a different list',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              cardId: {
+                type: 'string',
+                description: 'ID of the card to move',
+              },
+              listId: {
+                type: 'string',
+                description: 'ID of the destination list',
+              },
+            },
+            required: ['cardId', 'listId'],
+          },
+        },
+        {
           name: 'get_my_cards',
           description: 'Fetch all cards assigned to the current user',
           inputSchema: {
@@ -215,7 +236,7 @@ class TrelloServer {
       ],
     }));
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async request => {
       try {
         if (!request.params.arguments) {
           throw new McpError(ErrorCode.InvalidParams, 'Missing arguments');
@@ -284,6 +305,14 @@ class TrelloServer {
             const list = await this.trelloClient.archiveList(validArgs.listId);
             return {
               content: [{ type: 'text', text: JSON.stringify(list, null, 2) }],
+            };
+          }
+
+          case 'move_card': {
+            const validArgs = validateMoveCardRequest(args);
+            const result = await this.trelloClient.moveCard(validArgs.cardId, validArgs.listId);
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };
           }
 

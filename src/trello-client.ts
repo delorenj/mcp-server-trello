@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { TrelloConfig, TrelloCard, TrelloList, TrelloAction, TrelloMember } from './types.js';
+import { TrelloConfig, TrelloCard, TrelloList, TrelloAction } from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 
 export class TrelloClient {
@@ -18,7 +18,7 @@ export class TrelloClient {
     this.rateLimiter = createTrelloRateLimiters();
 
     // Add rate limiting interceptor
-    this.axiosInstance.interceptors.request.use(async (config) => {
+    this.axiosInstance.interceptors.request.use(async config => {
       await this.rateLimiter.waitForAvailable();
       return config;
     });
@@ -123,6 +123,15 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/lists/${listId}/closed`, {
         value: true,
+      });
+      return response.data;
+    });
+  }
+
+  async moveCard(cardId: string, listId: string): Promise<TrelloCard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put(`/cards/${cardId}`, {
+        idList: listId,
       });
       return response.data;
     });
