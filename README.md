@@ -81,6 +81,26 @@ You can get these values from:
 - Token: Generate using your API key
 - Board ID: Found in the board URL
 
+## Transports
+
+This server supports two communication transport mechanisms:
+
+1.  **Standard Input/Output (stdio)**: The default mode, suitable for local integrations like MCP Inspector or Claude Desktop. Messages are exchanged over the server process's stdin and stdout.
+2.  **Server-Sent Events (SSE)**: An HTTP-based transport useful for remote connections or web-based clients. It uses SSE for server-to-client messages and HTTP POST for client-to-server messages.
+
+### Selecting a Transport
+
+- **Default (stdio)**: Run the server normally (e.g., `node build/index.js`).
+- **SSE**: Set the `MCP_TRANSPORT=SSE` environment variable. You can also configure the port and paths:
+  - `PORT`: Port for the HTTP server (default: `3001`).
+  - `MCP_SSE_PATH`: Path for the SSE stream endpoint (default: `/sse`).
+  - `MCP_MESSAGE_PATH`: Path for receiving client messages via POST (default: `/message`).
+
+  Example:
+  ```bash
+  MCP_TRANSPORT=SSE PORT=4000 MCP_SSE_PATH=/trello-stream MCP_MESSAGE_PATH=/trello-msg node build/index.js
+  ```
+
 ## Available Tools
 
 ### get_cards_by_list_id
@@ -265,6 +285,103 @@ npm install
 npm run build
 ```
 
+## Testing
+
+To ensure both transport modes work correctly after making changes:
+
+### Prerequisites
+
+- Ensure Trello credentials (`TRELLO_API_KEY`, `TRELLO_TOKEN`, `TRELLO_BOARD_ID`) are set in your environment or `.env` file.
+- Build the project: `npm run build`
+
+### Testing with stdio
+
+1.  **Start the server with MCP Inspector**: In one terminal window, run:
+    ```bash
+    npx @modelcontextprotocol/inspector node build/index.js
+    ```
+2.  **Use the Inspector UI**: In the web UI that opens:
+    - Navigate to the **Tools** tab.
+    - Select the `get_lists` tool.
+    - Click **Send**.
+3.  **Verify**: You should see a JSON array of your Trello lists in the response panel. This confirms the default stdio transport is working.
+
+### Testing with SSE
+
+1.  **Start the server in SSE mode**: In one terminal window, run:
+    ```bash
+    MCP_TRANSPORT=SSE PORT=3001 node build/index.js
+    ```
+    Note the `sessionId` printed in the log message: `Trello MCP server (SSE) session started. POST messages to /message?sessionId=abc-123...`.
+
+2.  **Open the SSE stream**: In a second terminal window, run:
+    ```bash
+    curl -N http://localhost:3001/sse
+    ```
+    You'll see the initial `endpoint` event. Keep this window open to see server-sent messages.
+
+3.  **Send a message via POST**: In a third terminal window, use `curl` to call the `tools/list` method. Replace `abc-123...` with the actual `sessionId` from step 1:
+    ```bash
+    curl -X POST -H "Content-Type: application/json" \
+         -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
+         "http://localhost:3001/message?sessionId=abc-123..."
+    ```
+
+4.  **Verify**: 
+    - The POST request (Window 3) should return `HTTP 202 Accepted`.
+    - The SSE stream (Window 2) should receive a `message` event containing the JSON-RPC response with the list of available tools.
+
+This confirms the SSE transport is correctly handling connections and messages.
+
+### Automated SSE Test Script (Optional)
+
+You can use this script (`scripts/sse-test.sh`) for quick regression testing:
+
+```bash
+#!/usr/bin/env bash
+set -e
+
+PORT=4000
+SSE_PATH=/sse
+MSG_PATH=/message
+
+# Start server in background
+ MCP_TRANSPORT=SSE PORT=$PORT MCP_SSE_PATH=$SSE_PATH MCP_MESSAGE_PATH=$MSG_PATH node build/index.js &
+PID=$!
+
+# Give server time to start
+sleep 2
+
+# Fetch session ID from SSE endpoint
+SESSION_QUERY=$(curl -sN http://localhost:$PORT$SSE_PATH | grep -m1 "^data:" | cut -d'?' -f2)
+
+if [ -z "$SESSION_QUERY" ]; then
+  echo "Error: Could not get session ID from SSE endpoint." >&2
+  kill $PID
+  exit 1
+fi
+
+# Send tools/list request via POST
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+     -X POST \
+     -H "Content-Type: application/json" \
+     -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
+     "http://localhost:$PORT$MSG_PATH?$SESSION_QUERY")
+
+# Cleanup
+kill $PID
+
+# Verify response code
+if [ "$HTTP_CODE" = "202" ]; then
+  echo "✅ SSE transport responded 202"
+  exit 0
+else
+  echo "❌ SSE transport failed with HTTP code: $HTTP_CODE" >&2
+  exit 1
+fi
+```
+
+Make it executable (`chmod +x scripts/sse-test.sh`) and run it after making changes.
 
 ## Contributing
 
