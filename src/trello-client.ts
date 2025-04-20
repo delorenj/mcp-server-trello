@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { TrelloConfig, TrelloCard, TrelloList, TrelloAction, TrelloMember } from './types.js';
+import { TrelloConfig, TrelloCard, TrelloList, TrelloAction, TrelloMember, TrelloAttachment } from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 
 export class TrelloClient {
@@ -19,7 +19,7 @@ export class TrelloClient {
 
     // Add rate limiting interceptor
     this.axiosInstance.interceptors.request.use(async (config) => {
-      await this.rateLimiter.waitForAvailable();
+      await this.rateLimiter.waitForAvailableToken();
       return config;
     });
   }
@@ -140,6 +140,17 @@ export class TrelloClient {
   async getMyCards(): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/cards');
+      return response.data;
+    });
+  }
+
+  async attachImageToCard(cardId: string, imageUrl: string, name?: string): Promise<TrelloAttachment> {
+    return this.handleRequest(async () => {
+      // Attaching an image directly from URL without downloading it
+      const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, {
+        url: imageUrl,
+        name: name || 'Image Attachment',
+      });
       return response.data;
     });
   }

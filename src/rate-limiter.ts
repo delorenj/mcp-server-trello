@@ -57,7 +57,10 @@ export const createTrelloRateLimiters = () => {
   return {
     apiKeyLimiter,
     tokenLimiter,
-    async waitForAvailable(): Promise<void> {
+    canMakeRequest(): boolean {
+      return apiKeyLimiter.canMakeRequest() && tokenLimiter.canMakeRequest();
+    },
+    async waitForAvailableToken(): Promise<void> {
       await Promise.all([
         apiKeyLimiter.waitForAvailableToken(),
         tokenLimiter.waitForAvailableToken(),

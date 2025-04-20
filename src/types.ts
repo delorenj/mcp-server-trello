@@ -64,6 +64,23 @@ export interface TrelloMember {
   avatarUrl: string | null;
 }
 
+export interface TrelloAttachment {
+  id: string;
+  name: string;
+  url: string;
+  fileName: string | null;
+  bytes: number | null;
+  date: string;
+  mimeType: string;
+  previews: Array<{
+    id: string;
+    url: string;
+    width: number;
+    height: number;
+  }>;
+  isUpload: boolean;
+}
+
 export interface RateLimiter {
   canMakeRequest(): boolean;
   waitForAvailableToken(): Promise<void>;
