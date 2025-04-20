@@ -17,6 +17,7 @@ import {
   validateAddListRequest,
   validateArchiveListRequest,
   validateMoveCardRequest,
+  validateAttachImageRequest,
 } from './validators.js';
 
 class TrelloServer {
@@ -231,6 +232,28 @@ class TrelloServer {
             required: [],
           },
         },
+        {
+          name: 'attach_image_to_card',
+          description: 'Attach an image to a card directly from a URL',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              cardId: {
+                type: 'string',
+                description: 'ID of the card to attach the image to',
+              },
+              imageUrl: {
+                type: 'string',
+                description: 'URL of the image to attach',
+              },
+              name: {
+                type: 'string',
+                description: 'Optional name for the attachment (defaults to "Image Attachment")',
+              },
+            },
+            required: ['cardId', 'imageUrl'],
+          },
+        },
       ],
     }));
 
@@ -318,6 +341,18 @@ class TrelloServer {
             const cards = await this.trelloClient.getMyCards();
             return {
               content: [{ type: 'text', text: JSON.stringify(cards, null, 2) }],
+            };
+          }
+
+          case 'attach_image_to_card': {
+            const validArgs = validateAttachImageRequest(args);
+            const attachment = await this.trelloClient.attachImageToCard(
+              validArgs.cardId, 
+              validArgs.imageUrl, 
+              validArgs.name
+            );
+            return {
+              content: [{ type: 'text', text: JSON.stringify(attachment, null, 2) }],
             };
           }
 

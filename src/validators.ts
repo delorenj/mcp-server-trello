@@ -125,3 +125,27 @@ export function validateMoveCardRequest(args: Record<string, unknown>): { cardId
     listId: validateString(args.listId, 'listId'),
   };
 }
+
+export function validateAttachImageRequest(args: Record<string, unknown>): { 
+  cardId: string; 
+  imageUrl: string;
+  name?: string;
+} {
+  if (!args.cardId || !args.imageUrl) {
+    throw new McpError(ErrorCode.InvalidParams, 'cardId and imageUrl are required');
+  }
+  
+  // Validate image URL format
+  const imageUrl = validateString(args.imageUrl, 'imageUrl');
+  try {
+    new URL(imageUrl);
+  } catch (e) {
+    throw new McpError(ErrorCode.InvalidParams, 'imageUrl must be a valid URL');
+  }
+  
+  return {
+    cardId: validateString(args.cardId, 'cardId'),
+    imageUrl: imageUrl,
+    name: validateOptionalString(args.name),
+  };
+}
