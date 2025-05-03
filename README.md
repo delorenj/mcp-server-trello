@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/delorenj-mcp-server-trello-badge.png)](https://mseep.ai/app/delorenj-mcp-server-trello)
+
 # MCP Server Trello
 [![smithery badge](https://smithery.ai/badge/@modelcontextprotocol/mcp-server-trello)](https://smithery.ai/server/@modelcontextprotocol/mcp-server-trello)
 
