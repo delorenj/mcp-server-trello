@@ -30,6 +30,11 @@ export class TrelloClient {
       return await requestFn();
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 429) {
+          // Rate limit exceeded, wait and retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return this.handleRequest(requestFn);
+        }
         console.error('Trello API Error:', error.response?.data || error.message);
         // Customize error handling based on Trello's error structure if needed
         throw new McpError(
@@ -68,7 +73,7 @@ export class TrelloClient {
   async getRecentActivity(boardId: string, limit: number = 10): Promise<TrelloAction[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/boards/${boardId}/actions`, {
-        params: { ...this.axiosInstance.defaults.params, limit },
+        params: { limit },
       });
       return response.data;
     });
