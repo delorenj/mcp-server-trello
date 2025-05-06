@@ -18,6 +18,7 @@ import {
   validateArchiveListRequest,
   validateMoveCardRequest,
   validateAttachImageRequest,
+  validateGetListsRequest,
 } from './validators.js';
 
 class TrelloServer {
@@ -27,13 +28,12 @@ class TrelloServer {
   constructor() {
     const apiKey = process.env.TRELLO_API_KEY;
     const token = process.env.TRELLO_TOKEN;
-    const boardId = process.env.TRELLO_BOARD_ID;
 
-    if (!apiKey || !token || !boardId) {
-      throw new Error('TRELLO_API_KEY, TRELLO_TOKEN, and TRELLO_BOARD_ID environment variables are required');
+    if (!apiKey || !token) {
+      throw new Error('TRELLO_API_KEY and TRELLO_TOKEN environment variables are required');
     }
 
-    this.trelloClient = new TrelloClient({ apiKey, token, boardId });
+    this.trelloClient = new TrelloClient({ apiKey, token });
 
     this.server = new Server(
       {
@@ -62,16 +62,20 @@ class TrelloServer {
       tools: [
         {
           name: 'get_cards_by_list_id',
-          description: 'Fetch cards from a specific Trello list',
+          description: 'Fetch cards from a specific Trello list on a specific board',
           inputSchema: {
             type: 'object',
             properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board',
+              },
               listId: {
                 type: 'string',
                 description: 'ID of the Trello list',
               },
             },
-            required: ['listId'],
+            required: ['boardId', 'listId'],
           },
         },
         {
@@ -79,8 +83,13 @@ class TrelloServer {
           description: 'Retrieve all lists from the specified board',
           inputSchema: {
             type: 'object',
-            properties: {},
-            required: [],
+            properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board',
+              },
+            },
+            required: ['boardId'],
           },
         },
         {
@@ -89,20 +98,28 @@ class TrelloServer {
           inputSchema: {
             type: 'object',
             properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board',
+              },
               limit: {
                 type: 'number',
                 description: 'Number of activities to fetch (default: 10)',
               },
             },
-            required: [],
+            required: ['boardId'],
           },
         },
         {
           name: 'add_card_to_list',
-          description: 'Add a new card to a specified list',
+          description: 'Add a new card to a specified list on a specific board',
           inputSchema: {
             type: 'object',
             properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board',
+              },
               listId: {
                 type: 'string',
                 description: 'ID of the list to add the card to',
@@ -127,15 +144,19 @@ class TrelloServer {
                 description: 'Array of label IDs to apply to the card',
               },
             },
-            required: ['listId', 'name'],
+            required: ['boardId', 'listId', 'name'],
           },
         },
         {
           name: 'update_card_details',
-          description: 'Update an existing card\'s details',
+          description: "Update an existing card's details on a specific board",
           inputSchema: {
             type: 'object',
             properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board',
+              },
               cardId: {
                 type: 'string',
                 description: 'ID of the card to update',
@@ -160,29 +181,37 @@ class TrelloServer {
                 description: 'New array of label IDs for the card',
               },
             },
-            required: ['cardId'],
+            required: ['boardId', 'cardId'],
           },
         },
         {
           name: 'archive_card',
-          description: 'Send a card to the archive',
+          description: 'Send a card to the archive on a specific board',
           inputSchema: {
             type: 'object',
             properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board',
+              },
               cardId: {
                 type: 'string',
                 description: 'ID of the card to archive',
               },
             },
-            required: ['cardId'],
+            required: ['boardId', 'cardId'],
           },
         },
         {
           name: 'move_card',
-          description: 'Move a card to a different list',
+          description: 'Move a card to a different list, potentially on a different board',
           inputSchema: {
             type: 'object',
             properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the target Trello board (where the listId resides)',
+              },
               cardId: {
                 type: 'string',
                 description: 'ID of the card to move',
@@ -192,35 +221,43 @@ class TrelloServer {
                 description: 'ID of the target list',
               },
             },
-            required: ['cardId', 'listId'],
+            required: ['boardId', 'cardId', 'listId'],
           },
         },
         {
           name: 'add_list_to_board',
-          description: 'Add a new list to the board',
+          description: 'Add a new list to the specified board',
           inputSchema: {
             type: 'object',
             properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board',
+              },
               name: {
                 type: 'string',
                 description: 'Name of the new list',
               },
             },
-            required: ['name'],
+            required: ['boardId', 'name'],
           },
         },
         {
           name: 'archive_list',
-          description: 'Send a list to the archive',
+          description: 'Send a list to the archive on a specific board',
           inputSchema: {
             type: 'object',
             properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board',
+              },
               listId: {
                 type: 'string',
                 description: 'ID of the list to archive',
               },
             },
-            required: ['listId'],
+            required: ['boardId', 'listId'],
           },
         },
         {
@@ -234,10 +271,14 @@ class TrelloServer {
         },
         {
           name: 'attach_image_to_card',
-          description: 'Attach an image to a card directly from a URL',
+          description: 'Attach an image to a card from a URL on a specific board',
           inputSchema: {
             type: 'object',
             properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board where the card exists',
+              },
               cardId: {
                 type: 'string',
                 description: 'ID of the card to attach the image to',
@@ -251,7 +292,16 @@ class TrelloServer {
                 description: 'Optional name for the attachment (defaults to "Image Attachment")',
               },
             },
-            required: ['cardId', 'imageUrl'],
+            required: ['boardId', 'cardId', 'imageUrl'],
+          },
+        },
+        {
+          name: 'list_boards',
+          description: 'Retrieve all Trello boards accessible by the user',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+            required: [],
           },
         },
       ],
@@ -268,14 +318,22 @@ class TrelloServer {
         switch (request.params.name) {
           case 'get_cards_by_list_id': {
             const validArgs = validateGetCardsListRequest(args);
-            const cards = await this.trelloClient.getCardsByList(validArgs.listId);
+            const cards = await this.trelloClient.getCardsByList(validArgs.boardId, validArgs.listId);
             return {
               content: [{ type: 'text', text: JSON.stringify(cards, null, 2) }],
             };
           }
 
+          case 'list_boards': {
+            const boards = await this.trelloClient.getBoards();
+            return {
+              content: [{ type: 'text', text: JSON.stringify(boards, null, 2) }],
+            };
+          }
+
           case 'get_lists': {
-            const lists = await this.trelloClient.getLists();
+            const validArgs = validateGetListsRequest(args);
+            const lists = await this.trelloClient.getLists(validArgs.boardId);
             return {
               content: [{ type: 'text', text: JSON.stringify(lists, null, 2) }],
             };
@@ -283,7 +341,7 @@ class TrelloServer {
 
           case 'get_recent_activity': {
             const validArgs = validateGetRecentActivityRequest(args);
-            const activity = await this.trelloClient.getRecentActivity(validArgs.limit);
+            const activity = await this.trelloClient.getRecentActivity(validArgs.boardId, validArgs.limit);
             return {
               content: [{ type: 'text', text: JSON.stringify(activity, null, 2) }],
             };
@@ -291,7 +349,7 @@ class TrelloServer {
 
           case 'add_card_to_list': {
             const validArgs = validateAddCardRequest(args);
-            const card = await this.trelloClient.addCard(validArgs);
+            const card = await this.trelloClient.addCard(validArgs.boardId, validArgs);
             return {
               content: [{ type: 'text', text: JSON.stringify(card, null, 2) }],
             };
@@ -299,7 +357,7 @@ class TrelloServer {
 
           case 'update_card_details': {
             const validArgs = validateUpdateCardRequest(args);
-            const card = await this.trelloClient.updateCard(validArgs);
+            const card = await this.trelloClient.updateCard(validArgs.boardId, validArgs);
             return {
               content: [{ type: 'text', text: JSON.stringify(card, null, 2) }],
             };
@@ -307,7 +365,7 @@ class TrelloServer {
 
           case 'archive_card': {
             const validArgs = validateArchiveCardRequest(args);
-            const card = await this.trelloClient.archiveCard(validArgs.cardId);
+            const card = await this.trelloClient.archiveCard(validArgs.boardId, validArgs.cardId);
             return {
               content: [{ type: 'text', text: JSON.stringify(card, null, 2) }],
             };
@@ -315,7 +373,7 @@ class TrelloServer {
 
           case 'move_card': {
             const validArgs = validateMoveCardRequest(args);
-            const card = await this.trelloClient.moveCard(validArgs.cardId, validArgs.listId);
+            const card = await this.trelloClient.moveCard(validArgs.boardId, validArgs.cardId, validArgs.listId);
             return {
               content: [{ type: 'text', text: JSON.stringify(card, null, 2) }],
             };
@@ -323,7 +381,7 @@ class TrelloServer {
 
           case 'add_list_to_board': {
             const validArgs = validateAddListRequest(args);
-            const list = await this.trelloClient.addList(validArgs.name);
+            const list = await this.trelloClient.addList(validArgs.boardId, validArgs.name);
             return {
               content: [{ type: 'text', text: JSON.stringify(list, null, 2) }],
             };
@@ -331,7 +389,7 @@ class TrelloServer {
 
           case 'archive_list': {
             const validArgs = validateArchiveListRequest(args);
-            const list = await this.trelloClient.archiveList(validArgs.listId);
+            const list = await this.trelloClient.archiveList(validArgs.boardId, validArgs.listId);
             return {
               content: [{ type: 'text', text: JSON.stringify(list, null, 2) }],
             };
@@ -347,8 +405,9 @@ class TrelloServer {
           case 'attach_image_to_card': {
             const validArgs = validateAttachImageRequest(args);
             const attachment = await this.trelloClient.attachImageToCard(
-              validArgs.cardId, 
-              validArgs.imageUrl, 
+              validArgs.boardId,
+              validArgs.cardId,
+              validArgs.imageUrl,
               validArgs.name
             );
             return {
