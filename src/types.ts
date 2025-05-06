@@ -1,7 +1,6 @@
 export interface TrelloConfig {
   apiKey: string;
   token: string;
-  boardId: string;
 }
 
 export interface TrelloCard {
@@ -55,6 +54,14 @@ export interface TrelloLabel {
   id: string;
   name: string;
   color: string;
+}
+
+export interface TrelloBoard {
+  id: string;
+  name: string;
+  desc?: string;
+  url?: string;
+  shortUrl?: string;
 }
 
 export interface TrelloMember {

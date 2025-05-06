@@ -1,12 +1,13 @@
 import axios, { AxiosInstance } from 'axios';
-import { TrelloConfig, TrelloCard, TrelloList, TrelloAction, TrelloMember, TrelloAttachment } from './types.js';
+import { TrelloConfig, TrelloCard, TrelloList, TrelloAction, TrelloMember, TrelloAttachment, TrelloBoard } from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
+import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 
 export class TrelloClient {
   private axiosInstance: AxiosInstance;
   private rateLimiter;
 
-  constructor(private config: TrelloConfig) {
+  constructor(private config: Omit<TrelloConfig, 'boardId'>) {
     this.axiosInstance = axios.create({
       baseURL: 'https://api.trello.com/1',
       params: {
@@ -24,46 +25,56 @@ export class TrelloClient {
     });
   }
 
-  private async handleRequest<T>(request: () => Promise<T>): Promise<T> {
+  private async handleRequest<T = any>(requestFn: () => Promise<T>): Promise<T> {
     try {
-      return await request();
+      return await requestFn();
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 429) {
-          // Rate limit exceeded, wait and retry
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return this.handleRequest(request);
-        }
-        throw new Error(`Trello API error: ${error.response?.data?.message ?? error.message}`);
+        console.error('Trello API Error:', error.response?.data || error.message);
+        // Customize error handling based on Trello's error structure if needed
+        throw new McpError(
+          ErrorCode.InternalError,
+          `Trello API Error: ${error.response?.status} ${error.message}`,
+          error.response?.data
+        );
+      } else {
+        console.error('Unexpected Error:', error);
+        throw new McpError(ErrorCode.InternalError, 'An unexpected error occurred');
       }
-      throw error;
     }
   }
 
-  async getCardsByList(listId: string): Promise<TrelloCard[]> {
+  async getBoards(): Promise<TrelloBoard[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get('/members/me/boards');
+      return response.data;
+    });
+  }
+
+  async getCardsByList(boardId: string, listId: string): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`);
       return response.data;
     });
   }
 
-  async getLists(): Promise<TrelloList[]> {
+  async getLists(boardId: string): Promise<TrelloList[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${this.config.boardId}/lists`);
+      const response = await this.axiosInstance.get(`/boards/${boardId}/lists`);
       return response.data;
     });
   }
 
-  async getRecentActivity(limit: number = 10): Promise<TrelloAction[]> {
+  async getRecentActivity(boardId: string, limit: number = 10): Promise<TrelloAction[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${this.config.boardId}/actions`, {
-        params: { limit },
+      const response = await this.axiosInstance.get(`/boards/${boardId}/actions`, {
+        params: { ...this.axiosInstance.defaults.params, limit },
       });
       return response.data;
     });
   }
 
-  async addCard(params: {
+  async addCard(boardId: string, params: {
     listId: string;
     name: string;
     description?: string;
@@ -82,7 +93,7 @@ export class TrelloClient {
     });
   }
 
-  async updateCard(params: {
+  async updateCard(boardId: string, params: {
     cardId: string;
     name?: string;
     description?: string;
@@ -100,7 +111,7 @@ export class TrelloClient {
     });
   }
 
-  async archiveCard(cardId: string): Promise<TrelloCard> {
+  async archiveCard(boardId: string, cardId: string): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${cardId}`, {
         closed: true,
@@ -109,26 +120,27 @@ export class TrelloClient {
     });
   }
 
-  async moveCard(cardId: string, listId: string): Promise<TrelloCard> {
+  async moveCard(boardId: string, cardId: string, listId: string): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${cardId}`, {
         idList: listId,
+        idBoard: boardId,
       });
       return response.data;
     });
   }
 
-  async addList(name: string): Promise<TrelloList> {
+  async addList(boardId: string, name: string): Promise<TrelloList> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.post('/lists', {
         name,
-        idBoard: this.config.boardId,
+        idBoard: boardId,
       });
       return response.data;
     });
   }
 
-  async archiveList(listId: string): Promise<TrelloList> {
+  async archiveList(boardId: string, listId: string): Promise<TrelloList> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/lists/${listId}/closed`, {
         value: true,
@@ -144,9 +156,8 @@ export class TrelloClient {
     });
   }
 
-  async attachImageToCard(cardId: string, imageUrl: string, name?: string): Promise<TrelloAttachment> {
+  async attachImageToCard(boardId: string, cardId: string, imageUrl: string, name?: string): Promise<TrelloAttachment> {
     return this.handleRequest(async () => {
-      // Attaching an image directly from URL without downloading it
       const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, {
         url: imageUrl,
         name: name || 'Image Attachment',
