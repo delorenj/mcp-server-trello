@@ -7,8 +7,15 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ## Changelog
 
-### 0.1.2
+### 0.2.1
 
+- Added detailed JSDoc comments to rate limiter functions
+- Improved error handling for image attachment functionality
+- Updated documentation for attach_image_to_card tool
+
+### 0.2.0
+
+- Added `attach_image_to_card` tool to attach images to cards from URLs
 - Added Docker support with multi-stage build
 - Improved security by moving environment variables to `.env`
 - Added Docker Compose configuration
@@ -214,6 +221,21 @@ Move a card to a different list.
   arguments: {
     cardId: string,  // ID of the card to move
     listId: string   // ID of the target list
+  }
+}
+```
+
+### attach_image_to_card
+
+Attach an image to a card directly from a URL.
+
+```typescript
+{
+  name: 'attach_image_to_card',
+  arguments: {
+    cardId: string,  // ID of the card to attach the image to
+    imageUrl: string, // URL of the image to attach
+    name?: string    // Optional: Name for the attachment (defaults to "Image Attachment")
   }
 }
 ```
