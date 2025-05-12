@@ -346,14 +346,26 @@ class TrelloServer {
 
           case 'attach_image_to_card': {
             const validArgs = validateAttachImageRequest(args);
-            const attachment = await this.trelloClient.attachImageToCard(
-              validArgs.cardId, 
-              validArgs.imageUrl, 
-              validArgs.name
-            );
-            return {
-              content: [{ type: 'text', text: JSON.stringify(attachment, null, 2) }],
-            };
+            try {
+              const attachment = await this.trelloClient.attachImageToCard(
+                validArgs.cardId, 
+                validArgs.imageUrl, 
+                validArgs.name
+              );
+              return {
+                content: [{ type: 'text', text: JSON.stringify(attachment, null, 2) }],
+              };
+            } catch (error) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Failed to attach image: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
           }
 
           default:
