@@ -7,6 +7,18 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ## Changelog
 
+### 0.3.0
+
+- Added board and workspace management capabilities:
+  - `list_boards` - List all boards the user has access to
+  - `set_active_board` - Set the active board for future operations
+  - `list_workspaces` - List all workspaces the user has access to
+  - `set_active_workspace` - Set the active workspace for future operations
+  - `list_boards_in_workspace` - List all boards in a specific workspace
+  - `get_active_board_info` - Get information about the currently active board
+- Added persistent configuration storage to remember active board/workspace
+- Improved error handling for all new operations
+
 ### 0.2.1
 
 - Added detailed JSDoc comments to rate limiter functions
@@ -237,6 +249,78 @@ Attach an image to a card directly from a URL.
     imageUrl: string, // URL of the image to attach
     name?: string    // Optional: Name for the attachment (defaults to "Image Attachment")
   }
+}
+```
+
+### list_boards
+
+List all boards the user has access to.
+
+```typescript
+{
+  name: 'list_boards',
+  arguments: {}
+}
+```
+
+### set_active_board
+
+Set the active board for future operations.
+
+```typescript
+{
+  name: 'set_active_board',
+  arguments: {
+    boardId: string  // ID of the board to set as active
+  }
+}
+```
+
+### list_workspaces
+
+List all workspaces the user has access to.
+
+```typescript
+{
+  name: 'list_workspaces',
+  arguments: {}
+}
+```
+
+### set_active_workspace
+
+Set the active workspace for future operations.
+
+```typescript
+{
+  name: 'set_active_workspace',
+  arguments: {
+    workspaceId: string  // ID of the workspace to set as active
+  }
+}
+```
+
+### list_boards_in_workspace
+
+List all boards in a specific workspace.
+
+```typescript
+{
+  name: 'list_boards_in_workspace',
+  arguments: {
+    workspaceId: string  // ID of the workspace to list boards from
+  }
+}
+```
+
+### get_active_board_info
+
+Get information about the currently active board.
+
+```typescript
+{
+  name: 'get_active_board_info',
+  arguments: {}
 }
 ```
 

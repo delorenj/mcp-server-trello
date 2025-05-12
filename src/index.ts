@@ -18,6 +18,9 @@ import {
   validateArchiveListRequest,
   validateMoveCardRequest,
   validateAttachImageRequest,
+  validateSetActiveBoardRequest,
+  validateSetActiveWorkspaceRequest,
+  validateListBoardsInWorkspaceRequest,
 } from './validators.js';
 
 class TrelloServer {
@@ -38,7 +41,7 @@ class TrelloServer {
     this.server = new Server(
       {
         name: 'trello-server',
-        version: '0.1.1',
+        version: '0.3.0',
       },
       {
         capabilities: {
@@ -254,6 +257,75 @@ class TrelloServer {
             required: ['cardId', 'imageUrl'],
           },
         },
+        {
+          name: 'list_boards',
+          description: 'List all boards the user has access to',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+            required: [],
+          },
+        },
+        {
+          name: 'set_active_board',
+          description: 'Set the active board for future operations',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the board to set as active',
+              },
+            },
+            required: ['boardId'],
+          },
+        },
+        {
+          name: 'list_workspaces',
+          description: 'List all workspaces the user has access to',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+            required: [],
+          },
+        },
+        {
+          name: 'set_active_workspace',
+          description: 'Set the active workspace for future operations',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workspaceId: {
+                type: 'string',
+                description: 'ID of the workspace to set as active',
+              },
+            },
+            required: ['workspaceId'],
+          },
+        },
+        {
+          name: 'list_boards_in_workspace',
+          description: 'List all boards in a specific workspace',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workspaceId: {
+                type: 'string',
+                description: 'ID of the workspace to list boards from',
+              },
+            },
+            required: ['workspaceId'],
+          },
+        },
+        {
+          name: 'get_active_board_info',
+          description: 'Get information about the currently active board',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+            required: [],
+          },
+        },
       ],
     }));
 
@@ -361,6 +433,113 @@ class TrelloServer {
                   {
                     type: 'text',
                     text: `Failed to attach image: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+
+          case 'list_boards': {
+            const boards = await this.trelloClient.listBoards();
+            return {
+              content: [{ type: 'text', text: JSON.stringify(boards, null, 2) }],
+            };
+          }
+
+          case 'set_active_board': {
+            const validArgs = validateSetActiveBoardRequest(args);
+            try {
+              const board = await this.trelloClient.setActiveBoard(validArgs.boardId);
+              return {
+                content: [{ 
+                  type: 'text', 
+                  text: `Successfully set active board to "${board.name}" (${board.id})`
+                }],
+              };
+            } catch (error) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Failed to set active board: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+
+          case 'list_workspaces': {
+            const workspaces = await this.trelloClient.listWorkspaces();
+            return {
+              content: [{ type: 'text', text: JSON.stringify(workspaces, null, 2) }],
+            };
+          }
+
+          case 'set_active_workspace': {
+            const validArgs = validateSetActiveWorkspaceRequest(args);
+            try {
+              const workspace = await this.trelloClient.setActiveWorkspace(validArgs.workspaceId);
+              return {
+                content: [{ 
+                  type: 'text', 
+                  text: `Successfully set active workspace to "${workspace.displayName}" (${workspace.id})`
+                }],
+              };
+            } catch (error) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Failed to set active workspace: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+
+          case 'list_boards_in_workspace': {
+            const validArgs = validateListBoardsInWorkspaceRequest(args);
+            try {
+              const boards = await this.trelloClient.listBoardsInWorkspace(validArgs.workspaceId);
+              return {
+                content: [{ type: 'text', text: JSON.stringify(boards, null, 2) }],
+              };
+            } catch (error) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Failed to list boards in workspace: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+
+          case 'get_active_board_info': {
+            try {
+              const boardId = this.trelloClient.activeBoardId;
+              const board = await this.trelloClient.getBoardById(boardId);
+              return {
+                content: [{ 
+                  type: 'text', 
+                  text: JSON.stringify({
+                    ...board,
+                    isActive: true,
+                    activeWorkspaceId: this.trelloClient.activeWorkspaceId || 'Not set'
+                  }, null, 2)
+                }],
+              };
+            } catch (error) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Failed to get active board info: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
                   },
                 ],
                 isError: true,
