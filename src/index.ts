@@ -428,15 +428,7 @@ class TrelloServer {
                 content: [{ type: 'text', text: JSON.stringify(attachment, null, 2) }],
               };
             } catch (error) {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: `Failed to attach image: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-                  },
-                ],
-                isError: true,
-              };
+              return this.handleErrorResponse(error);
             }
           }
 
@@ -458,15 +450,7 @@ class TrelloServer {
                 }],
               };
             } catch (error) {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: `Failed to set active board: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-                  },
-                ],
-                isError: true,
-              };
+              return this.handleErrorResponse(error);
             }
           }
 
@@ -488,15 +472,7 @@ class TrelloServer {
                 }],
               };
             } catch (error) {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: `Failed to set active workspace: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-                  },
-                ],
-                isError: true,
-              };
+              return this.handleErrorResponse(error);
             }
           }
 
@@ -508,15 +484,7 @@ class TrelloServer {
                 content: [{ type: 'text', text: JSON.stringify(boards, null, 2) }],
               };
             } catch (error) {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: `Failed to list boards in workspace: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-                  },
-                ],
-                isError: true,
-              };
+              return this.handleErrorResponse(error);
             }
           }
 
@@ -535,15 +503,7 @@ class TrelloServer {
                 }],
               };
             } catch (error) {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: `Failed to get active board info: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-                  },
-                ],
-                isError: true,
-              };
+              return this.handleErrorResponse(error);
             }
           }
 
@@ -564,8 +524,25 @@ class TrelloServer {
     });
   }
 
+  private handleErrorResponse(error: unknown) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
   async run() {
     const transport = new StdioServerTransport();
+    // Load configuration before starting the server
+    await this.trelloClient.loadConfig().catch((error) => {
+      console.error('Failed to load saved configuration:', error);
+      // Continue with default config if loading fails
+    });
     await this.server.connect(transport);
     console.error('Trello MCP server running on stdio');
   }

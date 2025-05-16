@@ -1,5 +1,13 @@
 import axios, { AxiosInstance } from 'axios';
-import { TrelloConfig, TrelloCard, TrelloList, TrelloAction, TrelloMember, TrelloAttachment, TrelloBoard, TrelloWorkspace } from './types.js';
+import {
+  TrelloConfig,
+  TrelloCard,
+  TrelloList,
+  TrelloAction,
+  TrelloAttachment,
+  TrelloBoard,
+  TrelloWorkspace,
+} from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -15,7 +23,7 @@ export class TrelloClient {
 
   constructor(private config: TrelloConfig) {
     this.activeConfig = { ...config };
-    
+
     this.axiosInstance = axios.create({
       baseURL: 'https://api.trello.com/1',
       params: {
@@ -27,27 +35,21 @@ export class TrelloClient {
     this.rateLimiter = createTrelloRateLimiters();
 
     // Add rate limiting interceptor
-    this.axiosInstance.interceptors.request.use(async (config) => {
+    this.axiosInstance.interceptors.request.use(async config => {
       await this.rateLimiter.waitForAvailableToken();
       return config;
-    });
-    
-    // Try to load saved configuration
-    this.loadConfig().catch(() => {
-      // If loading fails, use the provided config
-      console.error('Failed to load saved configuration, using default');
     });
   }
 
   /**
    * Load saved configuration from disk
    */
-  private async loadConfig(): Promise<void> {
+  public async loadConfig(): Promise<void> {
     try {
       await fs.mkdir(CONFIG_DIR, { recursive: true });
       const data = await fs.readFile(CONFIG_FILE, 'utf8');
       const savedConfig = JSON.parse(data);
-      
+
       // Only update boardId and workspaceId, keep credentials from env
       if (savedConfig.boardId) {
         this.activeConfig.boardId = savedConfig.boardId;
@@ -55,8 +57,10 @@ export class TrelloClient {
       if (savedConfig.workspaceId) {
         this.activeConfig.workspaceId = savedConfig.workspaceId;
       }
-      
-      console.log(`Loaded configuration: Board ID ${this.activeConfig.boardId}, Workspace ID ${this.activeConfig.workspaceId || 'not set'}`);
+
+      console.log(
+        `Loaded configuration: Board ID ${this.activeConfig.boardId}, Workspace ID ${this.activeConfig.workspaceId || 'not set'}`
+      );
     } catch (error) {
       // File might not exist yet, that's okay
       if (error instanceof Error && 'code' in error && error.code !== 'ENOENT') {
@@ -73,7 +77,7 @@ export class TrelloClient {
       await fs.mkdir(CONFIG_DIR, { recursive: true });
       const configToSave = {
         boardId: this.activeConfig.boardId,
-        workspaceId: this.activeConfig.workspaceId
+        workspaceId: this.activeConfig.workspaceId,
       };
       await fs.writeFile(CONFIG_FILE, JSON.stringify(configToSave, null, 2));
     } catch (error) {
@@ -200,9 +204,12 @@ export class TrelloClient {
 
   async getRecentActivity(limit: number = 10): Promise<TrelloAction[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${this.activeConfig.boardId}/actions`, {
-        params: { limit },
-      });
+      const response = await this.axiosInstance.get(
+        `/boards/${this.activeConfig.boardId}/actions`,
+        {
+          params: { limit },
+        }
+      );
       return response.data;
     });
   }
@@ -288,7 +295,11 @@ export class TrelloClient {
     });
   }
 
-  async attachImageToCard(cardId: string, imageUrl: string, name?: string): Promise<TrelloAttachment> {
+  async attachImageToCard(
+    cardId: string,
+    imageUrl: string,
+    name?: string
+  ): Promise<TrelloAttachment> {
     return this.handleRequest(async () => {
       // Attaching an image directly from URL without downloading it
       const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, {
