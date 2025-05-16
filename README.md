@@ -7,6 +7,18 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ## Changelog
 
+### 0.3.0
+
+- Added board and workspace management capabilities:
+  - `list_boards` - List all boards the user has access to
+  - `set_active_board` - Set the active board for future operations
+  - `list_workspaces` - List all workspaces the user has access to
+  - `set_active_workspace` - Set the active workspace for future operations
+  - `list_boards_in_workspace` - List all boards in a specific workspace
+  - `get_active_board_info` - Get information about the currently active board
+- Added persistent configuration storage to remember active board/workspace
+- Improved error handling for all new operations
+
 ### 0.2.1
 
 - Added detailed JSDoc comments to rate limiter functions
@@ -37,6 +49,7 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 - **Type-Safe Implementation**: Written in TypeScript with comprehensive type definitions
 - **Input Validation**: Robust validation for all API inputs
 - **Error Handling**: Graceful error handling with informative messages
+- **Dynamic Board Selection**: Switch between boards and workspaces without restarting
 
 ## Installation
 
@@ -75,18 +88,84 @@ npm install @delorenj/mcp-server-trello
 
 ## Configuration
 
+### Environment Variables
+
 The server can be configured using environment variables. Create a `.env` file in the root directory with the following variables:
 
 ```env
+# Required: Your Trello API credentials
 TRELLO_API_KEY=your-api-key
 TRELLO_TOKEN=your-token
+
+# Required: Initial board ID (can be changed later using set_active_board)
 TRELLO_BOARD_ID=your-board-id
+
+# Optional: Initial workspace ID (can be changed later using set_active_workspace)
+TRELLO_WORKSPACE_ID=your-workspace-id
 ```
 
 You can get these values from:
 - API Key: https://trello.com/app-key
 - Token: Generate using your API key
-- Board ID: Found in the board URL
+- Board ID: Found in the board URL (e.g., https://trello.com/b/BOARD_ID/board-name)
+- Workspace ID: Found in workspace settings or using `list_workspaces` tool
+
+### Board and Workspace Management
+
+Starting with version 0.3.0, the MCP server supports dynamic board and workspace selection:
+
+- The `TRELLO_BOARD_ID` in your `.env` file is used as the initial board ID when the server starts
+- You can change the active board at any time using the `set_active_board` tool
+- The selected board persists between server restarts (stored in `~/.trello-mcp/config.json`)
+- Similarly, you can set and persist an active workspace using `set_active_workspace`
+
+This allows you to work with multiple boards and workspaces without restarting the server or changing environment variables.
+
+#### Example Workflow
+
+1. Start by listing available boards:
+```typescript
+{
+  name: 'list_boards',
+  arguments: {}
+}
+```
+
+2. Set your active board:
+```typescript
+{
+  name: 'set_active_board',
+  arguments: {
+    boardId: "abc123"  // ID from list_boards response
+  }
+}
+```
+
+3. List workspaces if needed:
+```typescript
+{
+  name: 'list_workspaces',
+  arguments: {}
+}
+```
+
+4. Set active workspace if needed:
+```typescript
+{
+  name: 'set_active_workspace',
+  arguments: {
+    workspaceId: "xyz789"  // ID from list_workspaces response
+  }
+}
+```
+
+5. Check current active board info:
+```typescript
+{
+  name: 'get_active_board_info',
+  arguments: {}
+}
+```
 
 ## Available Tools
 
@@ -105,7 +184,7 @@ Fetch all cards from a specific list.
 
 ### get_lists
 
-Retrieve all lists from the configured board.
+Retrieve all lists from the currently active board.
 
 ```typescript
 {
@@ -116,7 +195,7 @@ Retrieve all lists from the configured board.
 
 ### get_recent_activity
 
-Fetch recent activity on the board.
+Fetch recent activity on the currently active board.
 
 ```typescript
 {
@@ -176,7 +255,7 @@ Send a card to the archive.
 
 ### add_list_to_board
 
-Add a new list to the board.
+Add a new list to the currently active board.
 
 ```typescript
 {
@@ -240,6 +319,78 @@ Attach an image to a card directly from a URL.
 }
 ```
 
+### list_boards
+
+List all boards the user has access to.
+
+```typescript
+{
+  name: 'list_boards',
+  arguments: {}
+}
+```
+
+### set_active_board
+
+Set the active board for future operations.
+
+```typescript
+{
+  name: 'set_active_board',
+  arguments: {
+    boardId: string  // ID of the board to set as active
+  }
+}
+```
+
+### list_workspaces
+
+List all workspaces the user has access to.
+
+```typescript
+{
+  name: 'list_workspaces',
+  arguments: {}
+}
+```
+
+### set_active_workspace
+
+Set the active workspace for future operations.
+
+```typescript
+{
+  name: 'set_active_workspace',
+  arguments: {
+    workspaceId: string  // ID of the workspace to set as active
+  }
+}
+```
+
+### list_boards_in_workspace
+
+List all boards in a specific workspace.
+
+```typescript
+{
+  name: 'list_boards_in_workspace',
+  arguments: {
+    workspaceId: string  // ID of the workspace to list boards from
+  }
+}
+```
+
+### get_active_board_info
+
+Get information about the currently active board.
+
+```typescript
+{
+  name: 'get_active_board_info',
+  arguments: {}
+}
+```
+
 ## Rate Limiting
 
 The server implements a token bucket algorithm for rate limiting to comply with Trello's API limits:
@@ -286,7 +437,6 @@ npm install
 ```bash
 npm run build
 ```
-
 
 ## Contributing
 
