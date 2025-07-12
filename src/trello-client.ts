@@ -1,13 +1,22 @@
 import axios, { AxiosInstance } from 'axios';
-import { TrelloConfig, TrelloCard, TrelloList, TrelloAction, TrelloMember, TrelloAttachment, TrelloBoard } from './types.js';
+import {
+  TrelloConfig,
+  TrelloCard,
+  TrelloList,
+  TrelloAction,
+  TrelloAttachment,
+  TrelloBoard,
+} from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 
 export class TrelloClient {
   private axiosInstance: AxiosInstance;
   private rateLimiter;
+  private defaultBoardId?: string;
 
-  constructor(private config: Omit<TrelloConfig, 'boardId'>) {
+  constructor(private config: TrelloConfig) {
+    this.defaultBoardId = config.defaultBoardId;
     this.axiosInstance = axios.create({
       baseURL: 'https://api.trello.com/1',
       params: {
@@ -19,7 +28,7 @@ export class TrelloClient {
     this.rateLimiter = createTrelloRateLimiters();
 
     // Add rate limiting interceptor
-    this.axiosInstance.interceptors.request.use(async (config) => {
+    this.axiosInstance.interceptors.request.use(async config => {
       await this.rateLimiter.waitForAvailableToken();
       return config;
     });
@@ -56,36 +65,53 @@ export class TrelloClient {
     });
   }
 
-  async getCardsByList(boardId: string, listId: string): Promise<TrelloCard[]> {
+  async getCardsByList(boardId: string | undefined, listId: string): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`);
       return response.data;
     });
   }
 
-  async getLists(boardId: string): Promise<TrelloList[]> {
+  async getLists(boardId?: string): Promise<TrelloList[]> {
+    const effectiveBoardId = boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${boardId}/lists`);
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/lists`);
       return response.data;
     });
   }
 
-  async getRecentActivity(boardId: string, limit: number = 10): Promise<TrelloAction[]> {
+  async getRecentActivity(boardId?: string, limit: number = 10): Promise<TrelloAction[]> {
+    const effectiveBoardId = boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${boardId}/actions`, {
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/actions`, {
         params: { limit },
       });
       return response.data;
     });
   }
 
-  async addCard(boardId: string, params: {
-    listId: string;
-    name: string;
-    description?: string;
-    dueDate?: string;
-    labels?: string[];
-  }): Promise<TrelloCard> {
+  async addCard(
+    boardId: string | undefined,
+    params: {
+      listId: string;
+      name: string;
+      description?: string;
+      dueDate?: string;
+      labels?: string[];
+    }
+  ): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.post('/cards', {
         idList: params.listId,
@@ -98,13 +124,16 @@ export class TrelloClient {
     });
   }
 
-  async updateCard(boardId: string, params: {
-    cardId: string;
-    name?: string;
-    description?: string;
-    dueDate?: string;
-    labels?: string[];
-  }): Promise<TrelloCard> {
+  async updateCard(
+    boardId: string | undefined,
+    params: {
+      cardId: string;
+      name?: string;
+      description?: string;
+      dueDate?: string;
+      labels?: string[];
+    }
+  ): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${params.cardId}`, {
         name: params.name,
@@ -116,7 +145,7 @@ export class TrelloClient {
     });
   }
 
-  async archiveCard(boardId: string, cardId: string): Promise<TrelloCard> {
+  async archiveCard(boardId: string | undefined, cardId: string): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${cardId}`, {
         closed: true,
@@ -125,27 +154,35 @@ export class TrelloClient {
     });
   }
 
-  async moveCard(boardId: string, cardId: string, listId: string): Promise<TrelloCard> {
+  async moveCard(boardId: string | undefined, cardId: string, listId: string): Promise<TrelloCard> {
+    const effectiveBoardId = boardId || this.defaultBoardId;
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${cardId}`, {
         idList: listId,
-        idBoard: boardId,
+        ...(effectiveBoardId && { idBoard: effectiveBoardId }),
       });
       return response.data;
     });
   }
 
-  async addList(boardId: string, name: string): Promise<TrelloList> {
+  async addList(boardId: string | undefined, name: string): Promise<TrelloList> {
+    const effectiveBoardId = boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.post('/lists', {
         name,
-        idBoard: boardId,
+        idBoard: effectiveBoardId,
       });
       return response.data;
     });
   }
 
-  async archiveList(boardId: string, listId: string): Promise<TrelloList> {
+  async archiveList(boardId: string | undefined, listId: string): Promise<TrelloList> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/lists/${listId}/closed`, {
         value: true,
@@ -161,7 +198,12 @@ export class TrelloClient {
     });
   }
 
-  async attachImageToCard(boardId: string, cardId: string, imageUrl: string, name?: string): Promise<TrelloAttachment> {
+  async attachImageToCard(
+    boardId: string | undefined,
+    cardId: string,
+    imageUrl: string,
+    name?: string
+  ): Promise<TrelloAttachment> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, {
         url: imageUrl,

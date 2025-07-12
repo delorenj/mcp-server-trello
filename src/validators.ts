@@ -36,54 +36,48 @@ export function validateOptionalStringArray(value: unknown): string[] | undefine
   return validateStringArray(value);
 }
 
-export function validateGetCardsListRequest(args: Record<string, unknown>): { boardId: string; listId: string } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
+export function validateGetCardsListRequest(args: Record<string, unknown>): {
+  boardId?: string;
+  listId: string;
+} {
   if (!args.listId) {
     throw new McpError(ErrorCode.InvalidParams, 'listId is required');
   }
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     listId: validateString(args.listId, 'listId'),
   };
 }
 
-export function validateGetListsRequest(args: Record<string, unknown>): { boardId: string } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
+export function validateGetListsRequest(args: Record<string, unknown>): { boardId?: string } {
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
   };
 }
 
-export function validateGetRecentActivityRequest(args: Record<string, unknown>): { boardId: string; limit?: number } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
+export function validateGetRecentActivityRequest(args: Record<string, unknown>): {
+  boardId?: string;
+  limit?: number;
+} {
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     limit: validateOptionalNumber(args.limit),
   };
 }
 
 export function validateAddCardRequest(args: Record<string, unknown>): {
-  boardId: string;
+  boardId?: string;
   listId: string;
   name: string;
   description?: string;
   dueDate?: string;
   labels?: string[];
 } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
   if (!args.listId || !args.name) {
     throw new McpError(ErrorCode.InvalidParams, 'listId and name are required');
   }
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     listId: validateString(args.listId, 'listId'),
     name: validateString(args.name, 'name'),
     description: validateOptionalString(args.description),
@@ -93,21 +87,18 @@ export function validateAddCardRequest(args: Record<string, unknown>): {
 }
 
 export function validateUpdateCardRequest(args: Record<string, unknown>): {
-  boardId: string;
+  boardId?: string;
   cardId: string;
   name?: string;
   description?: string;
   dueDate?: string;
   labels?: string[];
 } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
   if (!args.cardId) {
     throw new McpError(ErrorCode.InvalidParams, 'cardId is required');
   }
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     cardId: validateString(args.cardId, 'cardId'),
     name: validateOptionalString(args.name),
     description: validateOptionalString(args.description),
@@ -116,81 +107,79 @@ export function validateUpdateCardRequest(args: Record<string, unknown>): {
   };
 }
 
-export function validateArchiveCardRequest(args: Record<string, unknown>): { boardId: string; cardId: string } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
+export function validateArchiveCardRequest(args: Record<string, unknown>): {
+  boardId?: string;
+  cardId: string;
+} {
   if (!args.cardId) {
     throw new McpError(ErrorCode.InvalidParams, 'cardId is required');
   }
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     cardId: validateString(args.cardId, 'cardId'),
   };
 }
 
-export function validateAddListRequest(args: Record<string, unknown>): { boardId: string; name: string } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
+export function validateAddListRequest(args: Record<string, unknown>): {
+  boardId?: string;
+  name: string;
+} {
   if (!args.name) {
     throw new McpError(ErrorCode.InvalidParams, 'name is required');
   }
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     name: validateString(args.name, 'name'),
   };
 }
 
-export function validateArchiveListRequest(args: Record<string, unknown>): { boardId: string; listId: string } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
+export function validateArchiveListRequest(args: Record<string, unknown>): {
+  boardId?: string;
+  listId: string;
+} {
   if (!args.listId) {
     throw new McpError(ErrorCode.InvalidParams, 'listId is required');
   }
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     listId: validateString(args.listId, 'listId'),
   };
 }
 
-export function validateMoveCardRequest(args: Record<string, unknown>): { boardId: string; cardId: string; listId: string } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
+export function validateMoveCardRequest(args: Record<string, unknown>): {
+  boardId?: string;
+  cardId: string;
+  listId: string;
+} {
   if (!args.cardId || !args.listId) {
     throw new McpError(ErrorCode.InvalidParams, 'cardId and listId are required');
   }
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     cardId: validateString(args.cardId, 'cardId'),
     listId: validateString(args.listId, 'listId'),
   };
 }
 
-export function validateAttachImageRequest(args: Record<string, unknown>): { 
-  boardId: string;
-  cardId: string; 
+export function validateAttachImageRequest(args: Record<string, unknown>): {
+  boardId?: string;
+  cardId: string;
   imageUrl: string;
   name?: string;
 } {
-  if (!args.boardId) {
-    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
-  }
   if (!args.cardId || !args.imageUrl) {
     throw new McpError(ErrorCode.InvalidParams, 'cardId and imageUrl are required');
   }
-  
+
   const imageUrl = validateString(args.imageUrl, 'imageUrl');
   try {
     new URL(imageUrl);
   } catch (e) {
     throw new McpError(ErrorCode.InvalidParams, 'imageUrl must be a valid URL');
   }
-  
+
   return {
-    boardId: validateString(args.boardId, 'boardId'),
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     cardId: validateString(args.cardId, 'cardId'),
     imageUrl: imageUrl,
     name: validateOptionalString(args.name),
