@@ -7,6 +7,18 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ## Changelog
 
+### 0.3.0
+
+- Added multi-board support - all methods now accept optional `boardId` parameter (thanks @blackoutnet!)
+- `TRELLO_BOARD_ID` environment variable is now optional and serves as default board
+- Added `list_boards` method to retrieve all accessible Trello boards
+- Improved error handling with MCP-specific error types
+- Full backward compatibility maintained
+
+### 0.2.1
+
+- Added `attach_image_to_card` method to attach image URLs to Trello cards
+
 ### 0.1.2
 
 - Added Docker support with multi-stage build
@@ -73,13 +85,17 @@ The server can be configured using environment variables. Create a `.env` file i
 ```env
 TRELLO_API_KEY=your-api-key
 TRELLO_TOKEN=your-token
-TRELLO_BOARD_ID=your-board-id
+TRELLO_BOARD_ID=your-board-id  # Optional - serves as default board
 ```
 
 You can get these values from:
 - API Key: https://trello.com/app-key
 - Token: Generate using your API key
-- Board ID: Found in the board URL
+- Board ID (optional): Found in the board URL - if set, will be used as default for all operations
+
+**Note**: With version 0.3.0+, you can work with multiple boards by either:
+- Omitting `TRELLO_BOARD_ID` and providing `boardId` in each API call
+- Setting `TRELLO_BOARD_ID` as default and optionally overriding with `boardId` parameter
 
 ## Available Tools
 
@@ -212,9 +228,21 @@ Move a card to a different list.
 {
   name: 'move_card',
   arguments: {
-    cardId: string,  // ID of the card to move
-    listId: string   // ID of the target list
+    boardId?: string,  // Optional: ID of the target board (uses default if not provided)
+    cardId: string,    // ID of the card to move
+    listId: string     // ID of the target list
   }
+}
+```
+
+### list_boards
+
+Retrieve all Trello boards accessible by the user.
+
+```typescript
+{
+  name: 'list_boards',
+  arguments: {}
 }
 ```
 
