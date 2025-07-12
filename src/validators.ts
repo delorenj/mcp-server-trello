@@ -185,3 +185,30 @@ export function validateAttachImageRequest(args: Record<string, unknown>): {
     name: validateOptionalString(args.name),
   };
 }
+
+export function validateSetActiveBoardRequest(args: Record<string, unknown>): { boardId: string } {
+  if (!args.boardId) {
+    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
+  }
+  return {
+    boardId: validateString(args.boardId, 'boardId'),
+  };
+}
+
+export function validateSetActiveWorkspaceRequest(args: Record<string, unknown>): { workspaceId: string } {
+  if (!args.workspaceId) {
+    throw new McpError(ErrorCode.InvalidParams, 'workspaceId is required');
+  }
+  return {
+    workspaceId: validateString(args.workspaceId, 'workspaceId'),
+  };
+}
+
+export function validateListBoardsInWorkspaceRequest(args: Record<string, unknown>): { workspaceId: string } {
+  if (!args.workspaceId) {
+    throw new McpError(ErrorCode.InvalidParams, 'workspaceId is required');
+  }
+  return {
+    workspaceId: validateString(args.workspaceId, 'workspaceId'),
+  };
+}

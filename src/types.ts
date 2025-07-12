@@ -2,6 +2,27 @@ export interface TrelloConfig {
   apiKey: string;
   token: string;
   defaultBoardId?: string;
+  boardId?: string;
+  workspaceId?: string;
+}
+
+export interface TrelloBoard {
+  id: string;
+  name: string;
+  desc: string;
+  closed: boolean;
+  idOrganization: string;
+  url: string;
+  shortUrl: string;
+}
+
+export interface TrelloWorkspace {
+  id: string;
+  name: string;
+  displayName: string;
+  desc?: string;
+  url: string;
+  website?: string;
 }
 
 export interface TrelloCard {
@@ -55,14 +76,6 @@ export interface TrelloLabel {
   id: string;
   name: string;
   color: string;
-}
-
-export interface TrelloBoard {
-  id: string;
-  name: string;
-  desc?: string;
-  url?: string;
-  shortUrl?: string;
 }
 
 export interface TrelloMember {
