@@ -1,11 +1,10 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/delorenj-mcp-server-trello-badge.png)](https://mseep.ai/app/delorenj-mcp-server-trello)
-
 # MCP Server Trello
+
 [![smithery badge](https://smithery.ai/badge/@modelcontextprotocol/mcp-server-trello)](https://smithery.ai/server/@modelcontextprotocol/mcp-server-trello)
+<a href="https://glama.ai/mcp/servers/klqkamy7wt"><img width="380" height="200" src="https://glama.ai/mcp/servers/klqkamy7wt/badge" alt="Server Trello MCP server" /></a>
+[![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/27359682-7632-4ba7-981d-7dfecadf1c4b)
 
 A Model Context Protocol (MCP) server that provides tools for interacting with Trello boards. This server enables seamless integration with Trello's API while handling rate limiting, type safety, and error handling automatically.
-
-<a href="https://glama.ai/mcp/servers/klqkamy7wt"><img width="380" height="200" src="https://glama.ai/mcp/servers/klqkamy7wt/badge" alt="Server Trello MCP server" /></a>
 
 ## Changelog
 
@@ -60,17 +59,20 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 The easiest way to run the server is using Docker:
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/delorenj/mcp-server-trello
 cd mcp-server-trello
 ```
 
 2. Copy the environment template and fill in your Trello credentials:
+
 ```bash
 cp .env.template .env
 ```
 
 3. Build and run with Docker Compose:
+
 ```bash
 docker compose up --build
 ```
@@ -84,6 +86,7 @@ npx -y @smithery/cli install @modelcontextprotocol/mcp-server-trello --client cl
 ```
 
 ### Manual Installation
+
 ```bash
 npm install @delorenj/mcp-server-trello
 ```
@@ -99,7 +102,7 @@ The server can be configured using environment variables. Create a `.env` file i
 TRELLO_API_KEY=your-api-key
 TRELLO_TOKEN=your-token
 
-# Required: Initial board ID (can be changed later using set_active_board)
+# (Deprecated): Initial board ID
 TRELLO_BOARD_ID=your-board-id
 
 # Optional: Initial workspace ID (can be changed later using set_active_workspace)
@@ -107,9 +110,10 @@ TRELLO_WORKSPACE_ID=your-workspace-id
 ```
 
 You can get these values from:
-- API Key: https://trello.com/app-key
+
+- API Key: <https://trello.com/app-key>
 - Token: Generate using your API key
-- Board ID: Found in the board URL (e.g., https://trello.com/b/BOARD_ID/board-name)
+- Board ID (Deprecated): Found in the board URL (e.g., <https://trello.com/b/BOARD_ID/board-name>)
 - Workspace ID: Found in workspace settings or using `list_workspaces` tool
 
 ### Board and Workspace Management
@@ -126,6 +130,7 @@ This allows you to work with multiple boards and workspaces without restarting t
 #### Example Workflow
 
 1. Start by listing available boards:
+
 ```typescript
 {
   name: 'list_boards',
@@ -134,6 +139,7 @@ This allows you to work with multiple boards and workspaces without restarting t
 ```
 
 2. Set your active board:
+
 ```typescript
 {
   name: 'set_active_board',
@@ -144,6 +150,7 @@ This allows you to work with multiple boards and workspaces without restarting t
 ```
 
 3. List workspaces if needed:
+
 ```typescript
 {
   name: 'list_workspaces',
@@ -152,6 +159,7 @@ This allows you to work with multiple boards and workspaces without restarting t
 ```
 
 4. Set active workspace if needed:
+
 ```typescript
 {
   name: 'set_active_workspace',
@@ -162,6 +170,7 @@ This allows you to work with multiple boards and workspaces without restarting t
 ```
 
 5. Check current active board info:
+
 ```typescript
 {
   name: 'get_active_board_info',
@@ -440,7 +449,6 @@ npm install
 npm run build
 ```
 
-
 ## Running evals
 
 The evals package loads an mcp client that then runs the index.ts file, so there is no need to rebuild between tests. You can load environment variables by prefixing the npx command. Full documentation can be found [here](https://www.mcpevals.io/docs).
@@ -448,6 +456,7 @@ The evals package loads an mcp client that then runs the index.ts file, so there
 ```bash
 OPENAI_API_KEY=your-key  npx mcp-eval src/evals/evals.ts src/index.ts
 ```
+
 ## Contributing
 
 Contributions are welcome!
