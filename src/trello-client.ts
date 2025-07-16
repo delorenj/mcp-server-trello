@@ -9,6 +9,7 @@ import {
   TrelloWorkspace,
 } from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
+import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -19,11 +20,20 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 export class TrelloClient {
   private axiosInstance: AxiosInstance;
   private rateLimiter;
+  private defaultBoardId?: string;
   private activeConfig: TrelloConfig;
 
   constructor(private config: TrelloConfig) {
+    this.defaultBoardId = config.defaultBoardId;
     this.activeConfig = { ...config };
-
+    // If boardId is provided in config, use it as the active board
+    if (config.boardId && !this.activeConfig.boardId) {
+      this.activeConfig.boardId = config.boardId;
+    }
+    // If defaultBoardId is provided but boardId is not, use defaultBoardId
+    if (this.defaultBoardId && !this.activeConfig.boardId) {
+      this.activeConfig.boardId = this.defaultBoardId;
+    }
     this.axiosInstance = axios.create({
       baseURL: 'https://api.trello.com/1',
       params: {
@@ -89,7 +99,7 @@ export class TrelloClient {
   /**
    * Get the current active board ID
    */
-  get activeBoardId(): string {
+  get activeBoardId(): string | undefined {
     return this.activeConfig.boardId;
   }
 
@@ -122,19 +132,27 @@ export class TrelloClient {
     return workspace;
   }
 
-  private async handleRequest<T>(request: () => Promise<T>): Promise<T> {
+  private async handleRequest<T = any>(requestFn: () => Promise<T>): Promise<T> {
     try {
-      return await request();
+      return await requestFn();
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 429) {
           // Rate limit exceeded, wait and retry
           await new Promise(resolve => setTimeout(resolve, 1000));
-          return this.handleRequest(request);
+          return this.handleRequest(requestFn);
         }
-        throw new Error(`Trello API error: ${error.response?.data?.message ?? error.message}`);
+        console.error('Trello API Error:', error.response?.data || error.message);
+        // Customize error handling based on Trello's error structure if needed
+        throw new McpError(
+          ErrorCode.InternalError,
+          `Trello API Error: ${error.response?.status} ${error.message}`,
+          error.response?.data
+        );
+      } else {
+        console.error('Unexpected Error:', error);
+        throw new McpError(ErrorCode.InternalError, 'An unexpected error occurred');
       }
-      throw error;
     }
   }
 
@@ -188,39 +206,53 @@ export class TrelloClient {
     });
   }
 
-  async getCardsByList(listId: string): Promise<TrelloCard[]> {
+  async getCardsByList(boardId: string | undefined, listId: string): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`);
       return response.data;
     });
   }
 
-  async getLists(): Promise<TrelloList[]> {
-    return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${this.activeConfig.boardId}/lists`);
-      return response.data;
-    });
-  }
-
-  async getRecentActivity(limit: number = 10): Promise<TrelloAction[]> {
-    return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(
-        `/boards/${this.activeConfig.boardId}/actions`,
-        {
-          params: { limit },
-        }
+  async getLists(boardId?: string): Promise<TrelloList[]> {
+    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
       );
+    }
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/lists`);
       return response.data;
     });
   }
 
-  async addCard(params: {
-    listId: string;
-    name: string;
-    description?: string;
-    dueDate?: string;
-    labels?: string[];
-  }): Promise<TrelloCard> {
+  async getRecentActivity(boardId?: string, limit: number = 10): Promise<TrelloAction[]> {
+    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/actions`, {
+        params: { limit },
+      });
+      return response.data;
+    });
+  }
+
+  async addCard(
+    boardId: string | undefined,
+    params: {
+      listId: string;
+      name: string;
+      description?: string;
+      dueDate?: string;
+      labels?: string[];
+    }
+  ): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.post('/cards', {
         idList: params.listId,
@@ -233,13 +265,16 @@ export class TrelloClient {
     });
   }
 
-  async updateCard(params: {
-    cardId: string;
-    name?: string;
-    description?: string;
-    dueDate?: string;
-    labels?: string[];
-  }): Promise<TrelloCard> {
+  async updateCard(
+    boardId: string | undefined,
+    params: {
+      cardId: string;
+      name?: string;
+      description?: string;
+      dueDate?: string;
+      labels?: string[];
+    }
+  ): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${params.cardId}`, {
         name: params.name,
@@ -251,7 +286,7 @@ export class TrelloClient {
     });
   }
 
-  async archiveCard(cardId: string): Promise<TrelloCard> {
+  async archiveCard(boardId: string | undefined, cardId: string): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${cardId}`, {
         closed: true,
@@ -260,26 +295,35 @@ export class TrelloClient {
     });
   }
 
-  async moveCard(cardId: string, listId: string): Promise<TrelloCard> {
+  async moveCard(boardId: string | undefined, cardId: string, listId: string): Promise<TrelloCard> {
+    const effectiveBoardId = boardId || this.defaultBoardId;
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${cardId}`, {
         idList: listId,
+        ...(effectiveBoardId && { idBoard: effectiveBoardId }),
       });
       return response.data;
     });
   }
 
-  async addList(name: string): Promise<TrelloList> {
+  async addList(boardId: string | undefined, name: string): Promise<TrelloList> {
+    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.post('/lists', {
         name,
-        idBoard: this.activeConfig.boardId,
+        idBoard: effectiveBoardId,
       });
       return response.data;
     });
   }
 
-  async archiveList(listId: string): Promise<TrelloList> {
+  async archiveList(boardId: string | undefined, listId: string): Promise<TrelloList> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/lists/${listId}/closed`, {
         value: true,
@@ -296,12 +340,12 @@ export class TrelloClient {
   }
 
   async attachImageToCard(
+    boardId: string | undefined,
     cardId: string,
     imageUrl: string,
     name?: string
   ): Promise<TrelloAttachment> {
     return this.handleRequest(async () => {
-      // Attaching an image directly from URL without downloading it
       const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, {
         url: imageUrl,
         name: name || 'Image Attachment',

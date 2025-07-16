@@ -485,11 +485,18 @@ class TrelloServer {
 
           case 'attach_image_to_card': {
             const validArgs = validateAttachImageRequest(args);
+<<<<<<< HEAD
+            const attachment = await this.trelloClient.attachImageToCard(
+              validArgs.boardId,
+              validArgs.cardId,
+              validArgs.imageUrl,
+              validArgs.name
+            );
+=======
             try {
               const attachment = await this.trelloClient.attachImageToCard(
-                validArgs.boardId,
-                validArgs.cardId,
-                validArgs.imageUrl,
+                validArgs.cardId, 
+                validArgs.imageUrl, 
                 validArgs.name
               );
               return {
@@ -498,6 +505,14 @@ class TrelloServer {
             } catch (error) {
               return this.handleErrorResponse(error);
             }
+          }
+
+          case 'list_boards': {
+            const boards = await this.trelloClient.listBoards();
+>>>>>>> origin/main
+            return {
+              content: [{ type: 'text', text: JSON.stringify(boards, null, 2) }],
+            };
           }
 
           case 'set_active_board': {
@@ -552,9 +567,6 @@ class TrelloServer {
           case 'get_active_board_info': {
             try {
               const boardId = this.trelloClient.activeBoardId;
-              if (!boardId) {
-                throw new McpError(ErrorCode.InvalidParams, 'No active board set');
-              }
               const board = await this.trelloClient.getBoardById(boardId);
               return {
                 content: [{ 
