@@ -10,6 +10,8 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ### 0.3.0
 
+- Added multi-board support - all methods now accept optional `boardId` parameter (thanks @blackoutnet!)
+- `TRELLO_BOARD_ID` environment variable is now optional and serves as default board
 - Added board and workspace management capabilities:
   - `list_boards` - List all boards the user has access to
   - `set_active_board` - Set the active board for future operations
@@ -18,7 +20,8 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
   - `list_boards_in_workspace` - List all boards in a specific workspace
   - `get_active_board_info` - Get information about the currently active board
 - Added persistent configuration storage to remember active board/workspace
-- Improved error handling for all new operations
+- Improved error handling with MCP-specific error types
+- Full backward compatibility maintained
 
 ### 0.2.1
 
@@ -102,7 +105,7 @@ The server can be configured using environment variables. Create a `.env` file i
 TRELLO_API_KEY=your-api-key
 TRELLO_TOKEN=your-token
 
-# (Deprecated): Initial board ID
+# Optional (Deprecated): Default board ID (can be changed later using set_active_board)
 TRELLO_BOARD_ID=your-board-id
 
 # Optional: Initial workspace ID (can be changed later using set_active_workspace)
@@ -113,19 +116,24 @@ You can get these values from:
 
 - API Key: <https://trello.com/app-key>
 - Token: Generate using your API key
-- Board ID (Deprecated): Found in the board URL (e.g., <https://trello.com/b/BOARD_ID/board-name>)
+- Board ID (optional, deprecated): Found in the board URL (e.g., <https://trello.com/b/BOARD_ID/board-name>)
 - Workspace ID: Found in workspace settings or using `list_workspaces` tool
 
 ### Board and Workspace Management
 
-Starting with version 0.3.0, the MCP server supports dynamic board and workspace selection:
+Starting with version 0.3.0, the MCP server supports multiple ways to work with boards:
 
-- The `TRELLO_BOARD_ID` in your `.env` file is used as the initial board ID when the server starts
-- You can change the active board at any time using the `set_active_board` tool
-- The selected board persists between server restarts (stored in `~/.trello-mcp/config.json`)
-- Similarly, you can set and persist an active workspace using `set_active_workspace`
+1. **Multi-board support**: All methods now accept an optional `boardId` parameter
+   - Omit `TRELLO_BOARD_ID` and provide `boardId` in each API call
+   - Set `TRELLO_BOARD_ID` as default and optionally override with `boardId` parameter
 
-This allows you to work with multiple boards and workspaces without restarting the server or changing environment variables.
+2. **Dynamic board selection**: Use workspace management tools
+   - The `TRELLO_BOARD_ID` in your `.env` file is used as the initial/default board ID
+   - You can change the active board at any time using the `set_active_board` tool
+   - The selected board persists between server restarts (stored in `~/.trello-mcp/config.json`)
+   - Similarly, you can set and persist an active workspace using `set_active_workspace`
+
+This allows you to work with multiple boards and workspaces without restarting the server.
 
 #### Example Workflow
 
@@ -188,31 +196,35 @@ Fetch all cards from a specific list.
 {
   name: 'get_cards_by_list_id',
   arguments: {
-    listId: string  // ID of the Trello list
+    boardId?: string, // Optional: ID of the board (uses default if not provided)
+    listId: string    // ID of the Trello list
   }
 }
 ```
 
 ### get_lists
 
-Retrieve all lists from the currently active board.
+Retrieve all lists from a board.
 
 ```typescript
 {
   name: 'get_lists',
-  arguments: {}
+  arguments: {
+    boardId?: string  // Optional: ID of the board (uses default if not provided)
+  }
 }
 ```
 
 ### get_recent_activity
 
-Fetch recent activity on the currently active board.
+Fetch recent activity on a board.
 
 ```typescript
 {
   name: 'get_recent_activity',
   arguments: {
-    limit?: number  // Optional: Number of activities to fetch (default: 10)
+    boardId?: string, // Optional: ID of the board (uses default if not provided)
+    limit?: number    // Optional: Number of activities to fetch (default: 10)
   }
 }
 ```
@@ -225,6 +237,7 @@ Add a new card to a specified list.
 {
   name: 'add_card_to_list',
   arguments: {
+    boardId?: string,     // Optional: ID of the board (uses default if not provided)
     listId: string,       // ID of the list to add the card to
     name: string,         // Name of the card
     description?: string, // Optional: Description of the card
@@ -242,6 +255,7 @@ Update an existing card's details.
 {
   name: 'update_card_details',
   arguments: {
+    boardId?: string,     // Optional: ID of the board (uses default if not provided)
     cardId: string,       // ID of the card to update
     name?: string,        // Optional: New name for the card
     description?: string, // Optional: New description
@@ -259,20 +273,22 @@ Send a card to the archive.
 {
   name: 'archive_card',
   arguments: {
-    cardId: string  // ID of the card to archive
+    boardId?: string, // Optional: ID of the board (uses default if not provided)
+    cardId: string    // ID of the card to archive
   }
 }
 ```
 
 ### add_list_to_board
 
-Add a new list to the currently active board.
+Add a new list to a board.
 
 ```typescript
 {
   name: 'add_list_to_board',
   arguments: {
-    name: string  // Name of the new list
+    boardId?: string, // Optional: ID of the board (uses default if not provided)
+    name: string      // Name of the new list
   }
 }
 ```
@@ -285,7 +301,8 @@ Send a list to the archive.
 {
   name: 'archive_list',
   arguments: {
-    listId: string  // ID of the list to archive
+    boardId?: string, // Optional: ID of the board (uses default if not provided)
+    listId: string    // ID of the list to archive
   }
 }
 ```
@@ -309,8 +326,9 @@ Move a card to a different list.
 {
   name: 'move_card',
   arguments: {
-    cardId: string,  // ID of the card to move
-    listId: string   // ID of the target list
+    boardId?: string,  // Optional: ID of the target board (uses default if not provided)
+    cardId: string,    // ID of the card to move
+    listId: string     // ID of the target list
   }
 }
 ```
@@ -323,9 +341,10 @@ Attach an image to a card directly from a URL.
 {
   name: 'attach_image_to_card',
   arguments: {
-    cardId: string,  // ID of the card to attach the image to
+    boardId?: string, // Optional: ID of the board (uses default if not provided)
+    cardId: string,   // ID of the card to attach the image to
     imageUrl: string, // URL of the image to attach
-    name?: string    // Optional: Name for the attachment (defaults to "Image Attachment")
+    name?: string     // Optional: Name for the attachment (defaults to "Image Attachment")
   }
 }
 ```
@@ -401,7 +420,6 @@ Get information about the currently active board.
   arguments: {}
 }
 ```
-
 ## Rate Limiting
 
 The server implements a token bucket algorithm for rate limiting to comply with Trello's API limits:

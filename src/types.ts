@@ -1,7 +1,8 @@
 export interface TrelloConfig {
   apiKey: string;
   token: string;
-  boardId: string;
+  defaultBoardId?: string;
+  boardId?: string;
   workspaceId?: string;
 }
 

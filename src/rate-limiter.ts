@@ -33,7 +33,7 @@ export class TokenBucketRateLimiter implements RateLimiter {
   }
 
   async waitForAvailableToken(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const check = () => {
         if (this.canMakeRequest()) {
           resolve();
