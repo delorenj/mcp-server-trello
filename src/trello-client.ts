@@ -67,10 +67,6 @@ export class TrelloClient {
       if (savedConfig.workspaceId) {
         this.activeConfig.workspaceId = savedConfig.workspaceId;
       }
-
-      console.log(
-        `Loaded configuration: Board ID ${this.activeConfig.boardId}, Workspace ID ${this.activeConfig.workspaceId || 'not set'}`
-      );
     } catch (error) {
       // File might not exist yet, that's okay
       if (error instanceof Error && 'code' in error && error.code !== 'ENOENT') {
@@ -91,7 +87,7 @@ export class TrelloClient {
       };
       await fs.writeFile(CONFIG_FILE, JSON.stringify(configToSave, null, 2));
     } catch (error) {
-      console.error('Failed to save configuration:', error);
+      // Failed to save configuration
       throw new Error('Failed to save configuration');
     }
   }
@@ -142,7 +138,7 @@ export class TrelloClient {
           await new Promise(resolve => setTimeout(resolve, 1000));
           return this.handleRequest(requestFn);
         }
-        console.error('Trello API Error:', error.response?.data || error.message);
+        // Trello API Error
         // Customize error handling based on Trello's error structure if needed
         throw new McpError(
           ErrorCode.InternalError,
@@ -150,7 +146,7 @@ export class TrelloClient {
           error.response?.data
         );
       } else {
-        console.error('Unexpected Error:', error);
+        // Unexpected Error
         throw new McpError(ErrorCode.InternalError, 'An unexpected error occurred');
       }
     }

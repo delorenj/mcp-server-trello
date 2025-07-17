@@ -1,10 +1,9 @@
-name: mcp-server-trello
-
 services:
   mcp-server-trello:
+    container_name: mcp-server-trello
     build: .
     environment:
       TRELLO_API_KEY: ${TRELLO_API_KEY}
-      TRELLO_BOARD_ID: ${TRELLO_BOARD_ID}
       TRELLO_TOKEN: ${TRELLO_TOKEN}
-    restart: "no" # Changed from unless-stopped for local development 
+    restart: 'no'
+

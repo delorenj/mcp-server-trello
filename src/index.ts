@@ -47,7 +47,7 @@ class TrelloServer {
     this.server = new Server(
       {
         name: 'trello-server',
-        version: '0.3.0',
+        version: '1.0.0',
       },
       {
         capabilities: {
@@ -59,7 +59,9 @@ class TrelloServer {
     this.setupToolHandlers();
 
     // Error handling
-    this.server.onerror = error => console.error('[MCP Error]', error);
+    this.server.onerror = (error) => {
+      // Silently handle errors to avoid interfering with MCP protocol
+    };
     process.on('SIGINT', async () => {
       await this.server.close();
       process.exit(0);
@@ -604,13 +606,13 @@ class TrelloServer {
     const transport = new StdioServerTransport();
     // Load configuration before starting the server
     await this.trelloClient.loadConfig().catch((error) => {
-      console.error('Failed to load saved configuration:', error);
       // Continue with default config if loading fails
     });
     await this.server.connect(transport);
-    console.error('Trello MCP server running on stdio');
   }
 }
 
 const server = new TrelloServer();
-server.run().catch(console.error);
+server.run().catch(() => {
+  // Silently handle errors to avoid interfering with MCP protocol
+});

@@ -8,6 +8,14 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ## Changelog
 
+### 1.0.0
+
+- Fixed MCP protocol compatibility by removing all console output that interfered with JSON-RPC communication
+- Improved pnpx support - now works seamlessly with `pnpx @delorenj/mcp-server-trello`
+- Updated installation docs to feature pnpx as the primary installation method
+- Added mise installation instructions for convenient tool management
+- Production-ready release with stable API
+
 ### 0.3.0
 
 - Added multi-board support - all methods now accept optional `boardId` parameter (thanks @blackoutnet!)
@@ -57,9 +65,75 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ## Installation
 
-### Docker Installation (Recommended)
+### Quick Start with pnpx (Recommended)
 
-The easiest way to run the server is using Docker:
+The easiest way to use the Trello MCP server is with `pnpx`, which doesn't require a global install:
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "pnpx",
+      "args": ["@delorenj/mcp-server-trello"],
+      "env": {
+        "TRELLO_API_KEY": "your-api-key",
+        "TRELLO_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+Or if you're using mise:
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "mise",
+      "args": ["x", "--", "pnpx", "@delorenj/mcp-server-trello"],
+      "env": {
+        "TRELLO_API_KEY": "your-api-key",
+        "TRELLO_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+#### Don't have pnpm?
+
+The simplest way to get `pnpm` (and thus `pnpx`) is through [mise](https://mise.jdx.dev/):
+
+```bash
+# Install mise (if you don't have it)
+curl https://mise.run | sh
+
+# Install pnpm with mise
+mise install pnpm
+```
+
+### Installing via npm
+
+If you prefer using npm directly:
+
+```bash
+npm install -g @delorenj/mcp-server-trello
+```
+
+Then use `mcp-server-trello` as the command in your MCP configuration.
+
+### Installing via Smithery
+
+To install Trello Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@modelcontextprotocol/mcp-server-trello):
+
+```bash
+npx -y @smithery/cli install @modelcontextprotocol/mcp-server-trello --client claude
+```
+
+### Docker Installation
+
+For containerized environments:
 
 1. Clone the repository:
 
@@ -78,20 +152,6 @@ cp .env.template .env
 
 ```bash
 docker compose up --build
-```
-
-### Installing via Smithery
-
-To install Trello Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@modelcontextprotocol/mcp-server-trello):
-
-```bash
-npx -y @smithery/cli install @modelcontextprotocol/mcp-server-trello --client claude
-```
-
-### Manual Installation
-
-```bash
-npm install @delorenj/mcp-server-trello
 ```
 
 ## Configuration
@@ -420,6 +480,71 @@ Get information about the currently active board.
   arguments: {}
 }
 ```
+
+## Integration Examples
+
+### 🎨 Pairing with Ideogram MCP Server
+
+The Trello MCP server pairs beautifully with [@flowluap/ideogram-mcp-server](https://github.com/flowluap/ideogram-mcp-server) for AI-powered visual content creation. Generate images with Ideogram and attach them directly to your Trello cards!
+
+![Ideogram + Trello Integration Example](https://ss.delo.sh/hosted/20250717-0619.png)
+
+#### Example Workflow
+
+1. **Generate an image with Ideogram:**
+```typescript
+// Using ideogram-mcp-server
+{
+  name: 'generate_image',
+  arguments: {
+    prompt: "A futuristic dashboard design with neon accents",
+    aspect_ratio: "16:9"
+  }
+}
+// Returns: { image_url: "https://..." }
+```
+
+2. **Attach the generated image to a Trello card:**
+```typescript
+// Using trello-mcp-server
+{
+  name: 'attach_image_to_card',
+  arguments: {
+    cardId: "your-card-id",
+    imageUrl: "https://...", // URL from Ideogram
+    name: "Dashboard Mockup v1"
+  }
+}
+```
+
+#### Setting up both servers
+
+Add both servers to your Claude Desktop configuration:
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "pnpx",
+      "args": ["@delorenj/mcp-server-trello"],
+      "env": {
+        "TRELLO_API_KEY": "your-trello-api-key",
+        "TRELLO_TOKEN": "your-trello-token"
+      }
+    },
+    "ideogram": {
+      "command": "pnpx",
+      "args": ["@flowluap/ideogram-mcp-server"],
+      "env": {
+        "IDEOGRAM_API_KEY": "your-ideogram-api-key"
+      }
+    }
+  }
+}
+```
+
+Now you can seamlessly create visual content and organize it in Trello, all within Claude!
+
 ## Rate Limiting
 
 The server implements a token bucket algorithm for rate limiting to comply with Trello's API limits:
