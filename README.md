@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/delorenj-mcp-server-trello-badge.png)](https://mseep.ai/app/delorenj-mcp-server-trello)
+
 # MCP Server Trello
 
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/27359682-7632-4ba7-981d-7dfecadf1c4b)
