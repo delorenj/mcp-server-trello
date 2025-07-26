@@ -101,6 +101,23 @@ Or if you're using mise:
 }
 ```
 
+To connect a Trello workspace, you'll need to manually retrieve a `TRELLO_TOKEN` once per workspace. After setting up your Trello Power-Up, visit the following URL:
+
+```
+https://trello.com/1/authorize?expiration=never&name=YOUR_APP_NAME&scope=read,write&response_type=token&key=YOUR_API_KEY
+```
+
+Replace:
+
+* `YOUR_APP_NAME` with a name for your application (e.g., "My Trello Integration"). This name is shown to the user on the Trello authorization screen.
+* `YOUR_API_KEY` with the API key for your Trello Power-Up
+
+This will generate the token required for integration.
+
+> [!NOTE]
+> The `expiration=never` parameter creates a token that does not expire. For enhanced security, consider using `expiration=30days` and renewing the token periodically if your setup allows for it.
+
+
 #### Don't have pnpm?
 
 The simplest way to get `pnpm` (and thus `pnpx`) is through [mise](https://mise.jdx.dev/):
