@@ -114,6 +114,9 @@ Replace:
 
 This will generate the token required for integration.
 
+> [!NOTE]
+> The `expiration=never` parameter creates a token that does not expire. For enhanced security, consider using `expiration=30days` and renewing the token periodically if your setup allows for it.
+
 
 #### Don't have pnpm?
 
