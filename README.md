@@ -109,7 +109,7 @@ https://trello.com/1/authorize?expiration=never&name=YOUR_TRELLO_WORKSPACE&scope
 
 Replace:
 
-* `YOUR_TRELLO_WORKSPACE` with the short name of your workspace
+* `YOUR_APP_NAME` with a name for your application (e.g., "My Trello Integration"). This name is shown to the user on the Trello authorization screen.
 * `YOUR_API_KEY` with the API key for your Trello Power-Up
 
 This will generate the token required for integration.
