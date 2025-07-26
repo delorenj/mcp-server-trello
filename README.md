@@ -104,7 +104,7 @@ Or if you're using mise:
 To connect a Trello workspace, you'll need to manually retrieve a `TRELLO_TOKEN` once per workspace. After setting up your Trello Power-Up, visit the following URL:
 
 ```
-https://trello.com/1/authorize?expiration=never&name=YOUR_TRELLO_WORKSPACE&scope=read,write&response_type=token&key=YOUR_API_KEY
+https://trello.com/1/authorize?expiration=never&name=YOUR_APP_NAME&scope=read,write&response_type=token&key=YOUR_API_KEY
 ```
 
 Replace:
