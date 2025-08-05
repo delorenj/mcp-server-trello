@@ -1,6 +1,6 @@
 {
   "name": "@delorenj/mcp-server-trello",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Model Context Protocol (MCP) server for interacting with Trello boards",
   "type": "module",
   "main": "build/index.js",
