@@ -147,6 +147,10 @@ class TrelloServer {
                 type: 'string',
                 description: 'Due date for the card (ISO 8601 format)',
               },
+              start: {
+                type: 'string',
+                description: 'Start date for the card (YYYY-MM-DD format, date only)',
+              },
               labels: {
                 type: 'array',
                 items: {
@@ -183,6 +187,10 @@ class TrelloServer {
               dueDate: {
                 type: 'string',
                 description: 'New due date for the card (ISO 8601 format)',
+              },
+              start: {
+                type: 'string',
+                description: 'New start date for the card (YYYY-MM-DD format, date only)',
               },
               labels: {
                 type: 'array',
@@ -507,10 +515,12 @@ class TrelloServer {
             try {
               const board = await this.trelloClient.setActiveBoard(validArgs.boardId);
               return {
-                content: [{ 
-                  type: 'text', 
-                  text: `Successfully set active board to "${board.name}" (${board.id})`
-                }],
+                content: [
+                  {
+                    type: 'text',
+                    text: `Successfully set active board to "${board.name}" (${board.id})`,
+                  },
+                ],
               };
             } catch (error) {
               return this.handleErrorResponse(error);
@@ -529,10 +539,12 @@ class TrelloServer {
             try {
               const workspace = await this.trelloClient.setActiveWorkspace(validArgs.workspaceId);
               return {
-                content: [{ 
-                  type: 'text', 
-                  text: `Successfully set active workspace to "${workspace.displayName}" (${workspace.id})`
-                }],
+                content: [
+                  {
+                    type: 'text',
+                    text: `Successfully set active workspace to "${workspace.displayName}" (${workspace.id})`,
+                  },
+                ],
               };
             } catch (error) {
               return this.handleErrorResponse(error);
@@ -559,14 +571,20 @@ class TrelloServer {
               }
               const board = await this.trelloClient.getBoardById(boardId);
               return {
-                content: [{ 
-                  type: 'text', 
-                  text: JSON.stringify({
-                    ...board,
-                    isActive: true,
-                    activeWorkspaceId: this.trelloClient.activeWorkspaceId || 'Not set'
-                  }, null, 2)
-                }],
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify(
+                      {
+                        ...board,
+                        isActive: true,
+                        activeWorkspaceId: this.trelloClient.activeWorkspaceId || 'Not set',
+                      },
+                      null,
+                      2
+                    ),
+                  },
+                ],
               };
             } catch (error) {
               return this.handleErrorResponse(error);
@@ -605,7 +623,7 @@ class TrelloServer {
   async run() {
     const transport = new StdioServerTransport();
     // Load configuration before starting the server
-    await this.trelloClient.loadConfig().catch((error) => {
+    await this.trelloClient.loadConfig().catch(_error => {
       // Continue with default config if loading fails
     });
     await this.server.connect(transport);

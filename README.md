@@ -263,6 +263,15 @@ This allows you to work with multiple boards and workspaces without restarting t
 }
 ```
 
+## Date Format Guidelines
+
+When working with dates in the Trello MCP server, please note the different format requirements:
+
+- **Due Date (`dueDate`)**: Accepts full ISO 8601 format with time (e.g., `2023-12-31T12:00:00Z`)
+- **Start Date (`start`)**: Accepts date only in YYYY-MM-DD format (e.g., `2025-08-05`)
+
+This distinction follows Trello's API conventions where start dates are day-based markers while due dates can include specific times.
+
 ## Available Tools
 
 ### get_cards_by_list_id
@@ -318,8 +327,9 @@ Add a new card to a specified list.
     listId: string,       // ID of the list to add the card to
     name: string,         // Name of the card
     description?: string, // Optional: Description of the card
-    dueDate?: string,    // Optional: Due date (ISO 8601 format)
-    labels?: string[]    // Optional: Array of label IDs
+    dueDate?: string,     // Optional: Due date (ISO 8601 format with time)
+    start?: string,       // Optional: Start date (YYYY-MM-DD format, date only)
+    labels?: string[]     // Optional: Array of label IDs
   }
 }
 ```
@@ -336,8 +346,9 @@ Update an existing card's details.
     cardId: string,       // ID of the card to update
     name?: string,        // Optional: New name for the card
     description?: string, // Optional: New description
-    dueDate?: string,    // Optional: New due date (ISO 8601 format)
-    labels?: string[]    // Optional: New array of label IDs
+    dueDate?: string,     // Optional: New due date (ISO 8601 format with time)
+    start?: string,       // Optional: New start date (YYYY-MM-DD format, date only)
+    labels?: string[]     // Optional: New array of label IDs
   }
 }
 ```

@@ -71,17 +71,20 @@ export function validateAddCardRequest(args: Record<string, unknown>): {
   name: string;
   description?: string;
   dueDate?: string;
+  start?: string;
   labels?: string[];
 } {
   if (!args.listId || !args.name) {
     throw new McpError(ErrorCode.InvalidParams, 'listId and name are required');
   }
+
   return {
     boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
     listId: validateString(args.listId, 'listId'),
     name: validateString(args.name, 'name'),
     description: validateOptionalString(args.description),
     dueDate: validateOptionalString(args.dueDate),
+    start: validateOptionalString(args.start),
     labels: validateOptionalStringArray(args.labels),
   };
 }
@@ -92,6 +95,7 @@ export function validateUpdateCardRequest(args: Record<string, unknown>): {
   name?: string;
   description?: string;
   dueDate?: string;
+  start?: string;
   labels?: string[];
 } {
   if (!args.cardId) {
@@ -103,6 +107,7 @@ export function validateUpdateCardRequest(args: Record<string, unknown>): {
     name: validateOptionalString(args.name),
     description: validateOptionalString(args.description),
     dueDate: validateOptionalString(args.dueDate),
+    start: validateOptionalString(args.start),
     labels: validateOptionalStringArray(args.labels),
   };
 }

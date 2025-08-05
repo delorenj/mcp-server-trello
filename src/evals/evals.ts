@@ -35,7 +35,7 @@ const add_card_to_listEval: EvalFunction = {
     name: 'add_card_to_listEval',
     description: 'Evaluates the add_card_to_list tool',
     run: async () => {
-        const result = await grade(openai("gpt-4"), "Please add a new card named 'Demo Card' to the list with ID 'abc123', with a description of 'This is a test card', due date '2023-12-31T12:00:00Z', and a label 'priority'.");
+        const result = await grade(openai("gpt-4"), "Please add a new card named 'Demo Card' to the list with ID 'abc123', with a description of 'This is a test card', due date '2023-12-31T12:00:00Z', start date '2025-08-05', and a label 'priority'.");
         return JSON.parse(result);
     }
 };
@@ -44,7 +44,7 @@ const update_card_detailsEval: EvalFunction = {
     name: 'update_card_details Evaluation',
     description: 'Evaluates the update_card_details tool functionality',
     run: async () => {
-        const result = await grade(openai("gpt-4"), "Please update the card with ID 'abc123' to have the name 'Updated Card Name', the description 'New description for the card', a due date of '2024-01-01T10:00:00Z', and labels ['priority','review'].");
+        const result = await grade(openai("gpt-4"), "Please update the card with ID 'abc123' to have the name 'Updated Card Name', the description 'New description for the card', a due date of '2024-01-01T10:00:00Z', start date '2025-08-05', and labels ['priority','review'].");
         return JSON.parse(result);
     }
 };
