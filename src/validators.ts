@@ -36,6 +36,15 @@ export function validateOptionalStringArray(value: unknown): string[] | undefine
   return validateStringArray(value);
 }
 
+export function validateOptionalDateString(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  const dateStr = validateString(value, 'date');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    throw new McpError(ErrorCode.InvalidParams, 'date must be in YYYY-MM-DD format');
+  }
+  return dateStr;
+}
+
 export function validateGetCardsListRequest(args: Record<string, unknown>): {
   boardId?: string;
   listId: string;
@@ -84,7 +93,7 @@ export function validateAddCardRequest(args: Record<string, unknown>): {
     name: validateString(args.name, 'name'),
     description: validateOptionalString(args.description),
     dueDate: validateOptionalString(args.dueDate),
-    start: validateOptionalString(args.start),
+    start: validateOptionalDateString(args.start),
     labels: validateOptionalStringArray(args.labels),
   };
 }
@@ -107,7 +116,7 @@ export function validateUpdateCardRequest(args: Record<string, unknown>): {
     name: validateOptionalString(args.name),
     description: validateOptionalString(args.description),
     dueDate: validateOptionalString(args.dueDate),
-    start: validateOptionalString(args.start),
+    start: validateOptionalDateString(args.start),
     labels: validateOptionalStringArray(args.labels),
   };
 }
