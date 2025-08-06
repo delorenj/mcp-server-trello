@@ -22,6 +22,7 @@ import {
   validateSetActiveBoardRequest,
   validateSetActiveWorkspaceRequest,
   validateListBoardsInWorkspaceRequest,
+  validateGetCardRequest,
 } from './validators.js';
 
 class TrelloServer {
@@ -37,11 +38,11 @@ class TrelloServer {
       throw new Error('TRELLO_API_KEY and TRELLO_TOKEN environment variables are required');
     }
 
-    this.trelloClient = new TrelloClient({ 
-      apiKey, 
-      token, 
+    this.trelloClient = new TrelloClient({
+      apiKey,
+      token,
       defaultBoardId,
-      boardId: defaultBoardId // Use defaultBoardId as initial boardId if provided
+      boardId: defaultBoardId, // Use defaultBoardId as initial boardId if provided
     });
 
     this.server = new Server(
@@ -59,7 +60,7 @@ class TrelloServer {
     this.setupToolHandlers();
 
     // Error handling
-    this.server.onerror = (error) => {
+    this.server.onerror = error => {
       // Silently handle errors to avoid interfering with MCP protocol
     };
     process.on('SIGINT', async () => {
@@ -389,6 +390,24 @@ class TrelloServer {
             required: [],
           },
         },
+        {
+          name: 'get_card',
+          description: 'Get detailed information about a specific Trello card',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              cardId: {
+                type: 'string',
+                description: 'ID of the card to fetch',
+              },
+              includeMarkdown: {
+                type: 'boolean',
+                description: 'Whether to return card description in markdown format (default: false)',
+              },
+            },
+            required: ['cardId'],
+          },
+        },
       ],
     }));
 
@@ -589,6 +608,21 @@ class TrelloServer {
                     ),
                   },
                 ],
+              };
+            } catch (error) {
+              return this.handleErrorResponse(error);
+            }
+          }
+
+          case 'get_card': {
+            const validArgs = validateGetCardRequest(args);
+            try {
+              const card = await this.trelloClient.getCard(
+                validArgs.cardId,
+                validArgs.includeMarkdown || false
+              );
+              return {
+                content: [{ type: 'text', text: JSON.stringify(card, null, 2) }],
               };
             } catch (error) {
               return this.handleErrorResponse(error);

@@ -6,7 +6,32 @@
 
 A Model Context Protocol (MCP) server that provides tools for interacting with Trello boards. This server enables seamless integration with Trello's API while handling rate limiting, type safety, and error handling automatically.
 
+## 🎉 New in v1.1.0: Complete Card Data Extraction!
+
+**The `get_card` tool is here!** 🚀 Now you can fetch comprehensive Trello card data with human-level parity. Get everything you see in the Trello UI - checklists, attachments, labels with details, members, comments, and more - all formatted in beautiful markdown or structured JSON!
+
 ## Changelog
+
+### 1.1.0
+
+**🎊 Major Feature Release: Complete Card Data Extraction**
+
+- Added powerful `get_card` tool for comprehensive single card data retrieval
+- **Enhanced Data Extraction:**
+  - ✅ **Checklists** - Full checklist support with items, completion states, member assignments, and due dates
+  - 📎 **Attachments** - Complete attachment data including images, previews, file metadata, and inline image detection
+  - 🏷️ **Labels** - Full label details (names and colors, not just IDs)
+  - 👥 **Members** - Card member assignments with full profile information
+  - 💬 **Comments** - Card activity and comment history
+  - 📊 **Badges** - Statistics including checklist progress, comment counts, and attachment counts
+  - 🎨 **Cover Images** - Card cover image support
+  - 📍 **Context** - Board and list information for complete context
+  - 🔧 **Custom Fields** - Support for board-specific custom fields
+- **Markdown Formatting:** New `includeMarkdown` parameter returns beautifully formatted, human-readable card data
+- **Inline Image Parsing:** Automatically detects and extracts images embedded in card descriptions
+- **Comprehensive API Integration:** Single API call fetches all card data efficiently using optimized query parameters
+- **Type Safety:** Added new TypeScript interfaces for all enhanced data structures
+- **Human Parity:** Achieves complete parity with Trello UI - see everything a human sees
 
 ### 1.0.0
 
@@ -57,11 +82,13 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 ## Features
 
 - **Full Trello Board Integration**: Interact with cards, lists, and board activities
+- **🆕 Complete Card Data Extraction**: Fetch all card details including checklists, attachments, labels, members, and comments
 - **Built-in Rate Limiting**: Respects Trello's API limits (300 requests/10s per API key, 100 requests/10s per token)
 - **Type-Safe Implementation**: Written in TypeScript with comprehensive type definitions
 - **Input Validation**: Robust validation for all API inputs
 - **Error Handling**: Graceful error handling with informative messages
 - **Dynamic Board Selection**: Switch between boards and workspaces without restarting
+- **Markdown Formatting**: Export card data in human-readable markdown format
 
 ## Installation
 
@@ -273,6 +300,30 @@ When working with dates in the Trello MCP server, please note the different form
 This distinction follows Trello's API conventions where start dates are day-based markers while due dates can include specific times.
 
 ## Available Tools
+
+### get_card 🆕
+
+Get comprehensive details of a specific Trello card with human-level parity.
+
+```typescript
+{
+  name: 'get_card',
+  arguments: {
+    cardId: string,          // ID of the Trello card (short ID like 'FdhbArbK' or full ID)
+    includeMarkdown?: boolean // Return formatted markdown instead of JSON (default: false)
+  }
+}
+```
+
+**Returns:** Complete card data including:
+- ✅ Checklists with item states and assignments
+- 📎 Attachments with previews and metadata
+- 🏷️ Labels with names and colors
+- 👥 Assigned members
+- 💬 Comments and activity
+- 📊 Statistics (badges)
+- 🎨 Cover images
+- 📍 Board and list context
 
 ### get_cards_by_list_id
 

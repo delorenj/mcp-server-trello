@@ -36,12 +36,16 @@ export function validateOptionalStringArray(value: unknown): string[] | undefine
   return validateStringArray(value);
 }
 
-export function validateOptionalBoolean(value: unknown): boolean | undefined {
-  if (value === undefined) return undefined;
+export function validateBoolean(value: unknown, field: string): boolean {
   if (typeof value !== 'boolean') {
-    throw new McpError(ErrorCode.InvalidParams, 'Value must be a boolean');
+    throw new McpError(ErrorCode.InvalidParams, `${field} must be a boolean`);
   }
   return value;
+}
+
+export function validateOptionalBoolean(value: unknown): boolean | undefined {
+  if (value === undefined) return undefined;
+  return validateBoolean(value, 'value');
 }
 
 export function validateOptionalDateString(value: unknown): string | undefined {
@@ -219,7 +223,9 @@ export function validateSetActiveBoardRequest(args: Record<string, unknown>): { 
   };
 }
 
-export function validateSetActiveWorkspaceRequest(args: Record<string, unknown>): { workspaceId: string } {
+export function validateSetActiveWorkspaceRequest(args: Record<string, unknown>): {
+  workspaceId: string;
+} {
   if (!args.workspaceId) {
     throw new McpError(ErrorCode.InvalidParams, 'workspaceId is required');
   }
@@ -228,11 +234,26 @@ export function validateSetActiveWorkspaceRequest(args: Record<string, unknown>)
   };
 }
 
-export function validateListBoardsInWorkspaceRequest(args: Record<string, unknown>): { workspaceId: string } {
+export function validateListBoardsInWorkspaceRequest(args: Record<string, unknown>): {
+  workspaceId: string;
+} {
   if (!args.workspaceId) {
     throw new McpError(ErrorCode.InvalidParams, 'workspaceId is required');
   }
   return {
     workspaceId: validateString(args.workspaceId, 'workspaceId'),
+  };
+}
+
+export function validateGetCardRequest(args: Record<string, unknown>): {
+  cardId: string;
+  includeMarkdown?: boolean;
+} {
+  if (!args.cardId) {
+    throw new McpError(ErrorCode.InvalidParams, 'cardId is required');
+  }
+  return {
+    cardId: validateString(args.cardId, 'cardId'),
+    includeMarkdown: validateOptionalBoolean(args.includeMarkdown),
   };
 }

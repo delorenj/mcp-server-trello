@@ -102,6 +102,132 @@ export interface TrelloAttachment {
   isUpload: boolean;
 }
 
+export interface TrelloCheckItem {
+  id: string;
+  name: string;
+  state: 'complete' | 'incomplete';
+  pos: number;
+  due?: string | null;
+  dueReminder?: number | null;
+  idMember?: string | null;
+}
+
+export interface TrelloChecklist {
+  id: string;
+  name: string;
+  idCard: string;
+  pos: number;
+  checkItems: TrelloCheckItem[];
+}
+
+export interface TrelloLabelDetails {
+  id: string;
+  idBoard: string;
+  name: string;
+  color: string;
+}
+
+export interface TrelloComment {
+  id: string;
+  date: string;
+  data: {
+    text: string;
+    card?: {
+      id: string;
+      name: string;
+    };
+  };
+  memberCreator: {
+    id: string;
+    fullName: string;
+    username: string;
+    avatarUrl?: string;
+  };
+}
+
+export interface TrelloCustomField {
+  id: string;
+  name: string;
+  type: string;
+  value?: any;
+}
+
+export interface TrelloBadges {
+  attachmentsByType?: {
+    trello?: {
+      board: number;
+      card: number;
+    };
+  };
+  location: boolean;
+  votes: number;
+  viewingMemberVoted: boolean;
+  subscribed: boolean;
+  fogbugz: string;
+  checkItems: number;
+  checkItemsChecked: number;
+  checkItemsEarliestDue?: string | null;
+  comments: number;
+  attachments: number;
+  description: boolean;
+  due?: string | null;
+  dueComplete: boolean;
+  start?: string | null;
+}
+
+export interface TrelloCover {
+  idAttachment?: string | null;
+  color?: string | null;
+  idUploadedBackground?: string | null;
+  size: 'normal' | 'full';
+  brightness: 'light' | 'dark';
+  isTemplate: boolean;
+}
+
+export interface EnhancedTrelloCard {
+  // Basic fields
+  id: string;
+  name: string;
+  desc: string;
+  descData?: {
+    emoji?: Record<string, any>;
+  };
+  due: string | null;
+  dueComplete: boolean;
+  dueReminder: number | null;
+  start: string | null;
+  idList: string;
+  idBoard: string;
+  closed: boolean;
+  url: string;
+  shortUrl: string;
+  dateLastActivity: string;
+  pos: number;
+
+  // Enhanced fields
+  labels: TrelloLabelDetails[];
+  idLabels: string[];
+  attachments: TrelloAttachment[];
+  checklists: TrelloChecklist[];
+  members: TrelloMember[];
+  idMembers: string[];
+  comments: TrelloComment[];
+  customFieldItems?: TrelloCustomField[];
+  badges: TrelloBadges;
+  cover: TrelloCover;
+
+  // List and board info
+  list?: {
+    id: string;
+    name: string;
+  };
+  board?: {
+    id: string;
+    name: string;
+    url: string;
+  };
+}
+
 export interface RateLimiter {
   canMakeRequest(): boolean;
   waitForAvailableToken(): Promise<void>;
