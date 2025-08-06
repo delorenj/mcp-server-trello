@@ -247,6 +247,7 @@ export class TrelloClient {
       name: string;
       description?: string;
       dueDate?: string;
+      start?: string;
       labels?: string[];
     }
   ): Promise<TrelloCard> {
@@ -256,6 +257,7 @@ export class TrelloClient {
         name: params.name,
         desc: params.description,
         due: params.dueDate,
+        start: params.start,
         idLabels: params.labels,
       });
       return response.data;
@@ -269,6 +271,8 @@ export class TrelloClient {
       name?: string;
       description?: string;
       dueDate?: string;
+      start?: string;
+      dueComplete?: boolean;
       labels?: string[];
     }
   ): Promise<TrelloCard> {
@@ -277,6 +281,8 @@ export class TrelloClient {
         name: params.name,
         desc: params.description,
         due: params.dueDate,
+        start: params.start,
+        dueComplete: params.dueComplete,
         idLabels: params.labels,
       });
       return response.data;

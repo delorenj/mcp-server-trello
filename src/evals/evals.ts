@@ -46,7 +46,7 @@ const add_card_to_listEval: EvalFunction = {
   run: async () => {
     const result = await grade(
       openai('gpt-4'),
-      "Please add a new card named 'Demo Card' to the list with ID 'abc123', with a description of 'This is a test card', due date '2023-12-31T12:00:00Z', and a label 'priority'."
+      "Please add a new card named 'Demo Card' to the list with ID 'abc123', with a description of 'This is a test card', due date '2023-12-31T12:00:00Z', start date '2025-08-05', and a label 'priority'."
     );
     return JSON.parse(result);
   },
@@ -58,7 +58,19 @@ const update_card_detailsEval: EvalFunction = {
   run: async () => {
     const result = await grade(
       openai('gpt-4'),
-      "Please update the card with ID 'abc123' to have the name 'Updated Card Name', the description 'New description for the card', a due date of '2024-01-01T10:00:00Z', and labels ['priority','review']."
+      "Please update the card with ID 'abc123' to have the name 'Updated Card Name', the description 'New description for the card', a due date of '2024-01-01T10:00:00Z', start date '2025-08-05', and labels ['priority','review']."
+    );
+    return JSON.parse(result);
+  },
+};
+
+const mark_card_completeEval: EvalFunction = {
+  name: 'mark_card_complete Evaluation',
+  description: 'Evaluates the ability to mark a card as complete using dueComplete',
+  run: async () => {
+    const result = await grade(
+      openai('gpt-4'),
+      "Please mark the card with ID 'xyz789' as complete by setting dueComplete to true."
     );
     return JSON.parse(result);
   },
@@ -72,6 +84,7 @@ const config: EvalConfig = {
     get_recent_activityEvalFunction,
     add_card_to_listEval,
     update_card_detailsEval,
+    mark_card_completeEval,
   ],
 };
 
@@ -83,4 +96,5 @@ export const evals = [
   get_recent_activityEvalFunction,
   add_card_to_listEval,
   update_card_detailsEval,
+  mark_card_completeEval,
 ];

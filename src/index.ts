@@ -148,6 +148,10 @@ class TrelloServer {
                 type: 'string',
                 description: 'Due date for the card (ISO 8601 format)',
               },
+              start: {
+                type: 'string',
+                description: 'Start date for the card (YYYY-MM-DD format, date only)',
+              },
               labels: {
                 type: 'array',
                 items: {
@@ -184,6 +188,14 @@ class TrelloServer {
               dueDate: {
                 type: 'string',
                 description: 'New due date for the card (ISO 8601 format)',
+              },
+              start: {
+                type: 'string',
+                description: 'New start date for the card (YYYY-MM-DD format, date only)',
+              },
+              dueComplete: {
+                type: 'boolean',
+                description: 'Mark the due date as complete (true) or incomplete (false)',
               },
               labels: {
                 type: 'array',
@@ -649,7 +661,7 @@ class TrelloServer {
   async run() {
     const transport = new StdioServerTransport();
     // Load configuration before starting the server
-    await this.trelloClient.loadConfig().catch(error => {
+    await this.trelloClient.loadConfig().catch(_error => {
       // Continue with default config if loading fails
     });
     await this.server.connect(transport);
