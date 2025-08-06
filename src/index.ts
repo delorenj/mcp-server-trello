@@ -192,6 +192,10 @@ class TrelloServer {
                 type: 'string',
                 description: 'New start date for the card (YYYY-MM-DD format, date only)',
               },
+              dueComplete: {
+                type: 'boolean',
+                description: 'Mark the due date as complete (true) or incomplete (false)',
+              },
               labels: {
                 type: 'array',
                 items: {

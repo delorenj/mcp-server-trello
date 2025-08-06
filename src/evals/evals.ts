@@ -49,11 +49,20 @@ const update_card_detailsEval: EvalFunction = {
     }
 };
 
+const mark_card_completeEval: EvalFunction = {
+    name: 'mark_card_complete Evaluation',
+    description: 'Evaluates the ability to mark a card as complete using dueComplete',
+    run: async () => {
+        const result = await grade(openai("gpt-4"), "Please mark the card with ID 'xyz789' as complete by setting dueComplete to true.");
+        return JSON.parse(result);
+    }
+};
+
 const config: EvalConfig = {
     model: openai("gpt-4"),
-    evals: [get_cards_by_list_idEval, get_listsEval, get_recent_activityEvalFunction, add_card_to_listEval, update_card_detailsEval]
+    evals: [get_cards_by_list_idEval, get_listsEval, get_recent_activityEvalFunction, add_card_to_listEval, update_card_detailsEval, mark_card_completeEval]
 };
   
 export default config;
   
-export const evals = [get_cards_by_list_idEval, get_listsEval, get_recent_activityEvalFunction, add_card_to_listEval, update_card_detailsEval];
+export const evals = [get_cards_by_list_idEval, get_listsEval, get_recent_activityEvalFunction, add_card_to_listEval, update_card_detailsEval, mark_card_completeEval];

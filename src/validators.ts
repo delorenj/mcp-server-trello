@@ -36,6 +36,14 @@ export function validateOptionalStringArray(value: unknown): string[] | undefine
   return validateStringArray(value);
 }
 
+export function validateOptionalBoolean(value: unknown): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'boolean') {
+    throw new McpError(ErrorCode.InvalidParams, 'Value must be a boolean');
+  }
+  return value;
+}
+
 export function validateOptionalDateString(value: unknown): string | undefined {
   if (value === undefined) return undefined;
   const dateStr = validateString(value, 'date');
@@ -105,6 +113,7 @@ export function validateUpdateCardRequest(args: Record<string, unknown>): {
   description?: string;
   dueDate?: string;
   start?: string;
+  dueComplete?: boolean;
   labels?: string[];
 } {
   if (!args.cardId) {
@@ -117,6 +126,7 @@ export function validateUpdateCardRequest(args: Record<string, unknown>): {
     description: validateOptionalString(args.description),
     dueDate: validateOptionalString(args.dueDate),
     start: validateOptionalDateString(args.start),
+    dueComplete: validateOptionalBoolean(args.dueComplete),
     labels: validateOptionalStringArray(args.labels),
   };
 }

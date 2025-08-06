@@ -271,6 +271,7 @@ export class TrelloClient {
       description?: string;
       dueDate?: string;
       start?: string;
+      dueComplete?: boolean;
       labels?: string[];
     }
   ): Promise<TrelloCard> {
@@ -280,6 +281,7 @@ export class TrelloClient {
         desc: params.description,
         due: params.dueDate,
         start: params.start,
+        dueComplete: params.dueComplete,
         idLabels: params.labels,
       });
       return response.data;

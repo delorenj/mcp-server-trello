@@ -348,6 +348,7 @@ Update an existing card's details.
     description?: string, // Optional: New description
     dueDate?: string,     // Optional: New due date (ISO 8601 format with time)
     start?: string,       // Optional: New start date (YYYY-MM-DD format, date only)
+    dueComplete?: boolean,// Optional: Mark the due date as complete (true) or incomplete (false)
     labels?: string[]     // Optional: New array of label IDs
   }
 }
