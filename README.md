@@ -92,9 +92,38 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ## Installation
 
-### Quick Start with pnpx (Recommended)
+### 1. Getting a Trello API key
 
-The easiest way to use the Trello MCP server is with `pnpx`, which doesn't require a global install. Add the `mcpServers.trello` entry to your [Claude Desktop config file](https://modelcontextprotocol.io/quickstart/user#installing-the-filesystem-server): 
+To connect a Trello workspace, you'll need to configure a Power Up (no code required), and get its API key and token.
+
+ 1. Go to [trello.com/power-ups/admin](https://trello.com/power-ups/admin). Click _New_, and fill out the form. You can leave _Iframe connector URL_ blank.
+ 2. Click on _Generate a new API key_. You can leave the _Allowed origins_ field blank; it would be used for an OAuth user login flow, but we don't need it.
+ 3. Copy the _API key_ — you'll need it to set up the client (below)
+ 4. Next to _API key_ should be some text along the lines of:
+
+    > If you are looking to build an application for yourself, or are doing local testing, you can manually generate a **Token**.
+
+    **Token** should be a link like this:
+
+    ```
+    https://trello.com/1/authorize?expiration=never&name=YOUR_APP_NAME&scope=read,write&response_type=token&key=YOUR_API_KEY
+    ```
+
+    Click on it to get your token.
+
+ 5. ~~Ignore the _Secret_: it's different from the token, and it's not needed.~~
+
+This will generate the token required for integration.
+
+> [!NOTE]
+> The `expiration=never` parameter creates a token that does not expire. For enhanced security, consider using `expiration=30days` and renewing the token periodically if your setup allows for it.
+
+### 2. Quick Start for Claude Desktop
+
+1. Configure Claude Desktop to start the Trello MCP server
+2. Restart Claude Desktop.
+
+An easy way to use the Trello MCP server is with `pnpx`, which doesn't require a global install. Add the `mcpServers.trello` entry to your [Claude Desktop config file](https://modelcontextprotocol.io/quickstart/user#installing-the-filesystem-server): 
 
 ```json
 {
@@ -154,22 +183,7 @@ Or with Docker:
 }
 ```
 
-To connect a Trello workspace, you'll need to manually retrieve a `TRELLO_TOKEN` once per workspace. After setting up your Trello Power-Up, visit the following URL:
-
-```
-https://trello.com/1/authorize?expiration=never&name=YOUR_APP_NAME&scope=read,write&response_type=token&key=YOUR_API_KEY
-```
-
-Replace:
-
-* `YOUR_APP_NAME` with a name for your application (e.g., "My Trello Integration"). This name is shown to the user on the Trello authorization screen.
-* `YOUR_API_KEY` with the API key for your Trello Power-Up
-
-This will generate the token required for integration.
-
-> [!NOTE]
-> The `expiration=never` parameter creates a token that does not expire. For enhanced security, consider using `expiration=30days` and renewing the token periodically if your setup allows for it.
-
+After adding that to your configuration, quit and reopen Claude Desktop. It should start the server automatically, and you should see "trello" listed under _Search and tools_ in the chat interface.
 
 #### Don't have pnpm?
 
