@@ -1,4 +1,4 @@
-import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 
 export function validateString(value: unknown, field: string): string {
   if (typeof value !== 'string') {
@@ -255,5 +255,29 @@ export function validateGetCardRequest(args: Record<string, unknown>): {
   return {
     cardId: validateString(args.cardId, 'cardId'),
     includeMarkdown: validateOptionalBoolean(args.includeMarkdown),
+  };
+}
+
+export function validateGetCardCommentsRequest(args: Record<string, unknown>): {
+  cardId: string;
+} {
+  if (!args.cardId) {
+    throw new McpError(ErrorCode.InvalidParams, 'cardId is required');
+  }
+  return {
+    cardId: validateString(args.cardId, 'cardId'),
+  };
+}
+
+export function validateSearchCardsRequest(args: Record<string, unknown>): {
+  boardId?: string;
+  query: string;
+} {
+  if (!args.query) {
+    throw new McpError(ErrorCode.InvalidParams, 'query is required');
+  }
+  return {
+    boardId: args.boardId ? validateString(args.boardId, 'boardId') : undefined,
+    query: validateString(args.query, 'query'),
   };
 }
