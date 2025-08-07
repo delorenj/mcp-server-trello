@@ -6,11 +6,37 @@
 
 A Model Context Protocol (MCP) server that provides tools for interacting with Trello boards. This server enables seamless integration with Trello's API while handling rate limiting, type safety, and error handling automatically.
 
-## 🎉 New in v1.1.0: Complete Card Data Extraction!
+## 🎉 New in v1.2.0: Complete Checklist Management Suite!
 
-**The `get_card` tool is here!** 🚀 Now you can fetch comprehensive Trello card data with human-level parity. Get everything you see in the Trello UI - checklists, attachments, labels with details, members, comments, and more - all formatted in beautiful markdown or structured JSON!
+**Comprehensive Checklist Tools are here!** 🚀 Now you can fully manage Trello checklists with 5 powerful new tools! Search, create, and track checklist items across your boards. Perfect for managing acceptance criteria, development tasks, and project milestones!
+
+### ✨ New Checklist Tools:
+- 📋 **`get_checklist_items`** - Retrieve all items from any checklist by name
+- ➕ **`add_checklist_item`** - Add new items to existing checklists  
+- 🔍 **`find_checklist_items_by_description`** - Search checklist items by text content
+- ✅ **`get_acceptance_criteria`** - Quick access to "Acceptance Criteria" checklists
+- 📊 **`get_checklist_by_name`** - Get complete checklist with completion percentage
+
+**Plus:** Modern MCP SDK architecture, enhanced type safety, and comprehensive documentation!
 
 ## Changelog
+
+### 1.2.0
+
+**🎊 Major Feature Release: Complete Checklist Management Suite**
+
+- **5 New Checklist Tools** for comprehensive checklist management:
+  - `get_checklist_items(name)` - Retrieve all items from a checklist by name
+  - `add_checklist_item(text, checkListName)` - Add new items to existing checklists
+  - `find_checklist_items_by_description(description)` - Search checklist items by text content
+  - `get_acceptance_criteria()` - Convenience method for "Acceptance Criteria" checklists
+  - `get_checklist_by_name(name)` - Get complete checklist with completion percentage
+- **Modern MCP SDK Architecture:** Refactored to use latest MCP TypeScript SDK patterns with `registerTool()` and Zod validation
+- **Enhanced Type Safety:** Full TypeScript support with proper type conversions between Trello API and MCP types
+- **New Data Types:** `CheckList` and `CheckListItem` interfaces for structured checklist data
+- **Comprehensive Documentation:** Added `CHECKLIST_TOOLS.md` with examples and best practices
+- **Improved Error Handling:** Consistent error responses with descriptive messages
+- **Runtime Validation:** Zod schemas for all tool inputs with automatic validation
 
 ### 1.1.0
 
@@ -300,6 +326,84 @@ When working with dates in the Trello MCP server, please note the different form
 This distinction follows Trello's API conventions where start dates are day-based markers while due dates can include specific times.
 
 ## Available Tools
+
+### Checklist Management Tools 🆕
+
+#### get_checklist_items
+
+Get all items from a checklist by name.
+
+```typescript
+{
+  name: 'get_checklist_items',
+  arguments: {
+    name: string,        // Name of the checklist to retrieve items from
+    boardId?: string     // Optional: ID of the board (uses default if not provided)
+  }
+}
+```
+
+#### add_checklist_item
+
+Add a new item to an existing checklist.
+
+```typescript
+{
+  name: 'add_checklist_item',
+  arguments: {
+    text: string,           // Text content of the checklist item
+    checkListName: string,  // Name of the checklist to add the item to
+    boardId?: string        // Optional: ID of the board (uses default if not provided)
+  }
+}
+```
+
+#### find_checklist_items_by_description
+
+Search for checklist items containing specific text.
+
+```typescript
+{
+  name: 'find_checklist_items_by_description',
+  arguments: {
+    description: string,  // Text to search for in checklist item descriptions
+    boardId?: string      // Optional: ID of the board (uses default if not provided)
+  }
+}
+```
+
+#### get_acceptance_criteria
+
+Get all items from the "Acceptance Criteria" checklist.
+
+```typescript
+{
+  name: 'get_acceptance_criteria',
+  arguments: {
+    boardId?: string  // Optional: ID of the board (uses default if not provided)
+  }
+}
+```
+
+#### get_checklist_by_name
+
+Get a complete checklist with all items and completion percentage.
+
+```typescript
+{
+  name: 'get_checklist_by_name',
+  arguments: {
+    name: string,     // Name of the checklist to retrieve
+    boardId?: string  // Optional: ID of the board (uses default if not provided)
+  }
+}
+```
+
+**Returns:** `CheckList` object with:
+- `id`: Checklist identifier
+- `name`: Checklist name
+- `items`: Array of `CheckListItem` objects
+- `percentComplete`: Completion percentage (0-100)
 
 ### get_card 🆕
 
