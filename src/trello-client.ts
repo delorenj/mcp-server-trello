@@ -1,18 +1,18 @@
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import axios, { AxiosInstance } from 'axios';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { createTrelloRateLimiters } from './rate-limiter.js';
 import {
-  TrelloConfig,
-  TrelloCard,
-  TrelloList,
+  EnhancedTrelloCard,
   TrelloAction,
   TrelloAttachment,
   TrelloBoard,
+  TrelloCard,
+  TrelloConfig,
+  TrelloList,
   TrelloWorkspace,
-  EnhancedTrelloCard,
 } from './types.js';
-import { createTrelloRateLimiters } from './rate-limiter.js';
-import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 
 // Path for storing active board/workspace configuration
 const CONFIG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.trello-mcp');
@@ -237,6 +237,46 @@ export class TrelloClient {
         params: { limit },
       });
       return response.data;
+    });
+  }
+
+  async searchCards(boardId: string | undefined, query: string): Promise<TrelloCard[]> {
+    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get('/search', {
+        params: {
+          query,
+          idBoards: effectiveBoardId,
+          modelTypes: 'cards',
+          cards_limit: 100,
+          card_fields: 'name,desc,due,idList,idMembers,labels,shortUrl,url',
+        },
+      });
+      return response.data.cards;
+    });
+  }
+
+  async getCardComments(
+    cardId: string
+  ): Promise<{ text: string | undefined; creator: string; date: string }[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/cards/${cardId}/actions`, {
+        params: {
+          filter: 'commentCard',
+        },
+      });
+      // for each comment, extract {"text": .data.text, "creator": .memberCreator.fullName, "date": .date}
+      return response.data.map((action: TrelloAction) => ({
+        text: action.data.text,
+        creator: action.memberCreator.fullName,
+        date: action.date,
+      }));
     });
   }
 

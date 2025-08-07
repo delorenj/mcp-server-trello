@@ -9,20 +9,22 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { TrelloClient } from './trello-client.js';
 import {
-  validateGetCardsListRequest,
-  validateGetRecentActivityRequest,
   validateAddCardRequest,
-  validateUpdateCardRequest,
-  validateArchiveCardRequest,
   validateAddListRequest,
+  validateArchiveCardRequest,
   validateArchiveListRequest,
-  validateMoveCardRequest,
   validateAttachImageRequest,
+  validateGetCardCommentsRequest,
+  validateGetCardRequest,
+  validateGetCardsListRequest,
   validateGetListsRequest,
+  validateGetRecentActivityRequest,
+  validateListBoardsInWorkspaceRequest,
+  validateMoveCardRequest,
+  validateSearchCardsRequest,
   validateSetActiveBoardRequest,
   validateSetActiveWorkspaceRequest,
-  validateListBoardsInWorkspaceRequest,
-  validateGetCardRequest,
+  validateUpdateCardRequest,
 } from './validators.js';
 
 class TrelloServer {
@@ -60,7 +62,7 @@ class TrelloServer {
     this.setupToolHandlers();
 
     // Error handling
-    this.server.onerror = error => {
+    this.server.onerror = (error) => {
       // Silently handle errors to avoid interfering with MCP protocol
     };
     process.on('SIGINT', async () => {
@@ -402,10 +404,43 @@ class TrelloServer {
               },
               includeMarkdown: {
                 type: 'boolean',
-                description: 'Whether to return card description in markdown format (default: false)',
+                description:
+                  'Whether to return card description in markdown format (default: false)',
               },
             },
             required: ['cardId'],
+          },
+        },
+        {
+          name: 'get_card_comments',
+          description: 'Get all comments on a specific Trello card',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              cardId: {
+                type: 'string',
+                description: 'ID of the card to fetch comments for',
+              },
+            },
+            required: ['cardId'],
+          },
+        },
+        {
+          name: 'search_cards',
+          description: 'Search for cards on a board using a trello query string',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              boardId: {
+                type: 'string',
+                description: 'ID of the Trello board to search on (uses default if not provided)',
+              },
+              query: {
+                type: 'string',
+                description: 'Trello query string to search for cards',
+              },
+            },
+            required: ['query'],
           },
         },
       ],
@@ -623,6 +658,30 @@ class TrelloServer {
               );
               return {
                 content: [{ type: 'text', text: JSON.stringify(card, null, 2) }],
+              };
+            } catch (error) {
+              return this.handleErrorResponse(error);
+            }
+          }
+
+          case 'get_card_comments': {
+            const validArgs = validateGetCardCommentsRequest(args);
+            try {
+              const comments = await this.trelloClient.getCardComments(validArgs.cardId);
+              return {
+                content: [{ type: 'text', text: JSON.stringify(comments, null, 2) }],
+              };
+            } catch (error) {
+              return this.handleErrorResponse(error);
+            }
+          }
+
+          case 'search_cards': {
+            const validArgs = validateSearchCardsRequest(args);
+            try {
+              const cards = await this.trelloClient.searchCards(validArgs.boardId, validArgs.query);
+              return {
+                content: [{ type: 'text', text: JSON.stringify(cards, null, 2) }],
               };
             } catch (error) {
               return this.handleErrorResponse(error);
