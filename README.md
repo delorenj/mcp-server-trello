@@ -94,7 +94,7 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ### Quick Start with pnpx (Recommended)
 
-The easiest way to use the Trello MCP server is with `pnpx`, which doesn't require a global install:
+The easiest way to use the Trello MCP server is with `pnpx`, which doesn't require a global install. Add the `mcpServers.trello` entry to your [Claude Desktop config file](https://modelcontextprotocol.io/quickstart/user#installing-the-filesystem-server): 
 
 ```json
 {
@@ -119,6 +119,32 @@ Or if you're using mise:
     "trello": {
       "command": "mise",
       "args": ["x", "--", "pnpx", "@delorenj/mcp-server-trello"],
+      "env": {
+        "TRELLO_API_KEY": "your-api-key",
+        "TRELLO_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+Or with Docker:
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "--volume=npx-cache-20:/root/.npm",
+        "--volume=node-modules-cache-20:/root/.cache",
+        "--env=TRELLO_API_KEY",
+        "--env=TRELLO_TOKEN",
+        "node:20-alpine",
+        "npx",
+        "@delorenj/mcp-server-trello"
+      ],
       "env": {
         "TRELLO_API_KEY": "your-api-key",
         "TRELLO_TOKEN": "your-token"
