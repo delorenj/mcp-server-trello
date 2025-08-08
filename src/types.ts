@@ -232,3 +232,18 @@ export interface RateLimiter {
   canMakeRequest(): boolean;
   waitForAvailableToken(): Promise<void>;
 }
+
+// Enhanced checklist types for MCP tools
+export interface CheckList {
+  id: string;
+  name: string;
+  items: CheckListItem[];
+  percentComplete: number;
+}
+
+export interface CheckListItem {
+  id: string;
+  text: string;
+  complete: boolean;
+  parentCheckListId: string;
+}
