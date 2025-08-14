@@ -14,6 +14,9 @@ importers:
       axios:
         specifier: ^1.6.2
         version: 1.10.0
+      form-data:
+        specifier: ^4.0.4
+        version: 4.0.4
       mcp-evals:
         specifier: ^1.0.18
         version: 1.0.18(react@19.1.0)(zod@3.25.76)

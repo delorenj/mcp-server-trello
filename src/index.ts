@@ -357,7 +357,7 @@ class TrelloServer {
       }
     );
 
-    // Attach image to card
+    // Attach image to card (kept for backward compatibility)
     this.server.registerTool(
       'attach_image_to_card',
       {
@@ -373,6 +373,40 @@ class TrelloServer {
       async ({ boardId, cardId, imageUrl, name }) => {
         try {
           const attachment = await this.trelloClient.attachImageToCard(boardId, cardId, imageUrl, name);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    // Attach file to card (generic file attachment)
+    this.server.registerTool(
+      'attach_file_to_card',
+      {
+        title: 'Attach File to Card',
+        description: 'Attach any file to a card from a URL on a specific board',
+        inputSchema: {
+          boardId: z.string().optional().describe('ID of the Trello board where the card exists (uses default if not provided)'),
+          cardId: z.string().describe('ID of the card to attach the file to'),
+          fileUrl: z.string().describe('URL of the file to attach'),
+          name: z.string().optional().default('File Attachment').describe('Optional name for the attachment (defaults to "File Attachment")'),
+          mimeType: z.string().optional().describe('Optional MIME type of the file (e.g., "application/pdf", "text/plain", "video/mp4")'),
+        },
+      },
+      async ({ boardId, cardId, fileUrl, name, mimeType }) => {
+        try {
+          const attachment = await this.trelloClient.attachFileToCard(boardId, cardId, fileUrl, name, mimeType);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
           };

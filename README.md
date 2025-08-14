@@ -88,6 +88,12 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 - Improved error handling for image attachment functionality
 - Updated documentation for attach_image_to_card tool
 
+### 0.2.1
+
+- Added `attach_file_to_card` tool to attach any type of file (PDFs, documents, videos, etc.) to cards from URLs
+- Enhanced attachment support beyond just images
+- Kept `attach_image_to_card` for backward compatibility
+
 ### 0.2.0
 
 - Added `attach_image_to_card` tool to attach images to cards from URLs
@@ -109,6 +115,7 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 - **Full Trello Board Integration**: Interact with cards, lists, and board activities
 - **🆕 Complete Card Data Extraction**: Fetch all card details including checklists, attachments, labels, members, and comments
+- **File Attachments**: Attach any type of file to cards (PDFs, documents, videos, images, etc.) from URLs
 - **Built-in Rate Limiting**: Respects Trello's API limits (300 requests/10s per API key, 100 requests/10s per token)
 - **Type-Safe Implementation**: Written in TypeScript with comprehensive type definitions
 - **Input Validation**: Robust validation for all API inputs
@@ -592,6 +599,22 @@ Attach an image to a card directly from a URL.
   }
 }
 ```
+
+### attach_file_to_card
+
+Attach any type of file to a card from a URL or a local file path (e.g., `file:///path/to/your/file.pdf`).
+
+```typescript
+{
+  name: 'attach_file_to_card',
+  arguments: {
+    boardId?: string,  // Optional: ID of the board (uses default if not provided)
+    cardId: string,    // ID of the card to attach the file to
+    fileUrl: string,   // URL or local file path (using the file:// protocol) of the file to attach
+    name?: string,     // Optional: Name for the attachment (defaults to the file name for local files)
+    mimeType?: string  // Optional: MIME type (e.g., "application/pdf", "text/plain", "video/mp4")
+  }
+}
 
 ### list_boards
 
