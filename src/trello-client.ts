@@ -19,6 +19,7 @@ import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createReadStream } from 'fs';
+import { fileURLToPath } from 'url';
 
 // Path for storing active board/workspace configuration
 const CONFIG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.trello-mcp');
@@ -366,42 +367,40 @@ export class TrelloClient {
     mimeType?: string
   ): Promise<TrelloAttachment> {
     return this.handleRequest(async () => {
-      const pathname = new URL(fileUrl).pathname;
-
-      // Determine MIME type if not provided
-      let effectiveMimeType = mimeType;
-      if (!effectiveMimeType) {
-        const ext = path.extname(pathname).toLowerCase();
-        effectiveMimeType = MIME_TYPES[ext] || 'application/octet-stream';
-      }
-        
       // Check if fileUrl is a local file path (starts with file://)
       if (fileUrl.startsWith('file://')) {
         // Handle local file upload
+        const localPath = fileURLToPath(fileUrl);
+        let effectiveMimeType = mimeType;
+        if (!effectiveMimeType) {
+          const ext = path.extname(localPath).toLowerCase();
+          effectiveMimeType = MIME_TYPES[ext] || 'application/octet-stream';
+        }
+
         // Check if file exists
         try {
-          await fs.access(pathname);
+          await fs.access(localPath);
         } catch (error) {
           throw new McpError(
             ErrorCode.InvalidRequest,
-            `File not found: ${pathname}`
+            `File not found: ${localPath}`
           );
         }
-        
+
         // Create form data for multipart upload
         const form = new FormData();
-        const fileStream = createReadStream(pathname);
-        const fileName = name || path.basename(pathname);
-        
+        const fileStream = createReadStream(localPath);
+        const fileName = name || path.basename(localPath);
+
         form.append('file', fileStream, {
           filename: fileName,
           contentType: effectiveMimeType
         });
-        
+
         // Add name and mimeType to form
         form.append('name', fileName);
         form.append('mimeType', effectiveMimeType);
-        
+
         // Upload file directly to Trello using the configured axios instance
         const response = await this.axiosInstance.post(
           `/cards/${cardId}/attachments`,
@@ -416,7 +415,13 @@ export class TrelloClient {
         return response.data;
       } else {
         // Handle URL attachment
-        
+        const remoteUrlPath = new URL(fileUrl).pathname;
+        let effectiveMimeType = mimeType;
+        if (!effectiveMimeType) {
+          const ext = path.extname(remoteUrlPath).toLowerCase();
+          effectiveMimeType = MIME_TYPES[ext] || 'application/octet-stream';
+        }
+
         const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, {
           url: fileUrl,
           name: name || 'File Attachment',
