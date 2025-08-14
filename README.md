@@ -602,7 +602,7 @@ Attach an image to a card directly from a URL.
 
 ### attach_file_to_card
 
-Attach any type of file to a card from a URL (PDFs, documents, videos, etc.).
+Attach any type of file to a card from a URL or a local file path (e.g., `file:///path/to/your/file.pdf`).
 
 ```typescript
 {
@@ -610,12 +610,11 @@ Attach any type of file to a card from a URL (PDFs, documents, videos, etc.).
   arguments: {
     boardId?: string,  // Optional: ID of the board (uses default if not provided)
     cardId: string,    // ID of the card to attach the file to
-    fileUrl: string,   // URL of the file to attach
-    name?: string,     // Optional: Name for the attachment (defaults to "File Attachment")
+    fileUrl: string,   // URL or local file path (using the file:// protocol) of the file to attach
+    name?: string,     // Optional: Name for the attachment (defaults to the file name for local files)
     mimeType?: string  // Optional: MIME type (e.g., "application/pdf", "text/plain", "video/mp4")
   }
 }
-```
 
 ### list_boards
 
