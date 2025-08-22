@@ -1,0 +1,10 @@
+# Configuration for using this package from GitHub Packages
+# Copy this file to ~/.npmrc and replace YOUR_GITHUB_TOKEN with a personal access token
+
+# Configure the registry for @mozilla-ocho scope
+@mozilla-ocho:registry=https://npm.pkg.github.com
+
+# Authentication for GitHub Packages
+# Generate a token at: https://github.com/settings/tokens
+# Required scopes: read:packages
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN

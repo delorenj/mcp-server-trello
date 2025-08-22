@@ -1,5 +1,5 @@
 {
-  "name": "@delorenj/mcp-server-trello",
+  "name": "@mozilla-ocho/mcp-server-trello",
   "version": "1.2.0",
   "description": "A Model Context Protocol (MCP) server for interacting with Trello boards",
   "type": "module",
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/delorenj/mcp-server-trello.git"
+    "url": "git+https://github.com/Mozilla-Ocho/mcp-server-trello.git"
   },
   "keywords": [
     "mcp",
@@ -37,9 +37,9 @@
   "author": "Jarad DeLorenzo",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/delorenj/mcp-server-trello/issues"
+    "url": "https://github.com/Mozilla-Ocho/mcp-server-trello/issues"
   },
-  "homepage": "https://github.com/delorenj/mcp-server-trello#readme",
+  "homepage": "https://github.com/Mozilla-Ocho/mcp-server-trello#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "axios": "^1.6.2",
