@@ -93,14 +93,11 @@ jobs:
           
       - name: Upload release artifact
         if: github.event_name == 'release'
-        uses: actions/upload-release-assets@v1
+        uses: softprops/action-gh-release@v1
+        with:
+          files: mcp-server-trello-${{ env.VERSION }}.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./mcp-server-trello-${{ env.VERSION }}.tgz
-          asset_name: mcp-server-trello-${{ env.VERSION }}.tgz
-          asset_content_type: application/gzip
           
       - name: Create GitHub Release (if tag push)
         if: startsWith(github.ref, 'refs/tags/') && github.event_name != 'release'
