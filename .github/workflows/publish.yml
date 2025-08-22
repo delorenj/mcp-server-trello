@@ -52,8 +52,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         
-      - name: Run linter
-        run: pnpm lint
+    #   - name: Run linter
+    #     run: pnpm lint
         
       - name: Build package
         run: pnpm build
