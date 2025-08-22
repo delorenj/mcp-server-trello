@@ -1,0 +1,112 @@
+name: Build and Publish to GitHub Packages
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.2.1)'
+        required: false
+        type: string
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+          
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+            
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Run linter
+        run: pnpm lint
+        
+      - name: Build package
+        run: pnpm build
+        env:
+          SKIP_PREPARE: true
+          
+      - name: Update package version (if manual)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          
+      - name: Extract version from tag
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "@mozilla-ocho:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Create release artifact
+        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          tar -czf mcp-server-trello-${{ env.VERSION }}.tgz build/ package.json README.md LICENSE
+          
+      - name: Upload release artifact
+        if: github.event_name == 'release'
+        uses: actions/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./mcp-server-trello-${{ env.VERSION }}.tgz
+          asset_name: mcp-server-trello-${{ env.VERSION }}.tgz
+          asset_content_type: application/gzip
+          
+      - name: Create GitHub Release (if tag push)
+        if: startsWith(github.ref, 'refs/tags/') && github.event_name != 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: mcp-server-trello-${{ env.VERSION }}.tgz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

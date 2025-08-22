@@ -134,7 +134,7 @@ The easiest way to use the Trello MCP server is with `pnpx`, which doesn't requi
   "mcpServers": {
     "trello": {
       "command": "pnpx",
-      "args": ["@delorenj/mcp-server-trello"],
+      "args": ["@mozilla-ocho/mcp-server-trello"],
       "env": {
         "TRELLO_API_KEY": "your-api-key",
         "TRELLO_TOKEN": "your-token"
@@ -142,6 +142,41 @@ The easiest way to use the Trello MCP server is with `pnpx`, which doesn't requi
     }
   }
 }
+```
+
+### Using GitHub Packages
+
+This package is also available via GitHub Packages. To use it:
+
+1. Create a personal access token on GitHub with `read:packages` scope
+2. Configure npm to use GitHub Packages for this scope:
+
+```bash
+# Add to your ~/.npmrc file
+@mozilla-ocho:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+```
+
+3. Install or run the package:
+
+```bash
+# Install globally
+npm install -g @mozilla-ocho/mcp-server-trello
+
+# Or use with npx
+npx @mozilla-ocho/mcp-server-trello
+```
+
+### Using Pre-built Releases from GitHub
+
+You can also run directly from GitHub releases:
+
+```bash
+# Run latest release
+npx github:Mozilla-Ocho/mcp-server-trello
+
+# Run specific version
+npx github:Mozilla-Ocho/mcp-server-trello#v1.2.0
 ```
 
 Or if you're using mise:
