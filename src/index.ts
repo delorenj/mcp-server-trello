@@ -38,6 +38,18 @@ class TrelloServer {
     });
   }
 
+  private handleError(error: unknown) {
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
   private setupTools() {
     // Get cards from a specific list
     this.server.registerTool(
@@ -57,15 +69,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -87,15 +91,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(lists, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -118,15 +114,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(activity, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -154,15 +142,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -191,15 +171,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -222,15 +194,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -254,15 +218,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -285,15 +241,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -316,15 +264,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -344,15 +284,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -377,15 +309,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -405,15 +329,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(boards, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -440,15 +356,7 @@ class TrelloServer {
             ],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -468,15 +376,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(workspaces, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -503,15 +403,7 @@ class TrelloServer {
             ],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -533,15 +425,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(boards, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -581,15 +465,7 @@ class TrelloServer {
             ],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -612,15 +488,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -643,15 +511,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -674,15 +534,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(item, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -704,15 +556,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -733,15 +577,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
@@ -769,15 +605,7 @@ class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(checklist, null, 2) }],
           };
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-              },
-            ],
-            isError: true,
-          };
+          return this.handleError(error);
         }
       }
     );
