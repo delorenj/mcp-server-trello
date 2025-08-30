@@ -198,7 +198,7 @@ If you prefer using npm directly:
 npm install -g @delorenj/mcp-server-trello
 ```
 
-Then use `mcp-server-trello` as the command in your MCP configuration.
+Then use `npx mcp-server-trello` as the command in your MCP configuration.
 
 ### Installing via Smithery
 
