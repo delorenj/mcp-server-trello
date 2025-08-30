@@ -202,10 +202,10 @@ Then use `mcp-server-trello` as the command in your MCP configuration.
 
 ### Installing via Smithery
 
-To install Trello Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@modelcontextprotocol/mcp-server-trello):
+To install Trello Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@delorenj/mcp-server-trello):
 
 ```bash
-npx -y @smithery/cli install @modelcontextprotocol/mcp-server-trello --client claude
+npx -y @smithery/cli install @delorenj/mcp-server-trello --client claude
 ```
 
 ### Docker Installation
@@ -817,5 +817,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- Built with the [Model Context Protocol SDK](https://github.com/modelcontextprotocol/sdk)
+- Built with the [Model Context Protocol SDK](https://github.com/modelcontextprotocol/typescript-sdk)
 - Uses the [Trello REST API](https://developer.atlassian.com/cloud/trello/rest/)
