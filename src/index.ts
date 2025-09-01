@@ -3,10 +3,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { TrelloClient } from './trello-client.js';
+import { TrelloHealthEndpoints, HealthEndpointSchemas } from './health/health-endpoints.js';
 
 class TrelloServer {
   private server: McpServer;
   private trelloClient: TrelloClient;
+  private healthEndpoints: TrelloHealthEndpoints;
 
   constructor() {
     const apiKey = process.env.TRELLO_API_KEY;
@@ -24,12 +26,15 @@ class TrelloServer {
       boardId: defaultBoardId,
     });
 
+    this.healthEndpoints = new TrelloHealthEndpoints(this.trelloClient);
+
     this.server = new McpServer({
       name: 'trello-server',
       version: '1.0.0',
     });
 
     this.setupTools();
+    this.setupHealthEndpoints();
 
     // Error handling
     process.on('SIGINT', async () => {
@@ -829,6 +834,73 @@ class TrelloServer {
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(checklist, null, 2) }],
           };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+  }
+
+  private setupHealthEndpoints() {
+    // Basic health check endpoint
+    this.server.registerTool(
+      'get_health',
+      HealthEndpointSchemas.basicHealth,
+      async () => {
+        try {
+          return await this.healthEndpoints.getBasicHealth();
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Detailed health diagnostic endpoint
+    this.server.registerTool(
+      'get_health_detailed',
+      HealthEndpointSchemas.detailedHealth,
+      async () => {
+        try {
+          return await this.healthEndpoints.getDetailedHealth();
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Metadata consistency check endpoint
+    this.server.registerTool(
+      'get_health_metadata',
+      HealthEndpointSchemas.metadataHealth,
+      async () => {
+        try {
+          return await this.healthEndpoints.getMetadataHealth();
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Performance metrics endpoint
+    this.server.registerTool(
+      'get_health_performance',
+      HealthEndpointSchemas.performanceHealth,
+      async () => {
+        try {
+          return await this.healthEndpoints.getPerformanceHealth();
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // System repair endpoint
+    this.server.registerTool(
+      'perform_system_repair',
+      HealthEndpointSchemas.repair,
+      async () => {
+        try {
+          return await this.healthEndpoints.performRepair();
         } catch (error) {
           return this.handleError(error);
         }
