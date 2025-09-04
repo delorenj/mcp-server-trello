@@ -210,6 +210,28 @@ export class TrelloClient {
     });
   }
 
+  /**
+   * Create a new board
+   */
+  async createBoard(params: {
+    name: string;
+    desc?: string;
+    idOrganization?: string;
+    defaultLabels?: boolean;
+    defaultLists?: boolean;
+  }): Promise<TrelloBoard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post('/boards', {
+        name: params.name,
+        desc: params.desc,
+        idOrganization: params.idOrganization || this.activeConfig.workspaceId,
+        defaultLabels: params.defaultLabels,
+        defaultLists: params.defaultLists,
+      });
+      return response.data;
+    });
+  }
+
   async getCardsByList(boardId: string | undefined, listId: string): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`);
