@@ -428,8 +428,8 @@ class TrelloServer {
             .string()
             .optional()
             .describe('Workspace ID to create the board in (uses active if not provided)'),
-          defaultLabels: z.boolean().optional().describe('Create default labels (true by default)'),
-          defaultLists: z.boolean().optional().describe('Create default lists (true by default)'),
+          defaultLabels: z.boolean().optional().default(true).describe('Create default labels (true by default)'),
+          defaultLists: z.boolean().optional().default(true).describe('Create default lists (true by default)'),
         },
       },
       async ({ name, desc, idOrganization, defaultLabels, defaultLists }) => {
