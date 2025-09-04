@@ -415,6 +415,41 @@ class TrelloServer {
       }
     );
 
+    // Create a new board
+    this.server.registerTool(
+      'create_board',
+      {
+        title: 'Create Board',
+        description: 'Create a new Trello board optionally within a workspace',
+        inputSchema: {
+          name: z.string().describe('Name of the board'),
+          desc: z.string().optional().describe('Description of the board'),
+          idOrganization: z
+            .string().min(1)
+            .optional()
+            .describe('Workspace ID to create the board in (uses active if not provided)'),
+          defaultLabels: z.boolean().optional().default(true).describe('Create default labels (true by default)'),
+          defaultLists: z.boolean().optional().default(true).describe('Create default lists (true by default)'),
+        },
+      },
+      async ({ name, desc, idOrganization, defaultLabels, defaultLists }) => {
+        try {
+          const board = await this.trelloClient.createBoard({
+            name,
+            desc,
+            idOrganization,
+            defaultLabels,
+            defaultLists,
+          });
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(board, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Set active workspace
     this.server.registerTool(
       'set_active_workspace',
