@@ -425,7 +425,7 @@ class TrelloServer {
           name: z.string().describe('Name of the board'),
           desc: z.string().optional().describe('Description of the board'),
           idOrganization: z
-            .string()
+            .string().min(1)
             .optional()
             .describe('Workspace ID to create the board in (uses active if not provided)'),
           defaultLabels: z.boolean().optional().default(true).describe('Create default labels (true by default)'),

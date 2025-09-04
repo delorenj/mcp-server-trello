@@ -224,7 +224,7 @@ export class TrelloClient {
       const response = await this.axiosInstance.post('/boards', {
         name: params.name,
         desc: params.desc,
-        idOrganization: params.idOrganization || this.activeConfig.workspaceId,
+        idOrganization: params.idOrganization ?? this.activeConfig.workspaceId,
         defaultLabels: params.defaultLabels,
         defaultLists: params.defaultLists,
       });
