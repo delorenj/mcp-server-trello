@@ -36,6 +36,7 @@ type TrelloRequestReturn =
   | TrelloComment
   | EnhancedTrelloCard
   | string
+  | boolean
   | TrelloList
   | TrelloWorkspace;
 
@@ -482,6 +483,19 @@ export class TrelloClient {
         `cards/${cardId}/actions/comments?text=${encodeURIComponent(text)}`
       );
       return response.data;
+    });
+  }
+
+  // Update Comment
+  async updateCommentOnCard(commentId: string, text: string): Promise<boolean> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put(
+        `/actions/${commentId}?text=${encodeURIComponent(text)}`
+      );
+      if (response.status !== 200) {
+        return false;
+      }
+      return true;
     });
   }
 

@@ -633,6 +633,29 @@ class TrelloServer {
       }
     );
 
+    // Update a comment to a card
+    this.server.registerTool(
+      'update_comment',
+      {
+        title: 'Update Comment on Card',
+        description: 'Update the given comment with the new text',
+        inputSchema: {
+          commentId: z.string().describe('ID of the comment to change'),
+          text: z.string().describe('The new text of the comment'),
+        },
+      },
+      async ({ commentId, text }) => {
+        try {
+          const success = await this.trelloClient.updateCommentOnCard(commentId, text);
+          return {
+            content: [{ type: 'text' as const, text: success ? 'success' : 'failure' }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Checklist tools
     this.server.registerTool(
       'get_checklist_items',
