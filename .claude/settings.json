@@ -5,7 +5,9 @@
     "CLAUDE_FLOW_HOOKS_ENABLED": "true",
     "CLAUDE_FLOW_TELEMETRY_ENABLED": "true",
     "CLAUDE_FLOW_REMOTE_EXECUTION": "true",
-    "CLAUDE_FLOW_CHECKPOINTS_ENABLED": "true"
+    "CLAUDE_FLOW_GITHUB_INTEGRATION": "true",
+    "CLAUDE_FLOW_CHECKPOINTS_ENABLED": "true",
+    "CREATE_GH_RELEASE": "true"
   },
   "permissions": {
     "allow": [
@@ -24,11 +26,28 @@
       "Bash(git branch *)",
       "Bash(git checkout *)",
       "Bash(git stash *)",
-      "Bash(jq *)",
+      "Bash(git reset *)",
+      "Bash(git rev-parse *)",
+      "Bash(git ls-files *)",
+      "Bash(gh *)",
       "Bash(node *)",
       "Bash(which *)",
       "Bash(pwd)",
-      "Bash(ls *)"
+      "Bash(ls *)",
+      "Bash(jq *)",
+      "Bash(test *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(curl *)",
+      "Bash(mkdir *)",
+      "Bash(cd *)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(npx claude-flow@alpha *)",
+      "Bash(./claude-flow *)",
+      "Bash(./.claude/helpers/*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
@@ -54,6 +73,10 @@
           {
             "type": "command",
             "command": "cat | jq -r '.tool_input.file_path // .tool_input.path // empty' | tr '\\n' '\\0' | xargs -0 -I {} npx claude-flow@alpha hooks pre-edit --file '{}' --auto-assign-agents true --load-context true"
+          },
+          {
+            "type": "command",
+            "command": "/bin/bash -c 'FILE=$(cat | jq -r \".tool_input.file_path // .tool_input.path // empty\"); if [ -n \"$FILE\" ]; then CHECKPOINT_BRANCH=\"checkpoint/pre-edit-$(date +%Y%m%d-%H%M%S)\"; git add -A && git stash push -m \"Pre-edit checkpoint for $FILE\" >/dev/null 2>&1 && git branch \"$CHECKPOINT_BRANCH\" && mkdir -p .claude/checkpoints && echo \"{\\\"branch\\\": \\\"$CHECKPOINT_BRANCH\\\", \\\"file\\\": \\\"$FILE\\\", \\\"timestamp\\\": \\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\", \\\"type\\\": \\\"pre-edit\\\", \\\"original_branch\\\": \\\"$(git branch --show-current)\\\"}\" > \".claude/checkpoints/$(date +%s).json\" && git stash pop --quiet >/dev/null 2>&1 || true && echo \"✅ Created checkpoint: $CHECKPOINT_BRANCH for $FILE\"; fi'"
           }
         ]
       }
@@ -74,6 +97,34 @@
           {
             "type": "command",
             "command": "cat | jq -r '.tool_input.file_path // .tool_input.path // empty' | tr '\\n' '\\0' | xargs -0 -I {} npx claude-flow@alpha hooks post-edit --file '{}' --format true --update-memory true"
+          },
+          {
+            "type": "command",
+            "command": "/bin/bash -c 'FILE=$(cat | jq -r \".tool_input.file_path // .tool_input.path // empty\"); if [ -n \"$FILE\" ] && [ -f \"$FILE\" ]; then if ! git ls-files --error-unmatch \"$FILE\" >/dev/null 2>&1; then git add \"$FILE\"; fi; if ! (git diff --cached --quiet \"$FILE\" 2>/dev/null && git diff --quiet \"$FILE\" 2>/dev/null); then TAG_NAME=\"checkpoint-$(date +%Y%m%d-%H%M%S)\"; BRANCH=$(git branch --show-current); git add \"$FILE\" && git commit -m \"🔖 Checkpoint: Edit $FILE\" --quiet && git tag -a \"$TAG_NAME\" -m \"Checkpoint after editing $FILE\" && mkdir -p .claude/checkpoints && DIFF_STATS=$(git diff HEAD~1 --stat | tr \"\\n\" \" \" | sed \"s/\\\"/\\\\\\\\\\\"/g\") && echo \"{\\\"tag\\\": \\\"$TAG_NAME\\\", \\\"file\\\": \\\"$FILE\\\", \\\"timestamp\\\": \\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\", \\\"type\\\": \\\"post-edit\\\", \\\"branch\\\": \\\"$BRANCH\\\", \\\"diff_summary\\\": \\\"$DIFF_STATS\\\"}\" > \".claude/checkpoints/$(date +%s).json\" && echo \"✅ Created checkpoint: $TAG_NAME for $FILE\"; else echo \"ℹ️  No changes to checkpoint for $FILE\"; fi; fi'"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/bash -c 'INPUT=$(cat); TASK=$(echo \"$INPUT\" | jq -r \".prompt // empty\" 2>/dev/null | head -c 100 | tr \"\\n\" \" \"); if [ -z \"$TASK\" ]; then TASK=\"Task checkpoint\"; fi; if [ -n \"$TASK\" ]; then CHECKPOINT_NAME=\"task-$(date +%Y%m%d-%H%M%S)\"; git add -A && git commit -m \"🔖 Task: $TASK...\" --quiet || true; if command -v gh &> /dev/null; then echo \"🚀 Creating GitHub release for checkpoint...\"; gh release create \"$CHECKPOINT_NAME\" --title \"Checkpoint: $(date +\"%Y-%m-%d %H:%M\")\" --notes \"Task: $TASK\n\n## Checkpoint Details\n- Branch: $(git branch --show-current)\n- Commit: $(git rev-parse HEAD)\n- Files changed: $(git diff HEAD~1 --stat 2>/dev/null | wc -l || echo 0) files\n\n## Rollback Instructions\n\\`\\`\\`bash\n# To rollback to this checkpoint:\ngit checkout $CHECKPOINT_NAME\n\\`\\`\\`\" --prerelease || echo \"⚠️  Failed to create GitHub release\"; fi; mkdir -p .claude/checkpoints && echo \"{\\\"checkpoint\\\": \\\"$CHECKPOINT_NAME\\\", \\\"task\\\": \\\"$TASK\\\", \\\"timestamp\\\": \\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\", \\\"commit\\\": \\\"$(git rev-parse HEAD)\\\", \\\"github_release\\\": \\\"$(command -v gh &> /dev/null && echo true || echo false)\\\"}\" > \".claude/checkpoints/task-$(date +%s).json\" && echo \"✅ Created task checkpoint: $CHECKPOINT_NAME\"; fi'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx claude-flow@alpha hooks session-end --generate-summary true --persist-state true --export-metrics true"
+          },
+          {
+            "type": "command",
+            "command": "/bin/bash -c 'SESSION_ID=\"session-$(date +%Y%m%d-%H%M%S)\"; SUMMARY_FILE=\".claude/checkpoints/summary-$SESSION_ID.md\"; mkdir -p .claude/checkpoints && echo \"# Session Summary - $(date +\"%Y-%m-%d %H:%M:%S\")\n\n## Checkpoints Created\n$(find .claude/checkpoints -name \"*.json\" -mtime -1 -exec basename {} \\; | sort)\n\n## Files Modified\n$(git diff --name-only $(git log --format=%H -n 1 --before=\"1 hour ago\" 2>/dev/null) 2>/dev/null || echo \"No files tracked\")\n\n## Recent Commits\n$(git log --oneline -10 --grep=\"Checkpoint\" || echo \"No checkpoint commits\")\n\n## GitHub Releases Created\n$(gh release list --limit 10 | grep \"checkpoint-\" || echo \"No GitHub releases\")\n\n## Rollback Instructions\nTo rollback to a specific checkpoint:\n\\`\\`\\`bash\n# List all checkpoints\ngit tag -l \"checkpoint-*\" | sort -r\n\n# List GitHub releases\ngh release list\n\n# Rollback to a checkpoint\ngit checkout checkpoint-YYYYMMDD-HHMMSS\n\\`\\`\\`\" > \"$SUMMARY_FILE\" && git add -A && git commit -m \"🏁 Session end checkpoint: $SESSION_ID\" --quiet || true && git tag -a \"session-end-$SESSION_ID\" -m \"End of Claude session\" && if command -v gh &> /dev/null; then echo \"📊 Creating GitHub session summary...\"; gh release create \"session-$SESSION_ID\" --title \"Session Summary: $(date +\"%Y-%m-%d %H:%M\")\" --notes-file \"$SUMMARY_FILE\" --prerelease || echo \"⚠️  Failed to create GitHub session summary\"; fi && echo \"✅ Session summary saved to: $SUMMARY_FILE\" && echo \"📌 Final checkpoint: session-end-$SESSION_ID\"'"
           }
         ]
       }
@@ -84,7 +135,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'INPUT=$(cat); CUSTOM=$(echo \"$INPUT\" | jq -r \".custom_instructions // \\\"\\\"\"); echo \"🔄 PreCompact Guidance:\"; echo \"📋 IMPORTANT: Review CLAUDE.md in project root for:\"; echo \"   • 54 available agents and concurrent usage patterns\"; echo \"   • Swarm coordination strategies (hierarchical, mesh, adaptive)\"; echo \"   • SPARC methodology workflows with batchtools optimization\"; echo \"   • Critical concurrent execution rules (GOLDEN RULE: 1 MESSAGE = ALL OPERATIONS)\"; if [ -n \"$CUSTOM\" ]; then echo \"🎯 Custom compact instructions: $CUSTOM\"; fi; echo \"✅ Ready for compact operation\"'"
+            "command": "/bin/bash -c 'INPUT=$(cat); CUSTOM=$(echo \"$INPUT\" | jq -r \".custom_instructions // \"\"\"); echo \"🔄 PreCompact Guidance:\"; echo \"📋 IMPORTANT: Review CLAUDE.md in project root for:\"; echo \"   • 54 available agents and concurrent usage patterns\"; echo \"   • Swarm coordination strategies (hierarchical, mesh, adaptive)\"; echo \"   • SPARC methodology workflows with batchtools optimization\"; echo \"   • Critical concurrent execution rules (GOLDEN RULE: 1 MESSAGE = ALL OPERATIONS)\"; if [ -n \"$CUSTOM\" ]; then echo \"🎯 Custom compact instructions: $CUSTOM\"; fi; echo \"✅ Ready for compact operation\"'"
           }
         ]
       },
@@ -97,18 +148,15 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "npx claude-flow@alpha hooks session-end --generate-summary true --persist-state true --export-metrics true"
-          }
-        ]
-      }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "input=$(cat); model_name=$(echo \"$input\" | jq -r '.model.display_name'); current_dir=$(echo \"$input\" | jq -r '.workspace.current_dir'); project_dir=$(echo \"$input\" | jq -r '.workspace.project_dir'); relative_path=$(echo \"${current_dir#$project_dir}\"); if [ \"$relative_path\" = \"$current_dir\" ]; then display_path=$(basename \"$current_dir\"); else display_path=\"$(basename \"$project_dir\")${relative_path}\"; fi; printf \"$(whoami)@$(hostname -s):${display_path} [${model_name}]\""
+  },
   "includeCoAuthoredBy": true,
-  "enabledMcpjsonServers": ["claude-flow", "ruv-swarm"]
+  "enabledMcpjsonServers": [
+    "claude-flow",
+    "ruv-swarm"
+  ]
 }
