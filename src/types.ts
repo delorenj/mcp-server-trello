@@ -149,7 +149,7 @@ export interface TrelloCustomField {
   id: string;
   name: string;
   type: string;
-  value?: any;
+  value?: unknown;
 }
 
 export interface TrelloBadges {
@@ -190,7 +190,7 @@ export interface EnhancedTrelloCard {
   name: string;
   desc: string;
   descData?: {
-    emoji?: Record<string, any>;
+    emoji?: Record<string, unknown>;
   };
   due: string | null;
   dueComplete: boolean;
