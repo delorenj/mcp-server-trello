@@ -13,6 +13,7 @@ import {
   TrelloCheckItem,
   CheckList,
   CheckListItem,
+  TrelloComment,
 } from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
@@ -24,6 +25,20 @@ import { fileURLToPath } from 'url';
 // Path for storing active board/workspace configuration
 const CONFIG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.trello-mcp');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
+
+type TrelloRequestReturn =
+  | TrelloAction
+  | TrelloAttachment
+  | TrelloBoard
+  | TrelloCard
+  | TrelloCheckItem
+  | TrelloChecklist
+  | TrelloComment
+  | EnhancedTrelloCard
+  | string
+  | boolean
+  | TrelloList
+  | TrelloWorkspace;
 
 export class TrelloClient {
   private axiosInstance: AxiosInstance;
@@ -136,7 +151,9 @@ export class TrelloClient {
     return workspace;
   }
 
-  private async handleRequest<T = any>(requestFn: () => Promise<T>): Promise<T> {
+  private async handleRequest<T extends TrelloRequestReturn>(
+    requestFn: () => Promise<T>
+  ): Promise<T> {
     try {
       return await requestFn();
     } catch (error) {
@@ -403,10 +420,7 @@ export class TrelloClient {
         try {
           await fs.access(localPath);
         } catch (error) {
-          throw new McpError(
-            ErrorCode.InvalidRequest,
-            `File not found: ${localPath}`
-          );
+          throw new McpError(ErrorCode.InvalidRequest, `File not found: ${localPath}`);
         }
 
         // Create form data for multipart upload
@@ -416,7 +430,7 @@ export class TrelloClient {
 
         form.append('file', fileStream, {
           filename: fileName,
-          contentType: effectiveMimeType
+          contentType: effectiveMimeType,
         });
 
         // Add name and mimeType to form
@@ -424,16 +438,12 @@ export class TrelloClient {
         form.append('mimeType', effectiveMimeType);
 
         // Upload file directly to Trello using the configured axios instance
-        const response = await this.axiosInstance.post(
-          `/cards/${cardId}/attachments`,
-          form,
-          {
-            headers: {
-              ...form.getHeaders()
-            }
-          }
-        );
-        
+        const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, form, {
+          headers: {
+            ...form.getHeaders(),
+          },
+        });
+
         return response.data;
       } else {
         // Handle URL attachment
@@ -488,6 +498,29 @@ export class TrelloClient {
     });
   }
 
+  // Add Comment on Card
+  async addCommentToCard(cardId: string, text: string): Promise<TrelloComment> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post(
+        `cards/${cardId}/actions/comments?text=${encodeURIComponent(text)}`
+      );
+      return response.data;
+    });
+  }
+
+  // Update Comment
+  async updateCommentOnCard(commentId: string, text: string): Promise<boolean> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put(
+        `/actions/${commentId}?text=${encodeURIComponent(text)}`
+      );
+      if (response.status !== 200) {
+        return false;
+      }
+      return true;
+    });
+  }
+
   // Checklist methods
   async getChecklistItems(name: string, boardId?: string): Promise<CheckListItem[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId;
@@ -514,7 +547,11 @@ export class TrelloClient {
     return allCheckItems;
   }
 
-  async addChecklistItem(text: string, checkListName: string, boardId?: string): Promise<CheckListItem> {
+  async addChecklistItem(
+    text: string,
+    checkListName: string,
+    boardId?: string
+  ): Promise<CheckListItem> {
     const effectiveBoardId = boardId || this.activeConfig.boardId;
     if (!effectiveBoardId) {
       throw new McpError(ErrorCode.InvalidParams, 'No board ID provided and no active board set');
@@ -545,7 +582,10 @@ export class TrelloClient {
     return this.convertToCheckListItem(itemResponse.data, targetChecklist.id);
   }
 
-  async findChecklistItemsByDescription(description: string, boardId?: string): Promise<CheckListItem[]> {
+  async findChecklistItemsByDescription(
+    description: string,
+    boardId?: string
+  ): Promise<CheckListItem[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId;
     if (!effectiveBoardId) {
       throw new McpError(ErrorCode.InvalidParams, 'No board ID provided and no active board set');
@@ -558,7 +598,7 @@ export class TrelloClient {
 
     const matchingItems: CheckListItem[] = [];
     const searchTerm = description.toLowerCase();
-    
+
     for (const checklist of response.data) {
       for (const checkItem of checklist.checkItems) {
         if (checkItem.name.toLowerCase().includes(searchTerm)) {
@@ -760,7 +800,10 @@ export class TrelloClient {
   }
 
   // Helper methods to convert between Trello types and MCP types
-  private convertToCheckListItem(trelloItem: TrelloCheckItem, parentCheckListId: string): CheckListItem {
+  private convertToCheckListItem(
+    trelloItem: TrelloCheckItem,
+    parentCheckListId: string
+  ): CheckListItem {
     return {
       id: trelloItem.id,
       text: trelloItem.name,
@@ -770,14 +813,18 @@ export class TrelloClient {
   }
 
   private convertToCheckList(trelloChecklist: TrelloChecklist): CheckList {
-    const completedItems = trelloChecklist.checkItems.filter(item => item.state === 'complete').length;
+    const completedItems = trelloChecklist.checkItems.filter(
+      item => item.state === 'complete'
+    ).length;
     const totalItems = trelloChecklist.checkItems.length;
     const percentComplete = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
     return {
       id: trelloChecklist.id,
       name: trelloChecklist.name,
-      items: trelloChecklist.checkItems.map(item => this.convertToCheckListItem(item, trelloChecklist.id)),
+      items: trelloChecklist.checkItems.map(item =>
+        this.convertToCheckListItem(item, trelloChecklist.id)
+      ),
       percentComplete,
     };
   }
