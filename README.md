@@ -1,6 +1,8 @@
 # MCP Server Trello
 
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/27359682-7632-4ba7-981d-7dfecadf1c4b)
+[![MCP Registry](https://img.shields.io/badge/MCP-Registry-blue)](https://registry.modelcontextprotocol.io/servers/io.github.delorenj/mcp-server-trello)
+[![npm version](https://badge.fury.io/js/%40delorenj%2Fmcp-server-trello.svg)](https://badge.fury.io/js/%40delorenj%2Fmcp-server-trello)
 
 <a href="https://glama.ai/mcp/servers/klqkamy7wt"><img width="380" height="200" src="https://glama.ai/mcp/servers/klqkamy7wt/badge" alt="Server Trello MCP server" /></a>
 
@@ -125,7 +127,16 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 
 ## Installation
 
-### Quick Start with pnpx (Recommended)
+### 🚀 Install from MCP Registry (Recommended)
+
+The MCP Server Trello is now available in the official MCP Registry! MCP clients can automatically discover and install this server.
+
+For clients that support the MCP Registry:
+1. Search for "mcp-server-trello" or "io.github.delorenj/mcp-server-trello"
+2. Install directly from the registry
+3. Configure with your Trello credentials
+
+### Quick Start with pnpx
 
 The easiest way to use the Trello MCP server is with `pnpx`, which doesn't require a global install:
 
