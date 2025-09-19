@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.delorenj/mcp-server-trello",
+  "description": "A Model Context Protocol (MCP) server that provides tools for interacting with Trello boards. This server enables seamless integration with Trello's API while handling rate limiting, type safety, and error handling automatically.",
+  "status": "active",
+  "website_url": "https://github.com/delorenj/mcp-server-trello",
+  "repository": {
+    "url": "https://github.com/delorenj/mcp-server-trello",
+    "source": "github"
+  },
+  "version": "1.3.1",
+  "packages": [
+    {
+      "registry_type": "npm",
+      "registry_base_url": "https://registry.npmjs.org",
+      "identifier": "@delorenj/mcp-server-trello",
+      "version": "1.3.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environment_variables": [
+        {
+          "name": "TRELLO_API_KEY",
+          "description": "The API key for authenticating with Trello",
+          "is_required": true,
+          "is_secret": true
+        },
+        {
+          "name": "TRELLO_TOKEN",
+          "description": "The token for authenticating with Trello",
+          "is_required": true,
+          "is_secret": true
+        },
+        {
+          "name": "TRELLO_BOARD_ID",
+          "description": "The ID of the default Trello board to interact with",
+          "is_required": false,
+          "is_secret": false
+        }
+      ]
+    }
+  ]
+}
