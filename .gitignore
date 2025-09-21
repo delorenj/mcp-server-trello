@@ -59,3 +59,4 @@ claude-flow.ps1
 hive-mind-prompt-*.txt
 validate-server.cjs
 mcp-publisher
+**/system-metrics.json
