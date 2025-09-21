@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-09-21
+
+### Changed
+- **Complete Node.js → Bun Migration**: Migrated the entire project to the Bun runtime, resulting in a 2.8-4.4x performance boost.
+- Replaced `@types/node` and `ts-node` with `bun-types` for native Bun support.
+- Updated build scripts and test commands to use `bun` instead of `node` and `npm`.
+- Updated `package.json` to reflect the new engine requirement.
+
+### Added
+- Documentation updated to recommend `bunx` for optimal performance, while maintaining full backward compatibility with `npx` and `pnpx`.
+
+## [1.4.0] - 2025-09-21
+
+### Added
+- **Comprehensive Examples**: Added a new `examples` directory with detailed implementations in JavaScript, Python, and TypeScript.
+- **Extensive Usage Documentation**: Created `usage-examples.md` with over 800 lines of documentation, including:
+  - Advanced workflow examples for sprint management, bug tracking, and release management.
+  - AI integration examples, including a workflow with the Ideogram MCP server.
+  - Best practices for production-ready patterns, error handling, and advanced features like template systems and time tracking.
+- `.gitignore` updated to exclude `system-metrics.json`.
+
+### Changed
+- **Version Bump**: Updated `package.json` version from `1.3.1` to `1.4.0`.
+
 ## [1.2.0] - 2025-01-07
 
 ### Added

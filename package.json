@@ -1,37 +1,16 @@
 {
   "name": "@delorenj/mcp-server-trello",
-  "version": "1.4.0",
-  "description": "A Model Context Protocol (MCP) server for interacting with Trello boards",
-  "mcpName": "io.github.delorenj/mcp-server-trello",
-  "type": "module",
-  "main": "build/index.js",
-  "types": "build/index.d.ts",
-  "bin": {
-    "mcp-server-trello": "./build/index.js"
-  },
-  "scripts": {
-    "build:dev": "tsc && chmod +x build/index.js",
-    "build": "tsc && terser build/index.js --compress drop_console=true --mangle --output build/index.js && chmod +x build/index.js",
-    "start": "bun build/index.js",
-    "dev": "bun --watch src/index.ts",
-    "lint": "eslint . --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "validate-server": "bun validate-server.mjs",
-    "test": "bun test",
-    "prepare": "if [ \"$SKIP_PREPARE\" != \"true\" ]; then bun run build; fi",
-    "inspector": "bunx @modelcontextprotocol/inspector build/index.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/delorenj/mcp-server-trello.git"
-  },
+"version": "1.5.0",
+  "description": "An MCP server for Trello boards, powered by Bun for maximum performance.",
   "keywords": [
     "mcp",
-    "model-context-protocol",
     "trello",
+    "bun",
+    "automation",
+    "productivity",
+    "model-context-protocol",
     "api",
     "integration",
-    "automation",
     "typescript",
     "board-management",
     "task-management",

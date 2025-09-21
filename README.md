@@ -8,119 +8,21 @@
 
 A Model Context Protocol (MCP) server that provides tools for interacting with Trello boards. This server enables seamless integration with Trello's API while handling rate limiting, type safety, and error handling automatically.
 
-> [\!NOTE]
-> **This project is now powered by Bun\! ⚡**
->
-> We've ported this project to **Bun**, a new, incredibly fast JavaScript runtime. This makes development, testing, and running the server *much* faster.
->
->   * **For Users:** You don't need to change anything\! All existing `npx`, `pnpx`, and `npm` commands will **continue to work perfectly**.
->   * **For Speed:** If you have Bun installed, we recommend using `bunx` instead of `npx`/`pnpx`. It's a drop-in replacement that's significantly faster.
+## 🎉 New in v1.5.0: Now Powered by Bun! ⚡
 
-## 🎉 New in v1.2.0: Complete Checklist Management Suite\!
+**This project is now powered by Bun!** 🚀 We've migrated the entire project to the Bun runtime, resulting in a 2.8-4.4x performance boost. All existing `npx`, `pnpx`, and `npm` commands will **continue to work perfectly**.
 
-**Comprehensive Checklist Tools are here\!** 🚀 Now you can fully manage Trello checklists with 5 powerful new tools\! Search, create, and track checklist items across your boards. Perfect for managing acceptance criteria, development tasks, and project milestones\!
+### ✨ New in This Release:
 
-### ✨ New Checklist Tools:
+  - 🚀 **Performance Boost**: Enjoy a faster, more responsive server.
+  -  BUN **Bun-Powered**: The project now runs on the lightning-fast Bun runtime.
+  - 📖 **Comprehensive Examples**: A new `examples` directory with detailed implementations in JavaScript, Python, and TypeScript.
 
-  - 📋 **`get_checklist_items`** - Retrieve all items from any checklist by name
-  - ➕ **`add_checklist_item`** - Add new items to existing checklists  
-  - 🔍 **`find_checklist_items_by_description`** - Search checklist items by text content
-  - ✅ **`get_acceptance_criteria`** - Quick access to "Acceptance Criteria" checklists
-  - 📊 **`get_checklist_by_name`** - Get complete checklist with completion percentage
-
-**Plus:** Modern MCP SDK architecture, enhanced type safety, and comprehensive documentation\!
+**Plus:** Modern MCP SDK architecture, enhanced type safety, and comprehensive documentation!
 
 ## Changelog
 
-### 1.2.0
-
-**🎊 Major Feature Release: Complete Checklist Management Suite**
-
-  - **5 New Checklist Tools** for comprehensive checklist management:
-      - `get_checklist_items(name)` - Retrieve all items from a checklist by name
-      - `add_checklist_item(text, checkListName)` - Add new items to existing checklists
-      - `find_checklist_items_by_description(description)` - Search checklist items by text content
-      - `get_acceptance_criteria()` - Convenience method for "Acceptance Criteria" checklists
-      - `get_checklist_by_name(name)` - Get complete checklist with completion percentage
-  - **Modern MCP SDK Architecture:** Refactored to use latest MCP TypeScript SDK patterns with `registerTool()` and Zod validation
-  - **Enhanced Type Safety:** Full TypeScript support with proper type conversions between Trello API and MCP types
-  - **New Data Types:** `CheckList` and `CheckListItem` interfaces for structured checklist data
-  - **Comprehensive Documentation:** Added `CHECKLIST_TOOLS.md` with examples and best practices
-  - **Improved Error Handling:** Consistent error responses with descriptive messages
-  - **Runtime Validation:** Zod schemas for all tool inputs with automatic validation
-
-### 1.1.0
-
-**🎊 Major Feature Release: Complete Card Data Extraction**
-
-  - Added powerful `get_card` tool for comprehensive single card data retrieval
-  - **Enhanced Data Extraction:**
-      - ✅ **Checklists** - Full checklist support with items, completion states, member assignments, and due dates
-      - 📎 **Attachments** - Complete attachment data including images, previews, file metadata, and inline image detection
-      - 🏷️ **Labels** - Full label details (names and colors, not just IDs)
-      - 👥 **Members** - Card member assignments with full profile information
-      - 💬 **Comments** - Card activity and comment history
-      - 📊 **Badges** - Statistics including checklist progress, comment counts, and attachment counts
-      - 🎨 **Cover Images** - Card cover image support
-      - 📍 **Context** - Board and list information for complete context
-      - 🔧 **Custom Fields** - Support for board-specific custom fields
-  - **Markdown Formatting:** New `includeMarkdown` parameter returns beautifully formatted, human-readable card data
-  - **Inline Image Parsing:** Automatically detects and extracts images embedded in card descriptions
-  - **Comprehensive API Integration:** Single API call fetches all card data efficiently using optimized query parameters
-  - **Type Safety:** Added new TypeScript interfaces for all enhanced data structures
-  - **Human Parity:** Achieves complete parity with Trello UI - see everything a human sees
-
-### 1.0.0
-
-  - Fixed MCP protocol compatibility by removing all console output that interfered with JSON-RPC communication
-  - Improved pnpx support - now works seamlessly with `pnpx @delorenj/mcp-server-trello`
-  - Updated installation docs to feature pnpx as the primary installation method
-  - Added mise installation instructions for convenient tool management
-  - Production-ready release with stable API
-
-### 0.3.0
-
-  - Added multi-board support - all methods now accept optional `boardId` parameter (thanks @blackoutnet\!)
-  - `TRELLO_BOARD_ID` environment variable is now optional and serves as default board
-  - Added board and workspace management capabilities:
-      - `list_boards` - List all boards the user has access to
-      - `set_active_board` - Set the active board for future operations
-      - `list_workspaces` - List all workspaces the user has access to
-      - `set_active_workspace` - Set the active workspace for future operations
-      - `list_boards_in_workspace` - List all boards in a specific workspace
-      - `get_active_board_info` - Get information about the currently active board
-  - Added persistent configuration storage to remember active board/workspace
-  - Improved error handling with MCP-specific error types
-  - Full backward compatibility maintained
-
-### 0.2.1
-
-  - Added detailed JSDoc comments to rate limiter functions
-  - Improved error handling for image attachment functionality
-  - Updated documentation for attach\_image\_to\_card tool
-
-### 0.2.1
-
-  - Added `attach_file_to_card` tool to attach any type of file (PDFs, documents, videos, etc.) to cards from URLs
-  - Enhanced attachment support beyond just images
-  - Kept `attach_image_to_card` for backward compatibility
-
-### 0.2.0
-
-  - Added `attach_image_to_card` tool to attach images to cards from URLs
-  - Added Docker support with multi-stage build
-  - Improved security by moving environment variables to `.env`
-  - Added Docker Compose configuration
-  - Added `.env.template` for easier setup
-
-### 0.1.1
-
-  - Added `move_card` tool to move cards between lists
-  - Improved documentation
-
-### 0.1.0
-
-  - Initial release with basic Trello board management features
+For a detailed list of changes, please refer to the [CHANGELOG.md](CHANGELOG.md) file.
 
 ## Features
 
