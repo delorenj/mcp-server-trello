@@ -1,22 +1,39 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-16/server.schema.json",
   "name": "io.github.delorenj/mcp-server-trello",
   "description": "MCP server for Trello boards with rate limiting, type safety, and comprehensive API integration.",
   "status": "active",
-  "website_url": "https://github.com/delorenj/mcp-server-trello",
+  "websiteUrl": "https://delorenj.github.io/mcp-server-trello",
   "repository": {
     "url": "https://github.com/delorenj/mcp-server-trello",
     "source": "github"
   },
-  "version": "1.5.4",
+  "version": "1.5.5",
   "packages": [
     {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@delorenj/mcp-server-trello",
-      "registry_type": "npm",
-      "version": "1.5.4",
+      "version": "1.5.5",
       "transport": {
         "type": "stdio"
-      }
+      },
+      "environmentVariables": [
+        {
+          "name": "TRELLO_API_KEY",
+          "description": "Your Trello API key",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "TRELLO_TOKEN",
+          "description": "Your Trello token",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.delorenj/mcp-server-trello",
+  "description": "MCP server for Trello boards with rate limiting, type safety, and comprehensive API integration.",
+  "status": "active",
+  "website_url": "https://github.com/delorenj/mcp-server-trello",
+  "repository": {
+    "url": "https://github.com/delorenj/mcp-server-trello",
+    "source": "github"
+  },
+  "version": "1.5.4",
+  "packages": [
+    {
+      "identifier": "@delorenj/mcp-server-trello",
+      "registryType": "npm",
+      "version": "1.5.4",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
