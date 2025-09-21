@@ -23,11 +23,11 @@ interface RepairResult {
 
 /**
  * THE MAGNIFICENT HEALTH ENDPOINTS COLLECTION! 🏥
- * 
+ *
  * This class provides all the cardiovascular monitoring APIs that keep
  * our Trello MCP organism in peak condition. It's like having a team of
  * world-class physicians monitoring your API 24/7!
- * 
+ *
  * Available endpoints:
  * - /health - Quick health check
  * - /health/detailed - Comprehensive diagnostic report
@@ -46,13 +46,13 @@ export class TrelloHealthEndpoints {
 
   /**
    * GET /health
-   * Quick health status check - the digital pulse check! 
+   * Quick health status check - the digital pulse check!
    * Perfect for load balancers and monitoring systems.
    */
   async getBasicHealth(): Promise<HealthEndpointResult> {
     try {
       const healthReport = await this.healthMonitor.getSystemHealth(false);
-      
+
       const quickReport = {
         status: healthReport.overall_status,
         timestamp: healthReport.timestamp,
@@ -60,15 +60,17 @@ export class TrelloHealthEndpoints {
         checks_passed: healthReport.checks.filter(c => c.status === HealthStatus.HEALTHY).length,
         total_checks: healthReport.checks.length,
         response_time_ms: Math.round(healthReport.performance_metrics.avg_response_time_ms),
-        success_rate: `${healthReport.performance_metrics.success_rate_percent}%`
+        success_rate: `${healthReport.performance_metrics.success_rate_percent}%`,
       };
 
       return {
-        content: [{ 
-          type: 'text', 
-          text: JSON.stringify(quickReport, null, 2) 
-        }],
-        isError: healthReport.overall_status === HealthStatus.CRITICAL
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(quickReport, null, 2),
+          },
+        ],
+        isError: healthReport.overall_status === HealthStatus.CRITICAL,
       };
     } catch (error) {
       return this.createErrorResponse('Health check failed', error);
@@ -83,13 +85,15 @@ export class TrelloHealthEndpoints {
   async getDetailedHealth(): Promise<HealthEndpointResult> {
     try {
       const healthReport = await this.healthMonitor.getSystemHealth(true);
-      
+
       return {
-        content: [{ 
-          type: 'text', 
-          text: JSON.stringify(healthReport, null, 2) 
-        }],
-        isError: healthReport.overall_status === HealthStatus.CRITICAL
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(healthReport, null, 2),
+          },
+        ],
+        isError: healthReport.overall_status === HealthStatus.CRITICAL,
       };
     } catch (error) {
       return this.createErrorResponse('Detailed health check failed', error);
@@ -112,15 +116,17 @@ export class TrelloHealthEndpoints {
         timestamp: new Date().toISOString(),
         duration_ms: duration,
         metadata_consistency: metadataReport,
-        recommendations: this.generateMetadataRecommendations(metadataReport)
+        recommendations: this.generateMetadataRecommendations(metadataReport),
       };
 
       return {
-        content: [{ 
-          type: 'text', 
-          text: JSON.stringify(result, null, 2) 
-        }],
-        isError: !metadataReport.consistent
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+        isError: !metadataReport.consistent,
       };
     } catch (error) {
       return this.createErrorResponse('Metadata health check failed', error);
@@ -138,11 +144,13 @@ export class TrelloHealthEndpoints {
       const performanceAnalysis = this.analyzePerformanceMetrics(healthReport);
 
       return {
-        content: [{ 
-          type: 'text', 
-          text: JSON.stringify(performanceAnalysis, null, 2) 
-        }],
-        isError: performanceAnalysis.status === HealthStatus.CRITICAL
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(performanceAnalysis, null, 2),
+          },
+        ],
+        isError: performanceAnalysis.status === HealthStatus.CRITICAL,
       };
     } catch (error) {
       return this.createErrorResponse('Performance health check failed', error);
@@ -157,29 +165,37 @@ export class TrelloHealthEndpoints {
   async performRepair(): Promise<HealthEndpointResult> {
     try {
       const healthReport = await this.healthMonitor.getSystemHealth(true);
-      
+
       if (!healthReport.repair_available) {
         return {
-          content: [{ 
-            type: 'text', 
-            text: JSON.stringify({
-              repair_attempted: false,
-              reason: 'No repairable issues detected or system in critical state',
-              status: healthReport.overall_status,
-              recommendations: healthReport.recommendations
-            }, null, 2)
-          }]
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  repair_attempted: false,
+                  reason: 'No repairable issues detected or system in critical state',
+                  status: healthReport.overall_status,
+                  recommendations: healthReport.recommendations,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
       const repairResult = await this.attemptSystemRepair(healthReport);
 
       return {
-        content: [{ 
-          type: 'text', 
-          text: JSON.stringify(repairResult, null, 2) 
-        }],
-        isError: !repairResult.success
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(repairResult, null, 2),
+          },
+        ],
+        isError: !repairResult.success,
       };
     } catch (error) {
       return this.createErrorResponse('System repair failed', error);
@@ -194,7 +210,7 @@ export class TrelloHealthEndpoints {
       consistent: true,
       issues: [] as string[],
       statistics: {} as Record<string, any>,
-      last_check: new Date().toISOString()
+      last_check: new Date().toISOString(),
     };
 
     try {
@@ -247,12 +263,14 @@ export class TrelloHealthEndpoints {
         results.statistics.acceptance_criteria_items = acceptanceCriteria.length;
       } catch (error) {
         // This is not critical for consistency
-        results.statistics.checklist_note = 'Acceptance Criteria checklist not found (non-critical)';
+        results.statistics.checklist_note =
+          'Acceptance Criteria checklist not found (non-critical)';
       }
-
     } catch (error) {
       results.consistent = false;
-      results.issues.push(`Metadata check error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.issues.push(
+        `Metadata check error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     return results;
@@ -277,7 +295,9 @@ export class TrelloHealthEndpoints {
     }
 
     if (metadataReport.statistics.total_user_cards === 0) {
-      recommendations.push('Consider assigning yourself to some cards for better workflow tracking');
+      recommendations.push(
+        'Consider assigning yourself to some cards for better workflow tracking'
+      );
     }
 
     if (recommendations.length === 0) {
@@ -300,16 +320,16 @@ export class TrelloHealthEndpoints {
       performance_grade: performanceGrade,
       metrics: {
         ...metrics,
-        uptime_hours: Math.round(healthReport.uptime_ms / (1000 * 60 * 60) * 100) / 100,
-        health_check_duration_ms: healthReport.checks.reduce((sum, c) => sum + c.duration_ms, 0)
+        uptime_hours: Math.round((healthReport.uptime_ms / (1000 * 60 * 60)) * 100) / 100,
+        health_check_duration_ms: healthReport.checks.reduce((sum, c) => sum + c.duration_ms, 0),
       },
       analysis: {
         response_time_rating: this.rateResponseTime(metrics.avg_response_time_ms),
         success_rate_rating: this.rateSuccessRate(metrics.success_rate_percent),
         throughput_rating: this.rateThroughput(metrics.requests_per_minute),
-        rate_limit_health: this.rateRateLimitUtilization(metrics.rate_limit_utilization_percent)
+        rate_limit_health: this.rateRateLimitUtilization(metrics.rate_limit_utilization_percent),
       },
-      recommendations: this.generatePerformanceRecommendations(metrics)
+      recommendations: this.generatePerformanceRecommendations(metrics),
     };
   }
 
@@ -318,21 +338,21 @@ export class TrelloHealthEndpoints {
    */
   private calculatePerformanceGrade(metrics: any): string {
     let score = 0;
-    
+
     // Response time scoring (40% weight)
     if (metrics.avg_response_time_ms < 200) score += 40;
     else if (metrics.avg_response_time_ms < 500) score += 35;
     else if (metrics.avg_response_time_ms < 1000) score += 25;
     else if (metrics.avg_response_time_ms < 2000) score += 15;
     else score += 5;
-    
+
     // Success rate scoring (35% weight)
     if (metrics.success_rate_percent >= 99) score += 35;
     else if (metrics.success_rate_percent >= 95) score += 30;
     else if (metrics.success_rate_percent >= 90) score += 20;
     else if (metrics.success_rate_percent >= 80) score += 10;
     else score += 5;
-    
+
     // Rate limit utilization scoring (25% weight)
     if (metrics.rate_limit_utilization_percent < 50) score += 25;
     else if (metrics.rate_limit_utilization_percent < 70) score += 20;
@@ -398,15 +418,21 @@ export class TrelloHealthEndpoints {
     const recommendations: string[] = [];
 
     if (metrics.avg_response_time_ms > 1000) {
-      recommendations.push('High response times detected - check network connectivity and Trello API status');
+      recommendations.push(
+        'High response times detected - check network connectivity and Trello API status'
+      );
     }
 
     if (metrics.success_rate_percent < 95) {
-      recommendations.push('Low success rate - investigate error patterns and implement retry logic');
+      recommendations.push(
+        'Low success rate - investigate error patterns and implement retry logic'
+      );
     }
 
     if (metrics.rate_limit_utilization_percent > 80) {
-      recommendations.push('High rate limit utilization - consider implementing request caching or batching');
+      recommendations.push(
+        'High rate limit utilization - consider implementing request caching or batching'
+      );
     }
 
     if (metrics.requests_per_minute < 1) {
@@ -428,20 +454,21 @@ export class TrelloHealthEndpoints {
       attempted: true,
       success: false,
       actions_taken: [],
-      message: ''
+      message: '',
     };
 
     try {
       // Check for repairable issues
       const boardCheck = healthReport.checks.find(c => c.name === 'board_access');
-      
-      if (boardCheck?.status === HealthStatus.DEGRADED && 
-          boardCheck.message.includes('No active board configured')) {
-        
+
+      if (
+        boardCheck?.status === HealthStatus.DEGRADED &&
+        boardCheck.message.includes('No active board configured')
+      ) {
         // Attempt to set first available board as active
         const boards = await this.trelloClient.listBoards();
         const openBoards = boards.filter(b => !b.closed);
-        
+
         if (openBoards.length > 0) {
           await this.trelloClient.setActiveBoard(openBoards[0].id);
           result.actions_taken.push(`Set active board to "${openBoards[0].name}"`);
@@ -449,12 +476,11 @@ export class TrelloHealthEndpoints {
       }
 
       // Add more repair logic here as needed
-      
-      result.success = result.actions_taken.length > 0;
-      result.message = result.success 
-        ? 'System repair completed successfully' 
-        : 'No repairable issues found';
 
+      result.success = result.actions_taken.length > 0;
+      result.message = result.success
+        ? 'System repair completed successfully'
+        : 'No repairable issues found';
     } catch (error) {
       result.success = false;
       result.message = `Repair failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -468,18 +494,24 @@ export class TrelloHealthEndpoints {
    */
   private createErrorResponse(message: string, error: unknown): HealthEndpointResult {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     return {
-      content: [{ 
-        type: 'text', 
-        text: JSON.stringify({
-          error: message,
-          details: errorMessage,
-          timestamp: new Date().toISOString(),
-          status: HealthStatus.CRITICAL
-        }, null, 2)
-      }],
-      isError: true
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              error: message,
+              details: errorMessage,
+              timestamp: new Date().toISOString(),
+              status: HealthStatus.CRITICAL,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+      isError: true,
     };
   }
 }
@@ -491,30 +523,30 @@ export const HealthEndpointSchemas = {
   basicHealth: {
     title: 'Get Basic Health',
     description: 'Get quick system health status for monitoring and load balancing',
-    inputSchema: {}
+    inputSchema: {},
   },
 
   detailedHealth: {
     title: 'Get Detailed Health',
     description: 'Get comprehensive system health diagnostic with all subsystem checks',
-    inputSchema: {}
+    inputSchema: {},
   },
 
   metadataHealth: {
     title: 'Get Metadata Health',
     description: 'Verify metadata consistency between boards, lists, cards, and checklists',
-    inputSchema: {}
+    inputSchema: {},
   },
 
   performanceHealth: {
     title: 'Get Performance Health',
     description: 'Get detailed performance metrics and analysis',
-    inputSchema: {}
+    inputSchema: {},
   },
 
   repair: {
     title: 'Perform System Repair',
     description: 'Attempt to automatically repair common system issues',
-    inputSchema: {}
-  }
+    inputSchema: {},
+  },
 };

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2025-09-21
+
+### Fixed
+- **Build Process**: Fixed the build process by adding a `build` script to `package.json` that runs `bunx tsc`.
+- **Dockerfile**: Migrated the `Dockerfile` from `pnpm` to `bun`.
+
+### Changed
+- **README.md**: Updated the `README.md` file with the correct build and test instructions.
+- **Dependencies**: Removed `pnpm-lock.yaml` and `package-lock.json`.
+
 ## [1.5.0] - 2025-09-21
 
 ### Changed

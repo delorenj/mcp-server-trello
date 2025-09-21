@@ -778,6 +778,14 @@ bun install
 bun run build
 ```
 
+## Running tests
+
+To run the tests, run the following command:
+
+```bash
+bun test
+```
+
 ## Running evals
 
 The evals package loads an mcp client that then runs the index.ts file, so there is no need to rebuild between tests. You can load environment variables by prefixing the `bunx` command. Full documentation can be found [here](https://www.mcpevals.io/docs).

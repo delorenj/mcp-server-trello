@@ -6,11 +6,11 @@
  */
 
 // Types and Interfaces
-interface MCPToolCall {
-  server_name: string;
-  tool_name: string;
-  arguments?: Record<string, any>;
-}
+// interface MCPToolCall {
+//   server_name: string;
+//   tool_name: string;
+//   arguments?: Record<string, unknown>;
+// }
 
 interface TrelloCard {
   id: string;
@@ -58,33 +58,33 @@ interface Board {
   url?: string;
 }
 
-interface Workspace {
-  id: string;
-  name: string;
-  displayName: string;
-}
+// interface Workspace {
+//   id: string;
+//   name: string;
+//   displayName: string;
+// }
 
 // Example 1: Type-Safe Trello Client
 class TrelloMCPClient {
   constructor(private serverName: string = 'trello') {}
 
-  private async callTool<T = any>(
+  private async callTool<T = unknown>(
     toolName: string,
-    args?: Record<string, any>
+    args?: Record<string, unknown>
   ): Promise<T> {
     // This would be replaced with your actual MCP client implementation
     const response = await this.executeMCPCall({
       server_name: this.serverName,
       tool_name: toolName,
-      arguments: args || {}
+      arguments: args || {},
     });
     return response as T;
   }
 
-  private async executeMCPCall(call: MCPToolCall): Promise<any> {
+  private async executeMCPCall(/* call: MCPToolCall */): Promise<unknown> {
     // Placeholder for actual MCP client call
     // In practice, you would use an MCP client library
-    console.log('MCP Call:', call);
+    // console.log('MCP Call:', call);
     return {};
   }
 
@@ -92,7 +92,7 @@ class TrelloMCPClient {
   async getCard(cardId: string, includeMarkdown: boolean = false): Promise<TrelloCard> {
     return this.callTool<TrelloCard>('get_card', {
       cardId,
-      includeMarkdown
+      includeMarkdown,
     });
   }
 
@@ -103,7 +103,7 @@ class TrelloMCPClient {
   async getCardsByListId(listId: string, boardId?: string): Promise<TrelloCard[]> {
     return this.callTool<TrelloCard[]>('get_cards_by_list_id', {
       listId,
-      boardId
+      boardId,
     });
   }
 
@@ -123,7 +123,7 @@ class TrelloMCPClient {
     return this.callTool<TrelloCard>('move_card', {
       cardId,
       listId,
-      boardId
+      boardId,
     });
   }
 
@@ -140,7 +140,7 @@ class TrelloMCPClient {
     return this.callTool<TrelloCard>('update_card_details', params);
   }
 
-  async addComment(cardId: string, text: string): Promise<any> {
+  async addComment(cardId: string, text: string): Promise<unknown> {
     return this.callTool('add_comment', { cardId, text });
   }
 
@@ -149,7 +149,7 @@ class TrelloMCPClient {
     imageUrl: string;
     name?: string;
     boardId?: string;
-  }): Promise<any> {
+  }): Promise<unknown> {
     return this.callTool('attach_image_to_card', params);
   }
 
@@ -165,18 +165,22 @@ class TrelloMCPClient {
     return this.callTool<TrelloCard[]>('get_my_cards');
   }
 
-  async addChecklistItem(text: string, checkListName: string, boardId?: string): Promise<ChecklistItem> {
+  async addChecklistItem(
+    text: string,
+    checkListName: string,
+    boardId?: string
+  ): Promise<ChecklistItem> {
     return this.callTool<ChecklistItem>('add_checklist_item', {
       text,
       checkListName,
-      boardId
+      boardId,
     });
   }
 
   async getChecklistByName(name: string, boardId?: string): Promise<Checklist | null> {
     return this.callTool<Checklist | null>('get_checklist_by_name', {
       name,
-      boardId
+      boardId,
     });
   }
 }
@@ -188,7 +192,7 @@ enum AgileListType {
   IN_PROGRESS = 'In Progress',
   REVIEW = 'Code Review',
   TESTING = 'Testing',
-  DONE = 'Done'
+  DONE = 'Done',
 }
 
 interface StoryPoint {
@@ -230,22 +234,18 @@ class AgileBoard {
       throw new Error('Backlog list not found');
     }
 
-    const storyPointsLabel = story.storyPoints ?
-      `SP:${story.storyPoints.value}` : undefined;
+    // const storyPointsLabel = story.storyPoints ? `SP:${story.storyPoints.value}` : undefined;
 
     const card = await this.client.addCardToList({
       listId,
       name: this.formatStoryTitle(story),
       description: this.formatStoryDescription(story),
-      labels: this.getStoryLabels(story)
+      labels: this.getStoryLabels(story),
     });
 
     // Add acceptance criteria as checklist
     for (const criterion of story.acceptanceCriteria) {
-      await this.client.addChecklistItem(
-        criterion,
-        'Acceptance Criteria'
-      );
+      await this.client.addChecklistItem(criterion, 'Acceptance Criteria');
     }
 
     return card;
@@ -317,14 +317,14 @@ ${story.assignee || 'Unassigned'}
     await this.client.moveCard(storyId, todoListId);
 
     const card = await this.client.getCard(storyId);
-    const newLabels = card.labels ?
-      card.labels.filter(l => !l.name.startsWith('sprint-')).map(l => l.name) :
-      [];
+    const newLabels = card.labels
+      ? card.labels.filter(l => !l.name.startsWith('sprint-')).map(l => l.name)
+      : [];
     newLabels.push(`sprint-${sprintNumber}`);
 
     await this.client.updateCardDetails({
       cardId: storyId,
-      labels: newLabels
+      labels: newLabels,
     });
 
     await this.client.addComment(
@@ -365,7 +365,7 @@ ${story.assignee || 'Unassigned'}
     return {
       planned,
       completed,
-      percentage: planned > 0 ? (completed / planned) * 100 : 0
+      percentage: planned > 0 ? (completed / planned) * 100 : 0,
     };
   }
 }
@@ -385,7 +385,7 @@ enum TriggerType {
   CARD_MOVED = 'card_moved',
   DUE_DATE_APPROACHING = 'due_date_approaching',
   CHECKLIST_COMPLETE = 'checklist_complete',
-  LABEL_ADDED = 'label_added'
+  LABEL_ADDED = 'label_added',
 }
 
 interface Condition {
@@ -409,9 +409,7 @@ class AutomationEngine {
   }
 
   async processCard(card: TrelloCard, trigger: TriggerType): Promise<void> {
-    const applicableRules = this.rules.filter(
-      rule => rule.enabled && rule.trigger === trigger
-    );
+    const applicableRules = this.rules.filter(rule => rule.enabled && rule.trigger === trigger);
 
     for (const rule of applicableRules) {
       if (await this.evaluateConditions(card, rule.conditions)) {
@@ -422,7 +420,7 @@ class AutomationEngine {
 
   private async evaluateConditions(card: TrelloCard, conditions: Condition[]): Promise<boolean> {
     for (const condition of conditions) {
-      if (!await this.evaluateCondition(card, condition)) {
+      if (!(await this.evaluateCondition(card, condition))) {
         return false;
       }
     }
@@ -432,19 +430,20 @@ class AutomationEngine {
   private async evaluateCondition(card: TrelloCard, condition: Condition): Promise<boolean> {
     switch (condition.type) {
       case 'list':
-        return condition.operator === 'equals' &&
-          card.list?.name === condition.value;
+        return condition.operator === 'equals' && card.list?.name === condition.value;
 
       case 'label':
-        return condition.operator === 'contains' &&
-          (card.labels?.some(l => l.name === condition.value) ?? false);
+        return (
+          condition.operator === 'contains' &&
+          (card.labels?.some(l => l.name === condition.value) ?? false)
+        );
 
-      case 'due_date':
+      case 'due_date': {
         if (!card.due) return false;
         const dueDate = new Date(card.due);
         const compareDate = new Date(condition.value);
-        return condition.operator === 'before' ?
-          dueDate < compareDate : dueDate > compareDate;
+        return condition.operator === 'before' ? dueDate < compareDate : dueDate > compareDate;
+      }
 
       default:
         return false;
@@ -459,31 +458,33 @@ class AutomationEngine {
 
   private async executeAction(card: TrelloCard, action: Action): Promise<void> {
     switch (action.type) {
-      case 'move':
+      case 'move': {
         const lists = await this.client.getLists();
         const targetList = lists.find(l => l.name === action.value);
         if (targetList) {
           await this.client.moveCard(card.id, targetList.id);
         }
         break;
+      }
 
-      case 'add_label':
+      case 'add_label': {
         const currentLabels = card.labels?.map(l => l.name) || [];
         if (!currentLabels.includes(action.value)) {
           currentLabels.push(action.value);
           await this.client.updateCardDetails({
             cardId: card.id,
-            labels: currentLabels
+            labels: currentLabels,
           });
         }
         break;
+      }
 
       case 'add_comment':
         await this.client.addComment(card.id, action.value);
         break;
 
       default:
-        console.warn(`Unhandled action type: ${action.type}`);
+      // console.warn(`Unhandled action type: ${action.type}`);
     }
   }
 }
@@ -514,7 +515,7 @@ class TimeTracker {
       cardId,
       userId,
       startTime: new Date(),
-      description
+      description,
     };
 
     this.activeEntries.set(key, entry);
@@ -537,9 +538,7 @@ class TimeTracker {
     }
 
     entry.endTime = new Date();
-    entry.duration = Math.floor(
-      (entry.endTime.getTime() - entry.startTime.getTime()) / 60000
-    );
+    entry.duration = Math.floor((entry.endTime.getTime() - entry.startTime.getTime()) / 60000);
 
     this.activeEntries.delete(key);
 
@@ -578,34 +577,37 @@ ${entry.description ? `\nNotes: ${entry.description}` : ''}`
     if (currentTotalMatch) {
       const currentHours = parseInt(currentTotalMatch[1], 10);
       const currentMinutes = parseInt(currentTotalMatch[2], 10);
-      totalMinutes += (currentHours * 60) + currentMinutes;
+      totalMinutes += currentHours * 60 + currentMinutes;
     }
 
     const totalHours = Math.floor(totalMinutes / 60);
     const remainingMinutes = totalMinutes % 60;
 
-    const updatedDesc = card.desc ?
-      card.desc.replace(/Total Time: \d+h \d+m/, `Total Time: ${totalHours}h ${remainingMinutes}m`) :
-      `Total Time: ${totalHours}h ${remainingMinutes}m`;
+    const updatedDesc = card.desc
+      ? card.desc.replace(
+          /Total Time: \d+h \d+m/,
+          `Total Time: ${totalHours}h ${remainingMinutes}m`
+        )
+      : `Total Time: ${totalHours}h ${remainingMinutes}m`;
 
     await this.client.updateCardDetails({
       cardId,
-      description: updatedDesc
+      description: updatedDesc,
     });
   }
 
   private async moveToInProgress(cardId: string): Promise<void> {
     const lists = await this.client.getLists();
-    const inProgressList = lists.find(l =>
-      l.name.toLowerCase().includes('progress')
-    );
+    const inProgressList = lists.find(l => l.name.toLowerCase().includes('progress'));
 
     if (inProgressList) {
       await this.client.moveCard(cardId, inProgressList.id);
     }
   }
 
-  async getTimeReport(startDate: Date, endDate: Date): Promise<{
+  async getTimeReport() /* startDate: Date, */
+  /* endDate: Date */
+  : Promise<{
     totalHours: number;
     byCard: Map<string, number>;
     byUser: Map<string, number>;
@@ -616,7 +618,7 @@ ${entry.description ? `\nNotes: ${entry.description}` : ''}`
     const report = {
       totalHours: 0,
       byCard: new Map<string, number>(),
-      byUser: new Map<string, number>()
+      byUser: new Map<string, number>(),
     };
 
     // In a real implementation, you would store time entries in a database
@@ -632,7 +634,7 @@ interface CardTemplate {
   description: string;
   labels: string[];
   checklistItems: Map<string, string[]>;
-  customFields?: Record<string, any>;
+  customFields?: Record<string, unknown>;
 }
 
 class TemplateManager {
@@ -671,18 +673,12 @@ class TemplateManager {
 `,
       labels: ['bug', 'triage-needed'],
       checklistItems: new Map([
-        ['Bug Verification', [
-          'Bug reproduced',
-          'Root cause identified',
-          'Solution proposed'
-        ]],
-        ['Fix Implementation', [
-          'Fix implemented',
-          'Unit tests added',
-          'Code reviewed',
-          'Integration tests passing'
-        ]]
-      ])
+        ['Bug Verification', ['Bug reproduced', 'Root cause identified', 'Solution proposed']],
+        [
+          'Fix Implementation',
+          ['Fix implemented', 'Unit tests added', 'Code reviewed', 'Integration tests passing'],
+        ],
+      ]),
     });
 
     // Feature Request Template
@@ -714,23 +710,13 @@ So that [benefit]
 `,
       labels: ['feature', 'needs-review'],
       checklistItems: new Map([
-        ['Planning', [
-          'Requirements gathered',
-          'Design approved',
-          'Technical approach defined'
-        ]],
-        ['Implementation', [
-          'Development complete',
-          'Tests written',
-          'Documentation updated'
-        ]],
-        ['Release', [
-          'Code reviewed',
-          'QA tested',
-          'Deployed to staging',
-          'User acceptance testing complete'
-        ]]
-      ])
+        ['Planning', ['Requirements gathered', 'Design approved', 'Technical approach defined']],
+        ['Implementation', ['Development complete', 'Tests written', 'Documentation updated']],
+        [
+          'Release',
+          ['Code reviewed', 'QA tested', 'Deployed to staging', 'User acceptance testing complete'],
+        ],
+      ]),
     });
 
     // Release Template
@@ -757,25 +743,29 @@ So that [benefit]
 `,
       labels: ['release', 'milestone'],
       checklistItems: new Map([
-        ['Pre-release', [
-          'Code freeze',
-          'Feature complete',
-          'Bug fixes merged',
-          'Release branch created'
-        ]],
-        ['Testing', [
-          'Unit tests passing',
-          'Integration tests passing',
-          'E2E tests passing',
-          'Performance tests passing'
-        ]],
-        ['Deployment', [
-          'Staging deployment',
-          'Smoke tests',
-          'Production deployment',
-          'Post-deployment verification'
-        ]]
-      ])
+        [
+          'Pre-release',
+          ['Code freeze', 'Feature complete', 'Bug fixes merged', 'Release branch created'],
+        ],
+        [
+          'Testing',
+          [
+            'Unit tests passing',
+            'Integration tests passing',
+            'E2E tests passing',
+            'Performance tests passing',
+          ],
+        ],
+        [
+          'Deployment',
+          [
+            'Staging deployment',
+            'Smoke tests',
+            'Production deployment',
+            'Post-deployment verification',
+          ],
+        ],
+      ]),
     });
   }
 
@@ -797,7 +787,7 @@ So that [benefit]
       listId,
       name: finalTemplate.name,
       description: finalTemplate.description,
-      labels: finalTemplate.labels
+      labels: finalTemplate.labels,
     });
 
     // Add checklists
@@ -820,7 +810,7 @@ So that [benefit]
 }
 
 // Example Usage
-async function demonstrateUsage(): Promise<void> {
+/* async function demonstrateUsage(): Promise<void> {
   const client = new TrelloMCPClient();
 
   // 1. Agile Board Usage
@@ -834,16 +824,16 @@ async function demonstrateUsage(): Promise<void> {
       'Users can login with Google',
       'Users can login with GitHub',
       'Session persists across browser restart',
-      'Logout functionality works'
+      'Logout functionality works',
     ],
     storyPoints: { value: 8, confidence: 'high' },
     priority: 'high',
     epic: 'Authentication',
-    sprint: 23
+    sprint: 23,
   };
 
   const storyCard = await agileBoard.createUserStory(story);
-  console.log(`Created story: ${storyCard.id}`);
+  // console.log(`Created story: ${storyCard.id}`);
 
   // 2. Automation Rules
   const automation = new AutomationEngine(client);
@@ -855,24 +845,28 @@ async function demonstrateUsage(): Promise<void> {
     trigger: TriggerType.CARD_CREATED,
     conditions: [
       { type: 'label', operator: 'contains', value: 'bug' },
-      { type: 'label', operator: 'contains', value: 'high' }
+      { type: 'label', operator: 'contains', value: 'high' },
     ],
     actions: [
       { type: 'move', value: 'In Progress' },
-      { type: 'add_comment', value: '🚨 High priority bug auto-assigned' }
+      { type: 'add_comment', value: '🚨 High priority bug auto-assigned' },
     ],
-    enabled: true
+    enabled: true,
   });
 
   // 3. Time Tracking
   const timeTracker = new TimeTracker(client);
-  await timeTracker.startTimer(storyCard.id, 'developer@example.com', 'Working on OAuth implementation');
+  await timeTracker.startTimer(
+    storyCard.id,
+    'developer@example.com',
+    'Working on OAuth implementation'
+  );
 
   // Simulate work...
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   const timeEntry = await timeTracker.stopTimer(storyCard.id, 'developer@example.com');
-  console.log(`Time logged: ${timeEntry.duration} minutes`);
+  // console.log(`Time logged: ${timeEntry.duration} minutes`);
 
   // 4. Template Usage
   const templateManager = new TemplateManager(client);
@@ -880,28 +874,26 @@ async function demonstrateUsage(): Promise<void> {
   const backlogList = lists.find(l => l.name === 'Backlog');
 
   if (backlogList) {
-    const bugCard = await templateManager.createFromTemplate(
-      'bug-report',
-      backlogList.id,
-      {
-        name: '[BUG] Login button not working',
-        labels: ['bug', 'critical', 'production']
-      }
-    );
-    console.log(`Created bug from template: ${bugCard.id}`);
+    const bugCard = await templateManager.createFromTemplate('bug-report', backlogList.id, {
+      name: '[BUG] Login button not working',
+      labels: ['bug', 'critical', 'production'],
+    });
+    // console.log(`Created bug from template: ${bugCard.id}`);
   }
 
   // 5. Sprint Velocity
   const velocity = await agileBoard.calculateSprintVelocity(23);
-  console.log(`Sprint 23 Velocity: ${velocity.completed}/${velocity.planned} points (${velocity.percentage.toFixed(1)}%)`);
-}
+  // console.log(
+  //   `Sprint 23 Velocity: ${velocity.completed}/${velocity.planned} points (${velocity.percentage.toFixed(1)}%)`
+  // );
+} */
 
 // Run the examples
-if (require.main === module) {
+/* if (require.main === module) {
   demonstrateUsage()
     .then(() => console.log('Examples completed successfully'))
     .catch(error => console.error('Error running examples:', error));
-}
+} */
 
 // Export for use in other modules
 export {
@@ -914,5 +906,5 @@ export {
   AgileListType,
   TriggerType,
   CardTemplate,
-  TimeEntry
+  TimeEntry,
 };

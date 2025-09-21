@@ -10,7 +10,7 @@ export enum HealthStatus {
   HEALTHY = 'healthy',
   DEGRADED = 'degraded',
   CRITICAL = 'critical',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 /**
@@ -53,11 +53,11 @@ interface PerformanceTracker {
 
 /**
  * The magnificent HEALTH MONITORING system for our Trello MCP organism!
- * 
+ *
  * This class performs comprehensive cardiovascular diagnostics to ensure
- * our digital creature remains healthy and happy. It's like having a 
+ * our digital creature remains healthy and happy. It's like having a
  * personal physician for your API! 🩺
- * 
+ *
  * Features include:
  * - Real-time health status monitoring
  * - Performance metrics tracking
@@ -75,9 +75,9 @@ export class TrelloHealthMonitor {
     this.trelloClient = trelloClient;
     this.performanceTracker = {
       requests: [],
-      startTime: Date.now()
+      startTime: Date.now(),
     };
-    
+
     // Start monitoring performance in the background
     this.startPerformanceMonitoring();
   }
@@ -95,7 +95,7 @@ export class TrelloHealthMonitor {
       this.checkTrelloApiConnectivity(),
       this.checkBoardAccess(),
       this.checkRateLimitHealth(),
-      this.checkPerformanceMetrics()
+      this.checkPerformanceMetrics(),
     ];
 
     if (detailed) {
@@ -117,7 +117,7 @@ export class TrelloHealthMonitor {
 
     // Calculate overall status
     const overallStatus = this.calculateOverallStatus(checks);
-    
+
     // Generate recommendations
     const recommendations = this.generateRecommendations(checks, overallStatus);
 
@@ -129,7 +129,7 @@ export class TrelloHealthMonitor {
       recommendations,
       repair_available: this.isRepairAvailable(checks),
       uptime_ms: Date.now() - this.performanceTracker.startTime,
-      performance_metrics: this.calculatePerformanceMetrics()
+      performance_metrics: this.calculatePerformanceMetrics(),
     };
 
     this.lastHealthCheck = report;
@@ -146,7 +146,7 @@ export class TrelloHealthMonitor {
     try {
       // Simple "me" endpoint check - lowest impact way to verify connectivity
       await this.trelloClient.listBoards();
-      
+
       const duration = performance.now() - startTime;
       this.recordPerformanceMetric(duration, true);
 
@@ -158,8 +158,8 @@ export class TrelloHealthMonitor {
         timestamp: new Date().toISOString(),
         metadata: {
           endpoint: '/members/me/boards',
-          response_time_category: this.categorizeResponseTime(duration)
-        }
+          response_time_category: this.categorizeResponseTime(duration),
+        },
       };
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -186,8 +186,8 @@ export class TrelloHealthMonitor {
           duration_ms: Math.round(performance.now() - startTime),
           timestamp: new Date().toISOString(),
           metadata: {
-            suggestion: 'Set an active board using set_active_board tool'
-          }
+            suggestion: 'Set an active board using set_active_board tool',
+          },
         };
       }
 
@@ -198,15 +198,17 @@ export class TrelloHealthMonitor {
       return {
         name: checkName,
         status: board.closed ? HealthStatus.CRITICAL : HealthStatus.HEALTHY,
-        message: board.closed ? 'Active board is closed/archived' : `Board "${board.name}" is accessible`,
+        message: board.closed
+          ? 'Active board is closed/archived'
+          : `Board "${board.name}" is accessible`,
         duration_ms: Math.round(duration),
         timestamp: new Date().toISOString(),
         metadata: {
           board_id: board.id,
           board_name: board.name,
           board_closed: board.closed,
-          board_url: board.url
-        }
+          board_url: board.url,
+        },
       };
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -228,7 +230,7 @@ export class TrelloHealthMonitor {
       // In a real implementation, we'd expose this properly from TrelloClient
       const rateLimiterInfo = {
         can_make_request: true, // We'll approximate this
-        utilization_percent: this.calculateRateLimitUtilization()
+        utilization_percent: this.calculateRateLimitUtilization(),
       };
 
       const duration = performance.now() - startTime;
@@ -254,9 +256,9 @@ export class TrelloHealthMonitor {
           can_make_request: rateLimiterInfo.can_make_request,
           trello_limits: {
             api_key_limit: '300 requests / 10 seconds',
-            token_limit: '100 requests / 10 seconds'
-          }
-        }
+            token_limit: '100 requests / 10 seconds',
+          },
+        },
       };
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -294,8 +296,8 @@ export class TrelloHealthMonitor {
         timestamp: new Date().toISOString(),
         metadata: {
           ...metrics,
-          total_requests: this.performanceTracker.requests.length
-        }
+          total_requests: this.performanceTracker.requests.length,
+        },
       };
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -324,8 +326,8 @@ export class TrelloHealthMonitor {
         metadata: {
           total_lists: lists.length,
           open_lists: lists.filter(l => !l.closed).length,
-          closed_lists: lists.filter(l => l.closed).length
-        }
+          closed_lists: lists.filter(l => l.closed).length,
+        },
       };
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -356,8 +358,8 @@ export class TrelloHealthMonitor {
         metadata: {
           total_cards: myCards.length,
           open_cards: myCards.filter(c => !c.closed).length,
-          closed_cards: myCards.filter(c => c.closed).length
-        }
+          closed_cards: myCards.filter(c => c.closed).length,
+        },
       };
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -388,21 +390,22 @@ export class TrelloHealthMonitor {
         timestamp: new Date().toISOString(),
         metadata: {
           acceptance_criteria_count: criteria.length,
-          completed_items: criteria.filter(item => item.complete).length
-        }
+          completed_items: criteria.filter(item => item.complete).length,
+        },
       };
     } catch (error) {
       const duration = performance.now() - startTime;
       this.recordPerformanceMetric(duration, false);
 
       // Checklist failure might not be critical if it's just missing checklists
-      const isConfigError = error instanceof Error && 
+      const isConfigError =
+        error instanceof Error &&
         (error.message.includes('not found') || error.message.includes('No board ID'));
 
       return this.createErrorCheck(
-        checkName, 
-        error, 
-        duration, 
+        checkName,
+        error,
+        duration,
         isConfigError ? HealthStatus.DEGRADED : HealthStatus.CRITICAL
       );
     }
@@ -429,8 +432,8 @@ export class TrelloHealthMonitor {
         metadata: {
           total_workspaces: workspaces.length,
           active_workspace_id: this.trelloClient.activeWorkspaceId,
-          workspace_names: workspaces.map(w => w.displayName)
-        }
+          workspace_names: workspaces.map(w => w.displayName),
+        },
       };
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -470,12 +473,16 @@ export class TrelloHealthMonitor {
 
     const rateLimitCheck = checks.find(c => c.name === 'rate_limit_health');
     if (rateLimitCheck?.status === HealthStatus.DEGRADED) {
-      recommendations.push('Consider implementing request throttling or caching to reduce API usage');
+      recommendations.push(
+        'Consider implementing request throttling or caching to reduce API usage'
+      );
     }
 
     const performanceCheck = checks.find(c => c.name === 'performance_metrics');
     if (performanceCheck?.status === HealthStatus.DEGRADED) {
-      recommendations.push('Investigate slow response times - consider network conditions or API load');
+      recommendations.push(
+        'Investigate slow response times - consider network conditions or API load'
+      );
     }
 
     // Overall status recommendations
@@ -485,7 +492,9 @@ export class TrelloHealthMonitor {
       recommendations.push('Immediate attention required - check error logs and connectivity');
     }
 
-    return recommendations.length > 0 ? recommendations : ['System assessment complete - no specific recommendations'];
+    return recommendations.length > 0
+      ? recommendations
+      : ['System assessment complete - no specific recommendations'];
   }
 
   /**
@@ -493,17 +502,19 @@ export class TrelloHealthMonitor {
    */
   private isRepairAvailable(checks: HealthCheck[]): boolean {
     // Simple heuristic: repair available if we have degraded but not critical issues
-    return checks.some(c => c.status === HealthStatus.DEGRADED) && 
-           !checks.some(c => c.status === HealthStatus.CRITICAL);
+    return (
+      checks.some(c => c.status === HealthStatus.DEGRADED) &&
+      !checks.some(c => c.status === HealthStatus.CRITICAL)
+    );
   }
 
   /**
    * Create a standardized error check result
    */
   private createErrorCheck(
-    checkName: string, 
-    error: unknown, 
-    duration?: number, 
+    checkName: string,
+    error: unknown,
+    duration?: number,
     status: HealthStatus = HealthStatus.CRITICAL
   ): HealthCheck {
     let message = 'Unknown error occurred';
@@ -528,8 +539,8 @@ export class TrelloHealthMonitor {
       metadata: {
         error_type: error?.constructor?.name || 'Unknown',
         error_code: errorCode,
-        error_details: error instanceof Error ? error.stack : undefined
-      }
+        error_details: error instanceof Error ? error.stack : undefined,
+      },
     };
   }
 
@@ -556,13 +567,13 @@ export class TrelloHealthMonitor {
         avg_response_time_ms: 0,
         success_rate_percent: 100,
         rate_limit_utilization_percent: 0,
-        requests_per_minute: 0
+        requests_per_minute: 0,
       };
     }
 
     const avgResponseTime = requests.reduce((sum, r) => sum + r.duration, 0) / requests.length;
     const successRate = (requests.filter(r => r.success).length / requests.length) * 100;
-    
+
     // Calculate requests per minute based on recent activity
     const oneMinuteAgo = Date.now() - 60000;
     const recentRequests = requests.filter(r => r.timestamp > oneMinuteAgo);
@@ -572,7 +583,7 @@ export class TrelloHealthMonitor {
       avg_response_time_ms: Math.round(avgResponseTime),
       success_rate_percent: Math.round(successRate * 100) / 100,
       rate_limit_utilization_percent: this.calculateRateLimitUtilization(),
-      requests_per_minute: requestsPerMinute
+      requests_per_minute: requestsPerMinute,
     };
   }
 
@@ -583,7 +594,7 @@ export class TrelloHealthMonitor {
     const requests = this.performanceTracker.requests;
     const tenSecondsAgo = Date.now() - 10000;
     const recentRequests = requests.filter(r => r.timestamp > tenSecondsAgo).length;
-    
+
     // Use the more restrictive limit (100 per 10 seconds for tokens)
     return Math.min(100, (recentRequests / 100) * 100);
   }
@@ -607,8 +618,9 @@ export class TrelloHealthMonitor {
     setInterval(() => {
       // Clean up old metrics to prevent memory leaks
       const fiveMinutesAgo = Date.now() - 300000;
-      this.performanceTracker.requests = this.performanceTracker.requests
-        .filter(r => r.timestamp > fiveMinutesAgo);
+      this.performanceTracker.requests = this.performanceTracker.requests.filter(
+        r => r.timestamp > fiveMinutesAgo
+      );
     }, 60000); // Clean up every minute
   }
 

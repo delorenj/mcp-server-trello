@@ -1,6 +1,6 @@
 {
   "name": "@delorenj/mcp-server-trello",
-"version": "1.5.0",
+"version": "1.5.1",
   "description": "An MCP server for Trello boards, powered by Bun for maximum performance.",
   "keywords": [
     "mcp",
@@ -49,5 +49,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "build": "bunx tsc"
   }
 }

@@ -843,17 +843,13 @@ class TrelloServer {
 
   private setupHealthEndpoints() {
     // Basic health check endpoint
-    this.server.registerTool(
-      'get_health',
-      HealthEndpointSchemas.basicHealth,
-      async () => {
-        try {
-          return await this.healthEndpoints.getBasicHealth();
-        } catch (error) {
-          return this.handleError(error);
-        }
+    this.server.registerTool('get_health', HealthEndpointSchemas.basicHealth, async () => {
+      try {
+        return await this.healthEndpoints.getBasicHealth();
+      } catch (error) {
+        return this.handleError(error);
       }
-    );
+    });
 
     // Detailed health diagnostic endpoint
     this.server.registerTool(
@@ -895,17 +891,13 @@ class TrelloServer {
     );
 
     // System repair endpoint
-    this.server.registerTool(
-      'perform_system_repair',
-      HealthEndpointSchemas.repair,
-      async () => {
-        try {
-          return await this.healthEndpoints.performRepair();
-        } catch (error) {
-          return this.handleError(error);
-        }
+    this.server.registerTool('perform_system_repair', HealthEndpointSchemas.repair, async () => {
+      try {
+        return await this.healthEndpoints.performRepair();
+      } catch (error) {
+        return this.handleError(error);
       }
-    );
+    });
   }
 
   async run() {

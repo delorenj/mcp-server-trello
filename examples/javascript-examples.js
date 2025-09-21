@@ -11,13 +11,14 @@ class TrelloMCPClient {
     this.serverName = serverName;
   }
 
-  async callTool(toolName, args = {}) {
+  async callTool(toolName, /* args */) {
     // This would be replaced with your actual MCP client implementation
-    return await use_mcp_tool({
-      server_name: this.serverName,
-      tool_name: toolName,
-      arguments: args
-    });
+    // return await use_mcp_tool({
+    //   server_name: this.serverName,
+    //   tool_name: toolName,
+    //   arguments: args,
+    // });
+    return Promise.resolve({});
   }
 }
 
@@ -34,7 +35,7 @@ class SprintManager {
 
     // Create sprint list
     const list = await this.trello.callTool('add_list_to_board', {
-      name: `Sprint ${sprintNumber} (${startDate} - ${endDate})`
+      name: `Sprint ${sprintNumber} (${startDate} - ${endDate})`,
     });
 
     this.sprintListId = list.id;
@@ -44,7 +45,7 @@ class SprintManager {
       listId: this.sprintListId,
       name: `Sprint ${sprintNumber} Planning`,
       description: `# Sprint ${sprintNumber}\n\n**Duration**: ${startDate} to ${endDate}\n\n## Sprint Goals\n- [ ] Goal 1\n- [ ] Goal 2\n- [ ] Goal 3\n\n## Team Capacity\n- Dev: X points\n- QA: Y points`,
-      dueDate: new Date(endDate).toISOString()
+      dueDate: new Date(endDate).toISOString(),
     });
 
     return { list, planningCard };
@@ -56,7 +57,7 @@ class SprintManager {
       name: task.name,
       description: task.description,
       labels: task.labels || ['sprint-task'],
-      dueDate: task.dueDate
+      dueDate: task.dueDate,
     });
 
     // Add acceptance criteria
@@ -64,7 +65,7 @@ class SprintManager {
       for (const criteria of task.acceptanceCriteria) {
         await this.trello.callTool('add_checklist_item', {
           text: criteria,
-          checkListName: 'Acceptance Criteria'
+          checkListName: 'Acceptance Criteria',
         });
       }
     }
@@ -79,19 +80,19 @@ class SprintManager {
     if (inProgressList) {
       await this.trello.callTool('move_card', {
         cardId: cardId,
-        listId: inProgressList.id
+        listId: inProgressList.id,
       });
 
       await this.trello.callTool('add_comment', {
         cardId: cardId,
-        text: `Work started at ${new Date().toISOString()}`
+        text: `Work started at ${new Date().toISOString()}`,
       });
     }
   }
 
   async getSprintVelocity() {
     const cards = await this.trello.callTool('get_cards_by_list_id', {
-      listId: this.sprintListId
+      listId: this.sprintListId,
     });
 
     let completed = 0;
@@ -99,7 +100,7 @@ class SprintManager {
 
     for (const card of cards) {
       const fullCard = await this.trello.callTool('get_card', {
-        cardId: card.id
+        cardId: card.id,
       });
 
       if (fullCard.dueComplete) {
@@ -110,7 +111,7 @@ class SprintManager {
     return {
       total,
       completed,
-      velocity: (completed / total) * 100
+      velocity: (completed / total) * 100,
     };
   }
 }
@@ -128,7 +129,7 @@ class BugTracker {
 
     if (!bugList) {
       bugList = await this.trello.callTool('add_list_to_board', {
-        name: 'Bugs'
+        name: 'Bugs',
       });
     }
 
@@ -144,14 +145,14 @@ class BugTracker {
     expectedBehavior,
     actualBehavior,
     screenshotUrl,
-    userId
+    userId,
   }) {
     // Determine priority based on severity
     const dueDateOffset = {
-      'critical': 1,  // 1 day
-      'high': 3,      // 3 days
-      'medium': 7,    // 1 week
-      'low': 14       // 2 weeks
+      critical: 1, // 1 day
+      high: 3, // 3 days
+      medium: 7, // 1 week
+      low: 14, // 2 weeks
     };
 
     const dueDate = new Date();
@@ -168,10 +169,10 @@ class BugTracker {
         expectedBehavior,
         actualBehavior,
         reportedBy: userId,
-        reportedAt: new Date().toISOString()
+        reportedAt: new Date().toISOString(),
       }),
       labels: ['bug', severity, environment],
-      dueDate: dueDate.toISOString()
+      dueDate: dueDate.toISOString(),
     });
 
     // Add QA checklist
@@ -183,13 +184,13 @@ class BugTracker {
       'Integration tests passed',
       'Regression testing completed',
       'Fix verified in staging',
-      'Documentation updated'
+      'Documentation updated',
     ];
 
     for (const item of qaChecklist) {
       await this.trello.callTool('add_checklist_item', {
         text: item,
-        checkListName: 'QA Checklist'
+        checkListName: 'QA Checklist',
       });
     }
 
@@ -198,7 +199,7 @@ class BugTracker {
       await this.trello.callTool('attach_image_to_card', {
         cardId: bugCard.id,
         imageUrl: screenshotUrl,
-        name: 'Bug Screenshot'
+        name: 'Bug Screenshot',
       });
     }
 
@@ -212,7 +213,7 @@ class BugTracker {
     expectedBehavior,
     actualBehavior,
     reportedBy,
-    reportedAt
+    reportedAt,
   }) {
     return `## Bug Report
 
@@ -244,11 +245,11 @@ ${actualBehavior}
 
   async updateBugStatus(cardId, status, notes) {
     const statusToList = {
-      'triaged': 'Triaged',
+      triaged: 'Triaged',
       'in-progress': 'In Progress',
-      'fixed': 'Fixed',
-      'verified': 'Verified',
-      'closed': 'Done'
+      fixed: 'Fixed',
+      verified: 'Verified',
+      closed: 'Done',
     };
 
     // Get the appropriate list
@@ -259,26 +260,28 @@ ${actualBehavior}
       // Move card to new list
       await this.trello.callTool('move_card', {
         cardId: cardId,
-        listId: targetList.id
+        listId: targetList.id,
       });
 
       // Add status update comment
       await this.trello.callTool('add_comment', {
         cardId: cardId,
-        text: `**Status Update**: ${status}\n\n${notes}\n\nUpdated at: ${new Date().toISOString()}`
+        text: `**Status Update**: ${status}\n\n${notes}\n\nUpdated at: ${new Date().toISOString()}`,
       });
 
       // Update labels
       const card = await this.trello.callTool('get_card', {
-        cardId: cardId
+        cardId: cardId,
       });
 
-      const newLabels = card.labels.filter(l => !['triaged', 'in-progress', 'fixed', 'verified'].includes(l));
+      const newLabels = card.labels.filter(
+        l => !['triaged', 'in-progress', 'fixed', 'verified'].includes(l)
+      );
       newLabels.push(status);
 
       await this.trello.callTool('update_card_details', {
         cardId: cardId,
-        labels: newLabels
+        labels: newLabels,
       });
     }
   }
@@ -289,16 +292,16 @@ ${actualBehavior}
       total: 0,
       bySeverity: { critical: 0, high: 0, medium: 0, low: 0 },
       byStatus: {},
-      overdue: []
+      overdue: [],
     };
 
     for (const list of lists) {
       const cards = await this.trello.callTool('get_cards_by_list_id', {
-        listId: list.id
+        listId: list.id,
       });
 
-      const bugCards = cards.filter(card =>
-        card.labels && card.labels.some(label => label === 'bug' || label.name === 'bug')
+      const bugCards = cards.filter(
+        card => card.labels && card.labels.some(label => label === 'bug' || label.name === 'bug')
       );
 
       metrics.byStatus[list.name] = bugCards.length;
@@ -317,7 +320,7 @@ ${actualBehavior}
           metrics.overdue.push({
             name: card.name,
             due: card.due,
-            list: list.name
+            list: list.name,
           });
         }
       }
@@ -340,7 +343,7 @@ class ReleaseManager {
       name: `Release v${version}`,
       description: this.formatReleaseNotes(version, targetDate, features),
       dueDate: new Date(targetDate).toISOString(),
-      labels: ['release', 'milestone']
+      labels: ['release', 'milestone'],
     });
 
     // Add release checklist
@@ -361,13 +364,13 @@ class ReleaseManager {
       'Smoke tests passed',
       'Monitoring alerts configured',
       'Rollback plan tested',
-      'Stakeholders notified'
+      'Stakeholders notified',
     ];
 
     for (const item of checklist) {
       await this.trello.callTool('add_checklist_item', {
         text: item,
-        checkListName: 'Release Checklist'
+        checkListName: 'Release Checklist',
       });
     }
 
@@ -375,13 +378,13 @@ class ReleaseManager {
     for (const featureCardId of features) {
       await this.trello.callTool('add_comment', {
         cardId: featureCardId,
-        text: `✅ Included in Release v${version}`
+        text: `✅ Included in Release v${version}`,
       });
 
       // Move to release column
       await this.trello.callTool('move_card', {
         cardId: featureCardId,
-        listId: 'ready-for-release-list-id'
+        listId: 'ready-for-release-list-id',
       });
     }
 
@@ -433,7 +436,7 @@ In case of critical issues:
   async updateReleaseProgress(releaseCardId) {
     // Get checklist status
     const card = await this.trello.callTool('get_card', {
-      cardId: releaseCardId
+      cardId: releaseCardId,
     });
 
     // Calculate progress
@@ -452,7 +455,7 @@ In case of critical issues:
     // Update card with progress
     await this.trello.callTool('add_comment', {
       cardId: releaseCardId,
-      text: `📊 **Release Progress Update**\n\nProgress: ${progress.toFixed(1)}%\nCompleted: ${completedItems}/${totalItems} items\nUpdated: ${new Date().toISOString()}`
+      text: `📊 **Release Progress Update**\n\nProgress: ${progress.toFixed(1)}%\nCompleted: ${completedItems}/${totalItems} items\nUpdated: ${new Date().toISOString()}`,
     });
 
     return { progress, completedItems, totalItems };
@@ -478,19 +481,19 @@ class StandupAssistant {
       metrics: {
         cardsInProgress: 0,
         cardsCompleted: 0,
-        overdueCards: 0
-      }
+        overdueCards: 0,
+      },
     };
 
     // Get recent activity
     const recentActivity = await this.trello.callTool('get_recent_activity', {
-      limit: 50
+      limit: 50,
     });
 
     // Process cards
     for (const card of myCards) {
       const fullCard = await this.trello.callTool('get_card', {
-        cardId: card.id
+        cardId: card.id,
       });
 
       // Categorize by list
@@ -499,16 +502,17 @@ class StandupAssistant {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
 
-        const completedYesterday = recentActivity.some(activity =>
-          activity.data.card?.id === card.id &&
-          activity.type === 'updateCard' &&
-          new Date(activity.date) > yesterday
+        const completedYesterday = recentActivity.some(
+          activity =>
+            activity.data.card?.id === card.id &&
+            activity.type === 'updateCard' &&
+            new Date(activity.date) > yesterday
         );
 
         if (completedYesterday) {
           report.yesterday.push({
             name: card.name,
-            url: card.url
+            url: card.url,
           });
           report.metrics.cardsCompleted++;
         }
@@ -516,14 +520,14 @@ class StandupAssistant {
         report.today.push({
           name: card.name,
           url: card.url,
-          progress: this.getCardProgress(fullCard)
+          progress: this.getCardProgress(fullCard),
         });
         report.metrics.cardsInProgress++;
       } else if (fullCard.list.name === 'Blocked') {
         report.blockers.push({
           name: card.name,
           url: card.url,
-          reason: this.getBlockerReason(fullCard)
+          reason: this.getBlockerReason(fullCard),
         });
       }
 
@@ -572,19 +576,27 @@ class StandupAssistant {
 **Date**: ${report.date}
 
 ## 📅 Yesterday
-${report.yesterday.length > 0 ?
-  report.yesterday.map(task => `- ✅ ${task.name}`).join('\n') :
-  '- No completed tasks'}
+${
+  report.yesterday.length > 0
+    ? report.yesterday.map(task => `- ✅ ${task.name}`).join('\n')
+    : '- No completed tasks'
+}
 
 ## 📋 Today
-${report.today.length > 0 ?
-  report.today.map(task => `- 🔄 ${task.name} (${task.progress})`).join('\n') :
-  '- No tasks in progress'}
+${
+  report.today.length > 0
+    ? report.today.map(task => `- 🔄 ${task.name} (${task.progress})`).join('\n')
+    : '- No tasks in progress'
+}
 
 ## 🚧 Blockers
-${report.blockers.length > 0 ?
-  report.blockers.map(blocker => `- ⛔ ${blocker.name}\n  - Reason: ${blocker.reason}`).join('\n') :
-  '- No blockers'}
+${
+  report.blockers.length > 0
+    ? report.blockers
+        .map(blocker => `- ⛔ ${blocker.name}\n  - Reason: ${blocker.reason}`)
+        .join('\n')
+    : '- No blockers'
+}
 
 ## 📊 Metrics
 - Cards in Progress: ${report.metrics.cardsInProgress}
@@ -595,13 +607,13 @@ ${report.blockers.length > 0 ?
   async postStandupToCard(report, standupCardId) {
     await this.trello.callTool('add_comment', {
       cardId: standupCardId,
-      text: report
+      text: report,
     });
   }
 }
 
 // Example Usage
-async function main() {
+/* async function main() {
   const trello = new TrelloMCPClient();
 
   // Initialize sprint management
@@ -615,9 +627,9 @@ async function main() {
     acceptanceCriteria: [
       'Users can login with Google',
       'Users can login with GitHub',
-      'Session management works correctly'
+      'Session management works correctly',
     ],
-    dueDate: '2025-01-30T17:00:00Z'
+    dueDate: '2025-01-30T17:00:00Z',
   });
 
   // Initialize bug tracker
@@ -625,27 +637,23 @@ async function main() {
   await bugTracker.initialize();
 
   // Report a bug
-  const bug = await bugTracker.reportBug({
+  /* const bug = */ await bugTracker.reportBug({
     title: 'Login button not responding',
     description: 'The login button on the homepage does not respond to clicks',
     severity: 'high',
     environment: 'production',
-    stepsToReproduce: [
-      'Navigate to homepage',
-      'Click on login button',
-      'Nothing happens'
-    ],
+    stepsToReproduce: ['Navigate to homepage', 'Click on login button', 'Nothing happens'],
     expectedBehavior: 'Login modal should appear',
     actualBehavior: 'No response to click',
     screenshotUrl: 'https://example.com/screenshot.png',
-    userId: 'john.doe@example.com'
+    userId: 'john.doe@example.com',
   });
 
   // Generate standup report
   const standupAssistant = new StandupAssistant(trello);
-  const standupReport = await standupAssistant.generateStandupReport('John Doe');
-  console.log(standupReport);
-}
+  /* const standupReport = */ await standupAssistant.generateStandupReport('John Doe');
+  // console.log(standupReport);
+} */
 
 // Export for use in other modules
 module.exports = {
@@ -653,5 +661,5 @@ module.exports = {
   SprintManager,
   BugTracker,
   ReleaseManager,
-  StandupAssistant
+  StandupAssistant,
 };
