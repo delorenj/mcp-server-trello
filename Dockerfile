@@ -1,8 +1,6 @@
-FROM node:20-alpine AS builder
+# Use official Bun image as builder
+FROM oven/bun:1-alpine AS builder
 LABEL org.opencontainers.image.source=https://github.com/delorenj/mcp-server-trello
-
-# Install bun
-RUN npm install -g bun
 
 # Set the working directory to /app
 WORKDIR /app
@@ -11,7 +9,7 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 # Copy package files first to leverage Docker cache
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 
 # Install all dependencies (including dev dependencies)
 RUN bun install --frozen
@@ -22,11 +20,8 @@ COPY . .
 # Build TypeScript
 RUN bun run build
 
-# Use a smaller Node.js runtime for production
-FROM node:20-alpine AS release
-
-# Install bun
-RUN npm install -g bun
+# Use official Bun image for runtime
+FROM oven/bun:1-alpine AS release
 
 # Set the working directory to /app
 WORKDIR /app
@@ -34,7 +29,7 @@ WORKDIR /app
 # Copy only the necessary files from builder
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/package.json ./
-COPY --from=builder /app/bun.lockb ./
+COPY --from=builder /app/bun.lock ./
 
 # Install only production dependencies without running scripts
 RUN bun install --production --frozen
@@ -43,5 +38,5 @@ RUN bun install --production --frozen
 # They can be provided via docker run -e or docker compose environment section
 ENV NODE_ENV=production
 
-# Run the MCP server
-CMD ["node", "build/index.js"]
+# Run the MCP server using Bun
+CMD ["bun", "build/index.js"]
