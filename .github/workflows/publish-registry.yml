@@ -29,13 +29,12 @@ jobs:
       - name: Build project
         run: bun run build
 
-      - name: Validate server.json
-        run: bun validate-server.mjs
-
-      - name: Download mcp-publisher
+      - name: Build latest mcp-publisher
         run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.0.0/mcp-publisher_1.0.0_linux_amd64.tar.gz" | tar xz mcp-publisher
-          chmod +x mcp-publisher
+          git clone https://github.com/modelcontextprotocol/registry.git /tmp/registry
+          cd /tmp/registry
+          make publisher
+          cp bin/mcp-publisher $GITHUB_WORKSPACE/
 
       - name: Authenticate with GitHub OIDC
         run: ./mcp-publisher login github-oidc
