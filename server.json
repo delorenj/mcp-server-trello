@@ -9,11 +9,10 @@
     "source": "github"
   },
   "version": "1.5.4",
-  "registryType": "npm",
   "packages": [
     {
       "identifier": "@delorenj/mcp-server-trello",
-      "registryType": "npm",
+      "registry_type": "npm",
       "version": "1.5.4",
       "transport": {
         "type": "stdio"
