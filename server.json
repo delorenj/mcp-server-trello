@@ -8,13 +8,13 @@
     "url": "https://github.com/delorenj/mcp-server-trello",
     "source": "github"
   },
-  "version": "1.5.5",
+  "version": "1.5.6",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@delorenj/mcp-server-trello",
-      "version": "1.5.5",
+      "version": "1.5.6",
       "transport": {
         "type": "stdio"
       },
