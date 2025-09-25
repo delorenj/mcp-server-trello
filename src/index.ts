@@ -73,8 +73,16 @@ class TrelloServer {
       async ({ boardId, listId }) => {
         try {
           const cards = await this.trelloClient.getCardsByList(boardId, listId);
+          const fields = (process.env.TRELLO_FIELDS || "name,shortLink").split(",");
+          const filteredCards = cards.map(b => {
+              const obj = {};
+              for (const f of fields) {
+                  obj[f] = b[f];
+              }
+              return obj;
+          });
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
+                  content: [{ type: 'text', text: JSON.stringify(filteredLists, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
@@ -98,8 +106,16 @@ class TrelloServer {
       async ({ boardId }) => {
         try {
           const lists = await this.trelloClient.getLists(boardId);
+          const fields = (process.env.TRELLO_FIELDS || "name,shortLink").split(",");
+          const filteredLists = lists.map(b => {
+              const obj = {};
+              for (const f of fields) {
+                  obj[f] = b[f];
+              }
+              return obj;
+          });
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify(lists, null, 2) }],
+                  content: [{ type: 'text', text: JSON.stringify(filteredLists, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
@@ -443,8 +459,16 @@ class TrelloServer {
       async () => {
         try {
           const boards = await this.trelloClient.listBoards();
+          const fields = (process.env.TRELLO_FIELDS || "name,shortLink").split(",");
+          const filteredBoards = boards.map(b => {
+              const obj = {};
+              for (const f of fields) {
+                  obj[f] = b[f];
+              }
+              return obj;
+          });
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify(boards, null, 2) }],
+                  content: [{ type: 'text', text: JSON.stringify(filteredBoards, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
