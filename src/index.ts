@@ -704,7 +704,28 @@ class TrelloServer {
         }
       }
     );
-
+    // Checklist tools
+    this.server.registerTool(
+      'create_checklist',
+      {
+        title: 'Create Checklist',
+        description: 'Create a new checklist',
+        inputSchema: {
+          name: z.string().describe('Name of the checklist to create'),
+          cardId: z.string().describe('ID of the Trello card'),
+        },
+      },
+      async ({ name, cardId }) => {
+        try {
+          const isSuccess = await this.trelloClient.createChecklist(name, cardId);
+          return {
+            content: [{ type: 'text' as const, text: isSuccess ? 'success' : 'failure' }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
     // Checklist tools
     this.server.registerTool(
       'get_checklist_items',
