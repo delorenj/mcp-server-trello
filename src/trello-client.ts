@@ -616,7 +616,7 @@ export class TrelloClient {
 
   async createChecklist(name:string, cardId: string): Promise<boolean> {
     if (!cardId) {
-      throw new McpError(ErrorCode.InvalidParams, 'No card ID provided and no active card set');
+      throw new McpError(ErrorCode.InvalidParams, 'No card ID provided');
     }
     const response = await this.axiosInstance.post<TrelloChecklist[]>(`/cards/${cardId}/checklists`, {name});
     return response.status === 200;
