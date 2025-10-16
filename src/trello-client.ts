@@ -614,12 +614,12 @@ export class TrelloClient {
     return this.getChecklistItems('Acceptance Criteria', boardId);
   }
 
-  async createChecklist(name:string, cardId: string): Promise<boolean> {
+  async createChecklist(name: string, cardId: string): Promise<TrelloChecklist> {
     if (!cardId) {
-      throw new McpError(ErrorCode.InvalidParams, 'No card ID provided');
+      throw new McpError(ErrorCode.InvalidParams, 'No card ID provided and no active card set');
     }
-    const response = await this.axiosInstance.post<TrelloChecklist[]>(`/cards/${cardId}/checklists`, {name});
-    return response.status === 200;
+    const response = await this.axiosInstance.post<TrelloChecklist>(`/cards/${cardId}/checklists`, { name });
+    return response.data;
   }
 
   async getChecklistByName(name: string, boardId?: string): Promise<CheckList | null> {
