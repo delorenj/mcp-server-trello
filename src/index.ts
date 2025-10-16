@@ -717,9 +717,9 @@ class TrelloServer {
       },
       async ({ name, cardId }) => {
         try {
-          const isSuccess = await this.trelloClient.createChecklist(name, cardId);
+          const items = await this.trelloClient.createChecklist(name, cardId);
           return {
-            content: [{ type: 'text' as const, text: isSuccess ? 'success' : 'failure' }],
+            content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
@@ -854,6 +854,31 @@ class TrelloServer {
           }
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(checklist, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'update_checklist_item',
+      {
+        title: 'Update Checklist Item',
+        description: 'Update a checklist item state (mark as complete or incomplete)',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card containing the checklist item'),
+          checkItemId: z.string().describe('ID of the checklist item to update'),
+          state: z
+            .enum(['complete', 'incomplete'])
+            .describe('New state for the checklist item'),
+        },
+      },
+      async ({ cardId, checkItemId, state }) => {
+        try {
+          const item = await this.trelloClient.updateChecklistItem(cardId, checkItemId, state);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(item, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);

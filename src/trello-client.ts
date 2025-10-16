@@ -644,6 +644,25 @@ export class TrelloClient {
     return null;
   }
 
+  /**
+   * Update a checklist item state (complete/incomplete)
+   */
+  async updateChecklistItem(
+    cardId: string,
+    checkItemId: string,
+    state: 'complete' | 'incomplete'
+  ): Promise<TrelloCheckItem> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put<TrelloCheckItem>(
+        `/cards/${cardId}/checkItem/${checkItemId}`,
+        {
+          state,
+        }
+      );
+      return response.data;
+    });
+  }
+
   private formatCardAsMarkdown(card: EnhancedTrelloCard): string {
     let markdown = '';
 
