@@ -28,6 +28,7 @@ For a detailed list of changes, please refer to the [CHANGELOG.md](CHANGELOG.md)
 
   - **Full Trello Board Integration**: Interact with cards, lists, and board activities
   - **🆕 Complete Card Data Extraction**: Fetch all card details including checklists, attachments, labels, members, and comments
+  - **💬 Comment Management**: Add, update, delete, and retrieve comments on cards
   - **File Attachments**: Attach any type of file to cards (PDFs, documents, videos, images, etc.) from URLs
   - **Built-in Rate Limiting**: Respects Trello's API limits (300 requests/10s per API key, 100 requests/10s per token)
   - **Type-Safe Implementation**: Written in TypeScript with comprehensive type definitions
@@ -585,6 +586,64 @@ nbsp; arguments: {
   }
 }
 ```
+
+### Comment Management Tools
+
+#### add\_comment
+
+Add a comment to a Trello card.
+
+```typescript
+{
+  name: 'add_comment',
+  arguments: {
+    cardId: string,  // ID of the card to comment on
+    text: string     // The text of the comment to add
+  }
+}
+```
+
+#### update\_comment
+
+Update an existing comment on a card.
+
+```typescript
+{
+  name: 'update_comment',
+  arguments: {
+    commentId: string,  // ID of the comment to change
+    text: string        // The new text of the comment
+  }
+}
+```
+
+#### delete\_comment
+
+Delete a comment from a card.
+
+```typescript
+{
+  name: 'delete_comment',
+  arguments: {
+    commentId: string  // ID of the comment to delete
+  }
+}
+```
+
+#### get\_card\_comments
+
+Retrieve all comments from a specific card without fetching all card data.
+
+```typescript
+{
+  name: 'get_card_comments',
+  arguments: {
+    cardId: string,  // ID of the card to get comments from
+    limit?: number   // Optional: Maximum number of comments to retrieve (default: 100)
+  }
+}
+```
+
 
 ### list\_boards
 

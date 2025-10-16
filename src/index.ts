@@ -704,6 +704,56 @@ class TrelloServer {
         }
       }
     );
+
+    // Delete a comment from a card
+    this.server.registerTool(
+      'delete_comment',
+      {
+        title: 'Delete Comment from Card',
+        description: 'Delete a comment from a Trello card',
+        inputSchema: {
+          commentId: z.string().describe('ID of the comment to delete'),
+        },
+      },
+      async ({ commentId }) => {
+        try {
+          const success = await this.trelloClient.deleteCommentFromCard(commentId);
+          return {
+            content: [{ type: 'text' as const, text: success ? 'success' : 'failure' }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Get comments from a card
+    this.server.registerTool(
+      'get_card_comments',
+      {
+        title: 'Get Card Comments',
+        description: 'Retrieve all comments from a specific Trello card',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card to get comments from'),
+          limit: z
+            .number()
+            .optional()
+            .default(100)
+            .describe('Maximum number of comments to retrieve (default: 100)'),
+        },
+      },
+      async ({ cardId, limit }) => {
+        try {
+          const comments = await this.trelloClient.getCardComments(cardId, limit);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(comments, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Checklist tools
     this.server.registerTool(
       'create_checklist',
@@ -726,6 +776,7 @@ class TrelloServer {
         }
       }
     );
+
     // Checklist tools
     this.server.registerTool(
       'get_checklist_items',
