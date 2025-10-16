@@ -521,6 +521,27 @@ export class TrelloClient {
     });
   }
 
+  // Delete Comment
+  async deleteCommentFromCard(commentId: string): Promise<boolean> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.delete(`/actions/${commentId}`);
+      return response.status === 200;
+    });
+  }
+
+  // Get Card Comments
+  async getCardComments(cardId: string, limit: number = 100): Promise<TrelloComment[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/cards/${cardId}/actions`, {
+        params: {
+          filter: 'commentCard',
+          limit: limit,
+        },
+      });
+      return response.data;
+    });
+  }
+
   // Checklist methods
   async getChecklistItems(name: string, boardId?: string): Promise<CheckListItem[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId;

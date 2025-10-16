@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-01-16
+
+### Added
+- **Complete Comment Management**: Four new tools for managing comments on Trello cards:
+  - `add_comment(cardId, text)` - Add a comment to a card (previously available)
+  - `update_comment(commentId, text)` - Update an existing comment (previously available)
+  - `delete_comment(commentId)` - Delete a comment from a card (NEW)
+  - `get_card_comments(cardId, limit?)` - Retrieve all comments from a card without fetching all card data (NEW)
+- Enhanced comment functionality addresses feature request #24
+
 ## [1.5.1] - 2025-09-21
 
 ### Fixed
