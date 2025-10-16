@@ -635,6 +635,14 @@ export class TrelloClient {
     return this.getChecklistItems('Acceptance Criteria', boardId);
   }
 
+  async createChecklist(name: string, cardId: string): Promise<TrelloChecklist> {
+    if (!cardId) {
+      throw new McpError(ErrorCode.InvalidParams, 'No card ID provided and no active card set');
+    }
+    const response = await this.axiosInstance.post<TrelloChecklist>(`/cards/${cardId}/checklists`, { name });
+    return response.data;
+  }
+
   async getChecklistByName(name: string, boardId?: string): Promise<CheckList | null> {
     const effectiveBoardId = boardId || this.activeConfig.boardId;
     if (!effectiveBoardId) {
@@ -655,6 +663,25 @@ export class TrelloClient {
     }
 
     return null;
+  }
+
+  /**
+   * Update a checklist item state (complete/incomplete)
+   */
+  async updateChecklistItem(
+    cardId: string,
+    checkItemId: string,
+    state: 'complete' | 'incomplete'
+  ): Promise<TrelloCheckItem> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put<TrelloCheckItem>(
+        `/cards/${cardId}/checkItem/${checkItemId}`,
+        {
+          state,
+        }
+      );
+      return response.data;
+    });
   }
 
   private formatCardAsMarkdown(card: EnhancedTrelloCard): string {
