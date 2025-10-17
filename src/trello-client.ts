@@ -14,6 +14,8 @@ import {
   CheckList,
   CheckListItem,
   TrelloComment,
+  TrelloMember,
+  TrelloLabelDetails,
 } from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
@@ -927,7 +929,7 @@ export class TrelloClient {
   }
 
   // Member management methods
-  async getBoardMembers(boardId?: string): Promise<any[]> {
+  async getBoardMembers(boardId?: string): Promise<TrelloMember[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
     if (!effectiveBoardId) {
       throw new McpError(
@@ -945,7 +947,7 @@ export class TrelloClient {
     boardId: string | undefined,
     cardId: string,
     memberId: string
-  ): Promise<any[]> {
+  ): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.post(`/cards/${cardId}/idMembers`, {
         value: memberId,
@@ -966,7 +968,7 @@ export class TrelloClient {
   }
 
   // Label management methods
-  async getBoardLabels(boardId?: string): Promise<any[]> {
+  async getBoardLabels(boardId?: string): Promise<TrelloLabelDetails[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
     if (!effectiveBoardId) {
       throw new McpError(
@@ -984,7 +986,7 @@ export class TrelloClient {
     boardId: string | undefined,
     name: string,
     color?: string
-  ): Promise<any> {
+  ): Promise<TrelloLabelDetails> {
     const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
     if (!effectiveBoardId) {
       throw new McpError(
@@ -1006,9 +1008,9 @@ export class TrelloClient {
     labelId: string,
     name?: string,
     color?: string
-  ): Promise<any> {
+  ): Promise<TrelloLabelDetails> {
     return this.handleRequest(async () => {
-      const updateData: any = {};
+      const updateData: { name?: string; color?: string } = {};
       if (name !== undefined) updateData.name = name;
       if (color !== undefined) updateData.color = color;
 
@@ -1030,9 +1032,9 @@ export class TrelloClient {
     cardId: string,
     filter?: string,
     limit?: number
-  ): Promise<any[]> {
+  ): Promise<TrelloAction[]> {
     return this.handleRequest(async () => {
-      const params: any = {};
+      const params: { filter?: string; limit?: number } = {};
       if (filter) params.filter = filter;
       if (limit) params.limit = limit;
 

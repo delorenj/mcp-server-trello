@@ -1022,9 +1022,9 @@ class TrelloServer {
       },
       async ({ boardId, cardId, memberId }) => {
         try {
-          const members = await this.trelloClient.assignMemberToCard(boardId, cardId, memberId);
+          const card = await this.trelloClient.assignMemberToCard(boardId, cardId, memberId);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify(members, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
@@ -1048,9 +1048,9 @@ class TrelloServer {
       },
       async ({ boardId, cardId, memberId }) => {
         try {
-          const members = await this.trelloClient.removeMemberFromCard(boardId, cardId, memberId);
+          const card = await this.trelloClient.removeMemberFromCard(boardId, cardId, memberId);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify(members, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
