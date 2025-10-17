@@ -995,8 +995,7 @@ export class TrelloClient {
       );
     }
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.post(`/labels`, {
-        idBoard: effectiveBoardId,
+      const response = await this.axiosInstance.post(`/boards/${effectiveBoardId}/labels`, {
         name,
         color,
       });
