@@ -944,7 +944,6 @@ export class TrelloClient {
   }
 
   async assignMemberToCard(
-    boardId: string | undefined,
     cardId: string,
     memberId: string
   ): Promise<TrelloCard> {
@@ -957,7 +956,6 @@ export class TrelloClient {
   }
 
   async removeMemberFromCard(
-    boardId: string | undefined,
     cardId: string,
     memberId: string
   ): Promise<any[]> {
@@ -1004,7 +1002,6 @@ export class TrelloClient {
   }
 
   async updateLabel(
-    boardId: string | undefined,
     labelId: string,
     name?: string,
     color?: string
@@ -1019,7 +1016,7 @@ export class TrelloClient {
     });
   }
 
-  async deleteLabel(boardId: string | undefined, labelId: string): Promise<boolean> {
+  async deleteLabel(labelId: string): Promise<boolean> {
     return this.handleRequest(async () => {
       await this.axiosInstance.delete(`/labels/${labelId}`);
       return true;
@@ -1028,7 +1025,6 @@ export class TrelloClient {
 
   // Card history method
   async getCardHistory(
-    boardId: string | undefined,
     cardId: string,
     filter?: string,
     limit?: number

@@ -1012,17 +1012,13 @@ class TrelloServer {
         title: 'Assign Member to Card',
         description: 'Assign a member to a specific card',
         inputSchema: {
-          boardId: z
-            .string()
-            .optional()
-            .describe('ID of the Trello board (uses default if not provided)'),
           cardId: z.string().describe('ID of the card to assign the member to'),
           memberId: z.string().describe('ID of the member to assign to the card'),
         },
       },
-      async ({ boardId, cardId, memberId }) => {
+      async ({ cardId, memberId }) => {
         try {
-          const card = await this.trelloClient.assignMemberToCard(boardId, cardId, memberId);
+          const card = await this.trelloClient.assignMemberToCard(cardId, memberId);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
@@ -1038,17 +1034,13 @@ class TrelloServer {
         title: 'Remove Member from Card',
         description: 'Remove a member from a specific card',
         inputSchema: {
-          boardId: z
-            .string()
-            .optional()
-            .describe('ID of the Trello board (uses default if not provided)'),
           cardId: z.string().describe('ID of the card to remove the member from'),
           memberId: z.string().describe('ID of the member to remove from the card'),
         },
       },
-      async ({ boardId, cardId, memberId }) => {
+      async ({ cardId, memberId }) => {
         try {
-          const card = await this.trelloClient.removeMemberFromCard(boardId, cardId, memberId);
+          const card = await this.trelloClient.removeMemberFromCard(cardId, memberId);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
@@ -1120,18 +1112,14 @@ class TrelloServer {
         title: 'Update Label',
         description: 'Update an existing label',
         inputSchema: {
-          boardId: z
-            .string()
-            .optional()
-            .describe('ID of the Trello board (uses default if not provided)'),
           labelId: z.string().describe('ID of the label to update'),
           name: z.string().optional().describe('New name for the label'),
           color: z.string().optional().describe('New color for the label'),
         },
       },
-      async ({ boardId, labelId, name, color }) => {
+      async ({ labelId, name, color }) => {
         try {
-          const label = await this.trelloClient.updateLabel(boardId, labelId, name, color);
+          const label = await this.trelloClient.updateLabel(labelId, name, color);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(label, null, 2) }],
           };
@@ -1147,16 +1135,12 @@ class TrelloServer {
         title: 'Delete Label',
         description: 'Delete a label from a board',
         inputSchema: {
-          boardId: z
-            .string()
-            .optional()
-            .describe('ID of the Trello board (uses default if not provided)'),
           labelId: z.string().describe('ID of the label to delete'),
         },
       },
-      async ({ boardId, labelId }) => {
+      async ({ labelId }) => {
         try {
-          await this.trelloClient.deleteLabel(boardId, labelId);
+          await this.trelloClient.deleteLabel(labelId);
           return {
             content: [{ type: 'text' as const, text: 'Label deleted successfully' }],
           };
@@ -1173,10 +1157,6 @@ class TrelloServer {
         title: 'Get Card History',
         description: 'Get the history/actions of a specific card',
         inputSchema: {
-          boardId: z
-            .string()
-            .optional()
-            .describe('ID of the Trello board (uses default if not provided)'),
           cardId: z.string().describe('ID of the card to get history for'),
           filter: z
             .string()
@@ -1190,9 +1170,9 @@ class TrelloServer {
             .describe('Optional: Number of actions to fetch (default: all)'),
         },
       },
-      async ({ boardId, cardId, filter, limit }) => {
+      async ({ cardId, filter, limit }) => {
         try {
-          const history = await this.trelloClient.getCardHistory(boardId, cardId, filter, limit);
+          const history = await this.trelloClient.getCardHistory(cardId, filter, limit);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(history, null, 2) }],
           };
