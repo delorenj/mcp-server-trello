@@ -432,6 +432,50 @@ class TrelloServer {
       }
     );
 
+    // Attach image data to card (for base64/data URL uploads)
+    this.server.registerTool(
+      'attach_image_data_to_card',
+      {
+        title: 'Attach Image Data to Card',
+        description: 'Attach an image to a card from base64 data or data URL (for screenshot uploads)',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe(
+              'ID of the Trello board where the card exists (uses default if not provided)'
+            ),
+          cardId: z.string().describe('ID of the card to attach the image to'),
+          imageData: z.string().describe('Base64 encoded image data or data URL (e.g., data:image/png;base64,...)'),
+          name: z
+            .string()
+            .optional()
+            .describe('Optional name for the attachment'),
+          mimeType: z
+            .string()
+            .optional()
+            .default('image/png')
+            .describe('Optional MIME type (default: image/png)'),
+        },
+      },
+      async ({ boardId, cardId, imageData, name, mimeType }) => {
+        try {
+          const attachment = await this.trelloClient.attachImageDataToCard(
+            boardId,
+            cardId,
+            imageData,
+            name,
+            mimeType
+          );
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // List all boards
     this.server.registerTool(
       'list_boards',
@@ -785,15 +829,19 @@ class TrelloServer {
         description: 'Get all items from a checklist by name',
         inputSchema: {
           name: z.string().describe('Name of the checklist to retrieve items from'),
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ name, boardId }) => {
+      async ({ name, cardId, boardId }) => {
         try {
-          const items = await this.trelloClient.getChecklistItems(name, boardId);
+          const items = await this.trelloClient.getChecklistItems(name, cardId, boardId);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
           };
@@ -811,15 +859,19 @@ class TrelloServer {
         inputSchema: {
           text: z.string().describe('Text content of the checklist item'),
           checkListName: z.string().describe('Name of the checklist to add the item to'),
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ text, checkListName, boardId }) => {
+      async ({ text, checkListName, cardId, boardId }) => {
         try {
-          const item = await this.trelloClient.addChecklistItem(text, checkListName, boardId);
+          const item = await this.trelloClient.addChecklistItem(text, checkListName, cardId, boardId);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(item, null, 2) }],
           };
@@ -836,16 +888,21 @@ class TrelloServer {
         description: 'Search for checklist items containing specific text in their description',
         inputSchema: {
           description: z.string().describe('Text to search for in checklist item descriptions'),
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ description, boardId }) => {
+      async ({ description, cardId, boardId }) => {
         try {
           const items = await this.trelloClient.findChecklistItemsByDescription(
             description,
+            cardId,
             boardId
           );
           return {
@@ -863,15 +920,19 @@ class TrelloServer {
         title: 'Get Acceptance Criteria',
         description: 'Get all items from the "Acceptance Criteria" checklist',
         inputSchema: {
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ boardId }) => {
+      async ({ cardId, boardId }) => {
         try {
-          const items = await this.trelloClient.getAcceptanceCriteria(boardId);
+          const items = await this.trelloClient.getAcceptanceCriteria(cardId, boardId);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
           };
@@ -888,15 +949,19 @@ class TrelloServer {
         description: 'Get a complete checklist with all its items and completion percentage',
         inputSchema: {
           name: z.string().describe('Name of the checklist to retrieve'),
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ name, boardId }) => {
+      async ({ name, cardId, boardId }) => {
         try {
-          const checklist = await this.trelloClient.getChecklistByName(name, boardId);
+          const checklist = await this.trelloClient.getChecklistByName(name, cardId, boardId);
           if (!checklist) {
             return {
               content: [{ type: 'text' as const, text: `Checklist "${name}" not found` }],
@@ -930,6 +995,207 @@ class TrelloServer {
           const item = await this.trelloClient.updateChecklistItem(cardId, checkItemId, state);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(item, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Member management tools
+    this.server.registerTool(
+      'get_board_members',
+      {
+        title: 'Get Board Members',
+        description: 'Get all members of a specific board',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+        },
+      },
+      async ({ boardId }) => {
+        try {
+          const members = await this.trelloClient.getBoardMembers(boardId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(members, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'assign_member_to_card',
+      {
+        title: 'Assign Member to Card',
+        description: 'Assign a member to a specific card',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card to assign the member to'),
+          memberId: z.string().describe('ID of the member to assign to the card'),
+        },
+      },
+      async ({ cardId, memberId }) => {
+        try {
+          const card = await this.trelloClient.assignMemberToCard(cardId, memberId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'remove_member_from_card',
+      {
+        title: 'Remove Member from Card',
+        description: 'Remove a member from a specific card',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card to remove the member from'),
+          memberId: z.string().describe('ID of the member to remove from the card'),
+        },
+      },
+      async ({ cardId, memberId }) => {
+        try {
+          const card = await this.trelloClient.removeMemberFromCard(cardId, memberId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Label management tools
+    this.server.registerTool(
+      'get_board_labels',
+      {
+        title: 'Get Board Labels',
+        description: 'Get all labels of a specific board',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+        },
+      },
+      async ({ boardId }) => {
+        try {
+          const labels = await this.trelloClient.getBoardLabels(boardId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(labels, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'create_label',
+      {
+        title: 'Create Label',
+        description: 'Create a new label on a board',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+          name: z.string().describe('Name of the label'),
+          color: z
+            .string()
+            .optional()
+            .describe(
+              'Color of the label (e.g., "red", "blue", "green", "yellow", "orange", "purple", "pink", "sky", "lime", "black", "null")'
+            ),
+        },
+      },
+      async ({ boardId, name, color }) => {
+        try {
+          const label = await this.trelloClient.createLabel(boardId, name, color);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(label, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'update_label',
+      {
+        title: 'Update Label',
+        description: 'Update an existing label',
+        inputSchema: {
+          labelId: z.string().describe('ID of the label to update'),
+          name: z.string().optional().describe('New name for the label'),
+          color: z.string().optional().describe('New color for the label'),
+        },
+      },
+      async ({ labelId, name, color }) => {
+        try {
+          const label = await this.trelloClient.updateLabel(labelId, name, color);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(label, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'delete_label',
+      {
+        title: 'Delete Label',
+        description: 'Delete a label from a board',
+        inputSchema: {
+          labelId: z.string().describe('ID of the label to delete'),
+        },
+      },
+      async ({ labelId }) => {
+        try {
+          await this.trelloClient.deleteLabel(labelId);
+          return {
+            content: [{ type: 'text' as const, text: 'Label deleted successfully' }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Card history tool
+    this.server.registerTool(
+      'get_card_history',
+      {
+        title: 'Get Card History',
+        description: 'Get the history/actions of a specific card',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card to get history for'),
+          filter: z
+            .string()
+            .optional()
+            .describe(
+              'Optional: Filter actions by type (e.g., "all", "updateCard:idList", "addAttachmentToCard", "commentCard", "updateCard:name", "updateCard:desc", "updateCard:due", "addMemberToCard", "removeMemberFromCard", "addLabelToCard", "removeLabelFromCard")'
+            ),
+          limit: z
+            .number()
+            .optional()
+            .describe('Optional: Number of actions to fetch (default: all)'),
+        },
+      },
+      async ({ cardId, filter, limit }) => {
+        try {
+          const history = await this.trelloClient.getCardHistory(cardId, filter, limit);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(history, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
