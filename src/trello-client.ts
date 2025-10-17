@@ -968,9 +968,10 @@ export class TrelloClient {
     });
   }
 
-  async deleteLabel(boardId: string | undefined, labelId: string): Promise<void> {
+  async deleteLabel(boardId: string | undefined, labelId: string): Promise<boolean> {
     return this.handleRequest(async () => {
       await this.axiosInstance.delete(`/labels/${labelId}`);
+      return true;
     });
   }
 
