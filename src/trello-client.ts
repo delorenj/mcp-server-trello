@@ -594,20 +594,31 @@ export class TrelloClient {
   }
 
   // Checklist methods
-  async getChecklistItems(name: string, boardId?: string): Promise<CheckListItem[]> {
-    const effectiveBoardId = boardId || this.activeConfig.boardId;
-    if (!effectiveBoardId) {
-      throw new McpError(ErrorCode.InvalidParams, 'No board ID provided and no active board set');
-    }
+  async getChecklistItems(name: string, cardId?: string, boardId?: string): Promise<CheckListItem[]> {
+    let checklists: TrelloChecklist[];
 
-    // Get all checklists from the board directly
-    const response = await this.axiosInstance.get<TrelloChecklist[]>(
-      `/boards/${effectiveBoardId}/checklists`
-    );
+    if (cardId) {
+      // Get checklists from the specific card
+      const cardResponse = await this.axiosInstance.get<EnhancedTrelloCard>(`/cards/${cardId}`, {
+        params: { checklists: 'all' }
+      });
+      checklists = cardResponse.data.checklists || [];
+    } else {
+      // Fall back to board-level search
+      const effectiveBoardId = boardId || this.activeConfig.boardId;
+      if (!effectiveBoardId) {
+        throw new McpError(ErrorCode.InvalidParams, 'No board ID or card ID provided and no active board set');
+      }
+
+      const response = await this.axiosInstance.get<TrelloChecklist[]>(
+        `/boards/${effectiveBoardId}/checklists`
+      );
+      checklists = response.data;
+    }
 
     const allCheckItems: CheckListItem[] = [];
 
-    for (const checklist of response.data) {
+    for (const checklist of checklists) {
       if (checklist.name.toLowerCase() === name.toLowerCase()) {
         const convertedItems = checklist.checkItems.map(item =>
           this.convertToCheckListItem(item, checklist.id)
@@ -622,25 +633,36 @@ export class TrelloClient {
   async addChecklistItem(
     text: string,
     checkListName: string,
+    cardId?: string,
     boardId?: string
   ): Promise<CheckListItem> {
-    const effectiveBoardId = boardId || this.activeConfig.boardId;
-    if (!effectiveBoardId) {
-      throw new McpError(ErrorCode.InvalidParams, 'No board ID provided and no active board set');
-    }
+    let checklists: TrelloChecklist[];
 
-    // Find the checklist by name using the more efficient endpoint
-    const checklistsResponse = await this.axiosInstance.get<TrelloChecklist[]>(
-      `/boards/${effectiveBoardId}/checklists`
-    );
-    const checklists = checklistsResponse.data;
+    if (cardId) {
+      // Get checklists from the specific card
+      const cardResponse = await this.axiosInstance.get<EnhancedTrelloCard>(`/cards/${cardId}`, {
+        params: { checklists: 'all' }
+      });
+      checklists = cardResponse.data.checklists || [];
+    } else {
+      // Fall back to board-level search
+      const effectiveBoardId = boardId || this.activeConfig.boardId;
+      if (!effectiveBoardId) {
+        throw new McpError(ErrorCode.InvalidParams, 'No board ID or card ID provided and no active board set');
+      }
+
+      const checklistsResponse = await this.axiosInstance.get<TrelloChecklist[]>(
+        `/boards/${effectiveBoardId}/checklists`
+      );
+      checklists = checklistsResponse.data;
+    }
 
     const targetChecklist = checklists.find(
       checklist => checklist.name.toLowerCase() === checkListName.toLowerCase()
     );
 
     if (!targetChecklist) {
-      throw new McpError(ErrorCode.InvalidParams, `Checklist "${checkListName}" not found`);
+      throw new McpError(ErrorCode.InvalidParams, `Checklist "${checkListName}" not found${cardId ? ' on card' : ' on board'}`);
     }
 
     // Add the check item to the checklist
@@ -656,22 +678,34 @@ export class TrelloClient {
 
   async findChecklistItemsByDescription(
     description: string,
+    cardId?: string,
     boardId?: string
   ): Promise<CheckListItem[]> {
-    const effectiveBoardId = boardId || this.activeConfig.boardId;
-    if (!effectiveBoardId) {
-      throw new McpError(ErrorCode.InvalidParams, 'No board ID provided and no active board set');
-    }
+    let checklists: TrelloChecklist[];
 
-    // Get all checklists from the board directly
-    const response = await this.axiosInstance.get<TrelloChecklist[]>(
-      `/boards/${effectiveBoardId}/checklists`
-    );
+    if (cardId) {
+      // Get checklists from the specific card
+      const cardResponse = await this.axiosInstance.get<EnhancedTrelloCard>(`/cards/${cardId}`, {
+        params: { checklists: 'all' }
+      });
+      checklists = cardResponse.data.checklists || [];
+    } else {
+      // Fall back to board-level search
+      const effectiveBoardId = boardId || this.activeConfig.boardId;
+      if (!effectiveBoardId) {
+        throw new McpError(ErrorCode.InvalidParams, 'No board ID or card ID provided and no active board set');
+      }
+
+      const response = await this.axiosInstance.get<TrelloChecklist[]>(
+        `/boards/${effectiveBoardId}/checklists`
+      );
+      checklists = response.data;
+    }
 
     const matchingItems: CheckListItem[] = [];
     const searchTerm = description.toLowerCase();
 
-    for (const checklist of response.data) {
+    for (const checklist of checklists) {
       for (const checkItem of checklist.checkItems) {
         if (checkItem.name.toLowerCase().includes(searchTerm)) {
           matchingItems.push(this.convertToCheckListItem(checkItem, checklist.id));
@@ -682,8 +716,8 @@ export class TrelloClient {
     return matchingItems;
   }
 
-  async getAcceptanceCriteria(boardId?: string): Promise<CheckListItem[]> {
-    return this.getChecklistItems('Acceptance Criteria', boardId);
+  async getAcceptanceCriteria(cardId?: string, boardId?: string): Promise<CheckListItem[]> {
+    return this.getChecklistItems('Acceptance Criteria', cardId, boardId);
   }
 
   async createChecklist(name: string, cardId: string): Promise<TrelloChecklist> {
@@ -694,18 +728,29 @@ export class TrelloClient {
     return response.data;
   }
 
-  async getChecklistByName(name: string, boardId?: string): Promise<CheckList | null> {
-    const effectiveBoardId = boardId || this.activeConfig.boardId;
-    if (!effectiveBoardId) {
-      throw new McpError(ErrorCode.InvalidParams, 'No board ID provided and no active board set');
+  async getChecklistByName(name: string, cardId?: string, boardId?: string): Promise<CheckList | null> {
+    let checklists: TrelloChecklist[];
+
+    if (cardId) {
+      // Get checklists from the specific card
+      const cardResponse = await this.axiosInstance.get<EnhancedTrelloCard>(`/cards/${cardId}`, {
+        params: { checklists: 'all' }
+      });
+      checklists = cardResponse.data.checklists || [];
+    } else {
+      // Fall back to board-level search
+      const effectiveBoardId = boardId || this.activeConfig.boardId;
+      if (!effectiveBoardId) {
+        throw new McpError(ErrorCode.InvalidParams, 'No board ID or card ID provided and no active board set');
+      }
+
+      const response = await this.axiosInstance.get<TrelloChecklist[]>(
+        `/boards/${effectiveBoardId}/checklists`
+      );
+      checklists = response.data;
     }
 
-    // Get all checklists from the board directly
-    const response = await this.axiosInstance.get<TrelloChecklist[]>(
-      `/boards/${effectiveBoardId}/checklists`
-    );
-
-    const targetChecklist = response.data.find(
+    const targetChecklist = checklists.find(
       checklist => checklist.name.toLowerCase() === name.toLowerCase()
     );
 

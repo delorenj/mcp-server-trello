@@ -829,15 +829,19 @@ class TrelloServer {
         description: 'Get all items from a checklist by name',
         inputSchema: {
           name: z.string().describe('Name of the checklist to retrieve items from'),
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ name, boardId }) => {
+      async ({ name, cardId, boardId }) => {
         try {
-          const items = await this.trelloClient.getChecklistItems(name, boardId);
+          const items = await this.trelloClient.getChecklistItems(name, cardId, boardId);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
           };
@@ -855,15 +859,19 @@ class TrelloServer {
         inputSchema: {
           text: z.string().describe('Text content of the checklist item'),
           checkListName: z.string().describe('Name of the checklist to add the item to'),
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ text, checkListName, boardId }) => {
+      async ({ text, checkListName, cardId, boardId }) => {
         try {
-          const item = await this.trelloClient.addChecklistItem(text, checkListName, boardId);
+          const item = await this.trelloClient.addChecklistItem(text, checkListName, cardId, boardId);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(item, null, 2) }],
           };
@@ -880,16 +888,21 @@ class TrelloServer {
         description: 'Search for checklist items containing specific text in their description',
         inputSchema: {
           description: z.string().describe('Text to search for in checklist item descriptions'),
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ description, boardId }) => {
+      async ({ description, cardId, boardId }) => {
         try {
           const items = await this.trelloClient.findChecklistItemsByDescription(
             description,
+            cardId,
             boardId
           );
           return {
@@ -907,15 +920,19 @@ class TrelloServer {
         title: 'Get Acceptance Criteria',
         description: 'Get all items from the "Acceptance Criteria" checklist',
         inputSchema: {
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ boardId }) => {
+      async ({ cardId, boardId }) => {
         try {
-          const items = await this.trelloClient.getAcceptanceCriteria(boardId);
+          const items = await this.trelloClient.getAcceptanceCriteria(cardId, boardId);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
           };
@@ -932,15 +949,19 @@ class TrelloServer {
         description: 'Get a complete checklist with all its items and completion percentage',
         inputSchema: {
           name: z.string().describe('Name of the checklist to retrieve'),
+          cardId: z
+            .string()
+            .optional()
+            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
         },
       },
-      async ({ name, boardId }) => {
+      async ({ name, cardId, boardId }) => {
         try {
-          const checklist = await this.trelloClient.getChecklistByName(name, boardId);
+          const checklist = await this.trelloClient.getChecklistByName(name, cardId, boardId);
           if (!checklist) {
             return {
               content: [{ type: 'text' as const, text: `Checklist "${name}" not found` }],
