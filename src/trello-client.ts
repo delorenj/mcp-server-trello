@@ -876,6 +876,120 @@ export class TrelloClient {
       percentComplete,
     };
   }
+
+  // Member management methods
+  async getBoardMembers(boardId?: string): Promise<any[]> {
+    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/members`);
+      return response.data;
+    });
+  }
+
+  async assignMemberToCard(
+    boardId: string | undefined,
+    cardId: string,
+    memberId: string
+  ): Promise<any[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post(`/cards/${cardId}/idMembers`, {
+        value: memberId,
+      });
+      return response.data;
+    });
+  }
+
+  async removeMemberFromCard(
+    boardId: string | undefined,
+    cardId: string,
+    memberId: string
+  ): Promise<any[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.delete(`/cards/${cardId}/idMembers/${memberId}`);
+      return response.data;
+    });
+  }
+
+  // Label management methods
+  async getBoardLabels(boardId?: string): Promise<any[]> {
+    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/labels`);
+      return response.data;
+    });
+  }
+
+  async createLabel(
+    boardId: string | undefined,
+    name: string,
+    color?: string
+  ): Promise<any> {
+    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post(`/boards/${effectiveBoardId}/labels`, {
+        name,
+        color,
+      });
+      return response.data;
+    });
+  }
+
+  async updateLabel(
+    boardId: string | undefined,
+    labelId: string,
+    name?: string,
+    color?: string
+  ): Promise<any> {
+    return this.handleRequest(async () => {
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name;
+      if (color !== undefined) updateData.color = color;
+
+      const response = await this.axiosInstance.put(`/labels/${labelId}`, updateData);
+      return response.data;
+    });
+  }
+
+  async deleteLabel(boardId: string | undefined, labelId: string): Promise<void> {
+    return this.handleRequest(async () => {
+      await this.axiosInstance.delete(`/labels/${labelId}`);
+    });
+  }
+
+  // Card history method
+  async getCardHistory(
+    boardId: string | undefined,
+    cardId: string,
+    filter?: string,
+    limit?: number
+  ): Promise<any[]> {
+    return this.handleRequest(async () => {
+      const params: any = {};
+      if (filter) params.filter = filter;
+      if (limit) params.limit = limit;
+
+      const response = await this.axiosInstance.get(`/cards/${cardId}/actions`, { params });
+      return response.data;
+    });
+  }
 }
 
 const MIME_TYPES: Readonly<{ [key: string]: string }> = Object.freeze({

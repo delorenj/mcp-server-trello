@@ -936,6 +936,227 @@ class TrelloServer {
         }
       }
     );
+
+    // Member management tools
+    this.server.registerTool(
+      'get_board_members',
+      {
+        title: 'Get Board Members',
+        description: 'Get all members of a specific board',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+        },
+      },
+      async ({ boardId }) => {
+        try {
+          const members = await this.trelloClient.getBoardMembers(boardId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(members, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'assign_member_to_card',
+      {
+        title: 'Assign Member to Card',
+        description: 'Assign a member to a specific card',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+          cardId: z.string().describe('ID of the card to assign the member to'),
+          memberId: z.string().describe('ID of the member to assign to the card'),
+        },
+      },
+      async ({ boardId, cardId, memberId }) => {
+        try {
+          const members = await this.trelloClient.assignMemberToCard(boardId, cardId, memberId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(members, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'remove_member_from_card',
+      {
+        title: 'Remove Member from Card',
+        description: 'Remove a member from a specific card',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+          cardId: z.string().describe('ID of the card to remove the member from'),
+          memberId: z.string().describe('ID of the member to remove from the card'),
+        },
+      },
+      async ({ boardId, cardId, memberId }) => {
+        try {
+          const members = await this.trelloClient.removeMemberFromCard(boardId, cardId, memberId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(members, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Label management tools
+    this.server.registerTool(
+      'get_board_labels',
+      {
+        title: 'Get Board Labels',
+        description: 'Get all labels of a specific board',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+        },
+      },
+      async ({ boardId }) => {
+        try {
+          const labels = await this.trelloClient.getBoardLabels(boardId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(labels, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'create_label',
+      {
+        title: 'Create Label',
+        description: 'Create a new label on a board',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+          name: z.string().describe('Name of the label'),
+          color: z
+            .string()
+            .optional()
+            .describe(
+              'Color of the label (e.g., "red", "blue", "green", "yellow", "orange", "purple", "pink", "sky", "lime", "black", "null")'
+            ),
+        },
+      },
+      async ({ boardId, name, color }) => {
+        try {
+          const label = await this.trelloClient.createLabel(boardId, name, color);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(label, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'update_label',
+      {
+        title: 'Update Label',
+        description: 'Update an existing label',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+          labelId: z.string().describe('ID of the label to update'),
+          name: z.string().optional().describe('New name for the label'),
+          color: z.string().optional().describe('New color for the label'),
+        },
+      },
+      async ({ boardId, labelId, name, color }) => {
+        try {
+          const label = await this.trelloClient.updateLabel(boardId, labelId, name, color);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(label, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'delete_label',
+      {
+        title: 'Delete Label',
+        description: 'Delete a label from a board',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+          labelId: z.string().describe('ID of the label to delete'),
+        },
+      },
+      async ({ boardId, labelId }) => {
+        try {
+          await this.trelloClient.deleteLabel(boardId, labelId);
+          return {
+            content: [{ type: 'text' as const, text: 'Label deleted successfully' }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Card history tool
+    this.server.registerTool(
+      'get_card_history',
+      {
+        title: 'Get Card History',
+        description: 'Get the history/actions of a specific card',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+          cardId: z.string().describe('ID of the card to get history for'),
+          filter: z
+            .string()
+            .optional()
+            .describe(
+              'Optional: Filter actions by type (e.g., "all", "updateCard:idList", "addAttachmentToCard", "commentCard", "updateCard:name", "updateCard:desc", "updateCard:due", "addMemberToCard", "removeMemberFromCard", "addLabelToCard", "removeLabelFromCard")'
+            ),
+          limit: z
+            .number()
+            .optional()
+            .describe('Optional: Number of actions to fetch (default: all)'),
+        },
+      },
+      async ({ boardId, cardId, filter, limit }) => {
+        try {
+          const history = await this.trelloClient.getCardHistory(boardId, cardId, filter, limit);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(history, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
   }
 
   private setupHealthEndpoints() {
