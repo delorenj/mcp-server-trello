@@ -432,6 +432,50 @@ class TrelloServer {
       }
     );
 
+    // Attach image data to card (for base64/data URL uploads)
+    this.server.registerTool(
+      'attach_image_data_to_card',
+      {
+        title: 'Attach Image Data to Card',
+        description: 'Attach an image to a card from base64 data or data URL (for screenshot uploads)',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe(
+              'ID of the Trello board where the card exists (uses default if not provided)'
+            ),
+          cardId: z.string().describe('ID of the card to attach the image to'),
+          imageData: z.string().describe('Base64 encoded image data or data URL (e.g., data:image/png;base64,...)'),
+          name: z
+            .string()
+            .optional()
+            .describe('Optional name for the attachment'),
+          mimeType: z
+            .string()
+            .optional()
+            .default('image/png')
+            .describe('Optional MIME type (default: image/png)'),
+        },
+      },
+      async ({ boardId, cardId, imageData, name, mimeType }) => {
+        try {
+          const attachment = await this.trelloClient.attachImageDataToCard(
+            boardId,
+            cardId,
+            imageData,
+            name,
+            mimeType
+          );
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // List all boards
     this.server.registerTool(
       'list_boards',

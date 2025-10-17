@@ -398,6 +398,55 @@ export class TrelloClient {
     return this.attachFileToCard(boardId, cardId, imageUrl, name || 'Image Attachment', undefined);
   }
 
+  async attachImageDataToCard(
+    boardId: string | undefined,
+    cardId: string,
+    imageData: string,
+    name?: string,
+    mimeType?: string
+  ): Promise<TrelloAttachment> {
+    return this.handleRequest(async () => {
+      // Convert base64 or data URL to buffer
+      let buffer: Buffer;
+      let effectiveMimeType = mimeType || 'image/png';
+
+      if (imageData.startsWith('data:')) {
+        // Extract mime type and base64 data from data URL
+        const matches = imageData.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          effectiveMimeType = matches[1];
+          buffer = Buffer.from(matches[2], 'base64');
+        } else {
+          throw new McpError(ErrorCode.InvalidRequest, 'Invalid data URL format');
+        }
+      } else {
+        // Assume it's raw base64
+        buffer = Buffer.from(imageData, 'base64');
+      }
+
+      // Create form data for multipart upload
+      const form = new FormData();
+      const fileName = name || `screenshot-${Date.now()}.png`;
+
+      form.append('file', buffer, {
+        filename: fileName,
+        contentType: effectiveMimeType,
+      });
+
+      form.append('name', fileName);
+      form.append('mimeType', effectiveMimeType);
+
+      // Upload file directly to Trello
+      const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, form, {
+        headers: {
+          ...form.getHeaders(),
+        },
+      });
+
+      return response.data;
+    });
+  }
+
   async attachFileToCard(
     boardId: string | undefined,
     cardId: string,
