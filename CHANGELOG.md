@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2025-10-22
+
+### Added
+- **Build Script**: Added `publish` script to package.json for streamlined release workflow
+- The publish script now runs `bun run build && npm publish` to build and publish in one command
+
+### Changed
+- **Version Bump**: Updated version from 1.6.2 to 1.6.3
+
 ## [1.6.1] - 2025-10-16
 
 ### Fixed
