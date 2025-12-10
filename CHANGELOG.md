@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.6.3] - 2025-10-22
 
 ### Added
-- **Build Script**: Added `release` script to package.json for streamlined release workflow
+- **Release Script**: Added `release` script to package.json for streamlined release workflow
 - The release script now runs `bun run build && npm publish` to build and publish in one command
 - **GitHub Workflow**: Added automatic NPM publishing workflow that triggers on PR merge to main
 
