@@ -57,6 +57,6 @@
   },
   "scripts": {
     "build": "bunx tsc",
-    "publish": "bun run build && npm publish"
+    "release": "bun run build && npm publish"
   }
 }
