@@ -55,8 +55,8 @@ console.log(`Version bumped to ${newVersion}`);
 
 // Commit the change if git is available
 try {
-  execSync('git add package.json');
-  execSync(`git commit -m "Bump version to ${newVersion}"`);
+  execFileSync('git', ['add', 'package.json']);
+  execFileSync('git', ['commit', '-m', `Bump version to ${newVersion}`]);
   console.log(`Committed version bump to ${newVersion}`);
 } catch (error) {
   console.log('Git commit skipped or failed:', error.message);
