@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'fs';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 // Get the version bump type from command line arguments
 const args = process.argv.slice(2);
