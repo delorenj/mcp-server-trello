@@ -1,7 +1,7 @@
 {
   "name": "@delorenj/mcp-server-trello",
   "mcpName": "io.github.delorenj/mcp-server-trello",
-  "version": "1.6.4",
+  "version": "1.7.0",
   "description": "An MCP server for Trello boards, powered by Bun for maximum performance.",
   "keywords": [
     "mcp",
