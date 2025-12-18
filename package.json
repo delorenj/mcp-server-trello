@@ -46,7 +46,7 @@
     "build/**/*"
   ],
   "bin": {
-    "mcp-server-trello": "./build/index.js"
+    "mcp-server-trello": "build/index.js"
   },
   "type": "module",
   "engines": {
