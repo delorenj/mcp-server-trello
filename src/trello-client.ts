@@ -435,7 +435,19 @@ export class TrelloClient {
   async moveCard(boardId: string | undefined, cardId: string, listId: string): Promise<TrelloCard> {
     const effectiveBoardId = boardId || this.defaultBoardId;
     // Get current card to know the old list for cache invalidation
-    const currentCard = this.cache.get<TrelloCard>(CachePrefix.CARD, cardId);
+    let currentCard = this.cache.get<TrelloCard>(CachePrefix.CARD, cardId);
+    // If not in cache, fetch from API to ensure we can invalidate the old list
+    if (!currentCard) {
+      try {
+        const cardResponse = await this.axiosInstance.get(`/cards/${cardId}`, {
+          params: { fields: 'idList' }
+        });
+        currentCard = cardResponse.data;
+      } catch {
+        // If we can't fetch the card, proceed without old list info
+        currentCard = undefined;
+      }
+    }
     const oldListId = currentCard?.idList;
 
     return this.handleRequest(async () => {
@@ -695,7 +707,7 @@ export class TrelloClient {
   }
 
   // Update Comment
-  async updateCommentOnCard(commentId: string, text: string, cardId?: string): Promise<boolean> {
+  async updateCommentOnCard(commentId: string, text: string, cardId: string): Promise<boolean> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(
         `/actions/${commentId}?text=${encodeURIComponent(text)}`
@@ -703,24 +715,20 @@ export class TrelloClient {
       if (response.status !== 200) {
         return false;
       }
-      // Invalidate card and comment caches if cardId is provided
-      if (cardId) {
-        this.cache.del(CachePrefix.CARD, cardId);
-        this.cache.invalidateByPrefix(CachePrefix.CARD_COMMENTS, cardId);
-      }
+      // Invalidate card and comment caches
+      this.cache.del(CachePrefix.CARD, cardId);
+      this.cache.invalidateByPrefix(CachePrefix.CARD_COMMENTS, cardId);
       return true;
     });
   }
 
   // Delete Comment
-  async deleteCommentFromCard(commentId: string, cardId?: string): Promise<boolean> {
+  async deleteCommentFromCard(commentId: string, cardId: string): Promise<boolean> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.delete(`/actions/${commentId}`);
-      // Invalidate card and comment caches if cardId is provided
-      if (cardId) {
-        this.cache.del(CachePrefix.CARD, cardId);
-        this.cache.invalidateByPrefix(CachePrefix.CARD_COMMENTS, cardId);
-      }
+      // Invalidate card and comment caches
+      this.cache.del(CachePrefix.CARD, cardId);
+      this.cache.invalidateByPrefix(CachePrefix.CARD_COMMENTS, cardId);
       return response.status === 200;
     });
   }
@@ -1243,10 +1251,10 @@ export class TrelloClient {
       if (color !== undefined) updateData.color = color;
 
       const response = await this.axiosInstance.put(`/labels/${labelId}`, updateData);
-      // Invalidate labels cache for all boards (we don't know which board this label belongs to)
-      const activeBoardId = this.activeConfig.boardId || this.defaultBoardId;
-      if (activeBoardId) {
-        this.cache.invalidateLabels(activeBoardId);
+      // Invalidate labels cache for the board this label belongs to
+      const boardId = response.data.idBoard;
+      if (boardId) {
+        this.cache.invalidateLabels(boardId);
       }
       return response.data;
     });
@@ -1255,7 +1263,7 @@ export class TrelloClient {
   async deleteLabel(labelId: string): Promise<boolean> {
     return this.handleRequest(async () => {
       await this.axiosInstance.delete(`/labels/${labelId}`);
-      // Invalidate labels cache for all boards
+      // Invalidate labels cache for the active board (we can't know the label's board after deletion)
       const activeBoardId = this.activeConfig.boardId || this.defaultBoardId;
       if (activeBoardId) {
         this.cache.invalidateLabels(activeBoardId);
@@ -1274,8 +1282,8 @@ export class TrelloClient {
     const cached = this.cache.get<TrelloAction[]>(
       CachePrefix.CARD_HISTORY,
       cardId,
-      filter || 'all',
-      limit || 'default'
+      filter ?? 'all',
+      limit ?? 'default'
     );
     if (cached) {
       return cached;
@@ -1292,8 +1300,8 @@ export class TrelloClient {
         CachePrefix.CARD_HISTORY,
         response.data,
         cardId,
-        filter || 'all',
-        limit || 'default'
+        filter ?? 'all',
+        limit ?? 'default'
       );
       return response.data;
     });

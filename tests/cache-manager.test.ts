@@ -237,16 +237,24 @@ describe('TrelloCacheManager', () => {
       expect(config.lists).toBe(60 * 60);
     });
 
-    test('ignores invalid TTL values', () => {
+    test('ignores invalid TTL values (non-numeric and negative)', () => {
       process.env.TRELLO_CACHE_TTL_BOARDS = 'invalid';
       process.env.TRELLO_CACHE_TTL_CARDS = '-100';
-      process.env.TRELLO_CACHE_TTL_LISTS = '0';
+      process.env.TRELLO_CACHE_TTL_LISTS = '-1';
       const customCache = new TrelloCacheManager();
 
       const config = customCache.getTTLConfig();
-      expect(config.boards).toBe(6 * 60 * 60); // Default
-      expect(config.cards).toBe(2 * 60); // Default
-      expect(config.lists).toBe(60 * 60); // Default
+      expect(config.boards).toBe(6 * 60 * 60); // Default (non-numeric ignored)
+      expect(config.cards).toBe(2 * 60); // Default (negative ignored)
+      expect(config.lists).toBe(60 * 60); // Default (negative ignored)
+    });
+
+    test('accepts TTL=0 as valid (disables caching for that resource)', () => {
+      process.env.TRELLO_CACHE_TTL_ACTIVITIES = '0';
+      const customCache = new TrelloCacheManager();
+
+      const config = customCache.getTTLConfig();
+      expect(config.activities).toBe(0); // Zero is valid
     });
 
     test('returns a copy of TTL config (immutable)', () => {

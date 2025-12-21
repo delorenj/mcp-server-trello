@@ -138,7 +138,7 @@ export class TrelloCacheManager {
     const value = process.env[key];
     if (value) {
       const parsed = parseInt(value, 10);
-      if (!isNaN(parsed) && parsed > 0) {
+      if (!isNaN(parsed) && parsed >= 0) {
         return parsed;
       }
     }
