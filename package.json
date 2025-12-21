@@ -61,6 +61,8 @@
     "build:types": "tsc --emitDeclarationOnly || echo 'Warning: Type declarations generation failed, but build succeeded'",
     "build:prod": "npm run build",
     "dev": "bun --watch src/index.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
     "versionbump": "bun ./scripts/versionbump.js",
     "versionbump:patch": "bun run versionbump --patch",
     "versionbump:minor": "bun run versionbump --minor",
