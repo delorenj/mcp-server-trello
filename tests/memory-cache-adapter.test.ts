@@ -166,6 +166,26 @@ describe('MemoryCacheAdapter', () => {
       const stats = countAdapter.getStats();
       expect(stats.keys).toBe(3);
     });
+
+    it('should return same stats from getStatsAsync', async () => {
+      const asyncAdapter = new MemoryCacheAdapter({
+        defaultTTL: 60,
+        keyPrefix: 'async-stats-test',
+      });
+
+      await asyncAdapter.set('key1', 'value1');
+      await asyncAdapter.get('key1'); // hit
+      await asyncAdapter.get('miss'); // miss
+
+      const syncStats = asyncAdapter.getStats();
+      const asyncStats = await asyncAdapter.getStatsAsync();
+
+      expect(asyncStats).toEqual(syncStats);
+      expect(asyncStats.hits).toBe(1);
+      expect(asyncStats.misses).toBe(1);
+      expect(asyncStats.keys).toBe(1);
+      expect(asyncStats.connected).toBe(true);
+    });
   });
 
   describe('Flush Operations', () => {

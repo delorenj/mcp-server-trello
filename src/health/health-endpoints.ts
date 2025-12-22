@@ -142,7 +142,7 @@ export class TrelloHealthEndpoints {
   async getPerformanceHealth(): Promise<HealthEndpointResult> {
     try {
       const healthReport = await this.healthMonitor.getSystemHealth(false);
-      const performanceAnalysis = this.analyzePerformanceMetrics(healthReport);
+      const performanceAnalysis = await this.analyzePerformanceMetrics(healthReport);
 
       return {
         content: [
@@ -311,13 +311,13 @@ export class TrelloHealthEndpoints {
   /**
    * Analyze performance metrics in detail
    */
-  private analyzePerformanceMetrics(healthReport: SystemHealthReport) {
+  private async analyzePerformanceMetrics(healthReport: SystemHealthReport) {
     const metrics = healthReport.performance_metrics;
     const performanceGrade = this.calculatePerformanceGrade(metrics);
 
-    // Get cache statistics
+    // Get cache statistics (async for real-time Valkey stats)
     const cacheManager = getCacheManager();
-    const cacheStats = cacheManager.getStats();
+    const cacheStats = await cacheManager.getStatsAsync();
 
     return {
       status: this.getPerformanceStatus(performanceGrade),

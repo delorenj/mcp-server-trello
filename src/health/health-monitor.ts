@@ -422,7 +422,7 @@ export class TrelloHealthMonitor {
 
     try {
       const cacheManager = getCacheManager();
-      const stats = cacheManager.getStats();
+      const stats = await cacheManager.getStatsAsync();
       const duration = performance.now() - startTime;
 
       let status = HealthStatus.HEALTHY;

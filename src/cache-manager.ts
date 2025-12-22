@@ -415,10 +415,26 @@ export class TrelloCacheManager {
   }
 
   /**
-   * Get cache statistics
+   * Get cache statistics (sync - may not reflect real-time for external stores)
    */
   public getStats(): CacheStats {
     const adapterStats = this.adapter.getStats();
+    const totalRequests = adapterStats.hits + adapterStats.misses;
+    return {
+      hits: adapterStats.hits,
+      misses: adapterStats.misses,
+      keys: adapterStats.keys,
+      hitRate: totalRequests > 0 ? adapterStats.hits / totalRequests : 0,
+      storeType: this.storeType,
+      connected: adapterStats.connected,
+    };
+  }
+
+  /**
+   * Get cache statistics (async - fetches real-time stats from external stores like Valkey)
+   */
+  public async getStatsAsync(): Promise<CacheStats> {
+    const adapterStats = await this.adapter.getStatsAsync();
     const totalRequests = adapterStats.hits + adapterStats.misses;
     return {
       hits: adapterStats.hits,

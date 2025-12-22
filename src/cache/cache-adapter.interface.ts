@@ -81,9 +81,14 @@ export interface ICacheAdapter {
   flushAll(): Promise<void>;
 
   /**
-   * Get cache statistics
+   * Get cache statistics (sync - may not reflect real-time for external stores)
    */
   getStats(): CacheAdapterStats;
+
+  /**
+   * Get cache statistics (async - fetches real-time stats from external stores)
+   */
+  getStatsAsync(): Promise<CacheAdapterStats>;
 
   /**
    * Check if the adapter is connected and ready

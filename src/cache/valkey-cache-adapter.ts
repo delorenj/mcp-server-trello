@@ -255,6 +255,35 @@ export class ValkeyCacheAdapter implements ICacheAdapter {
     };
   }
 
+  async getStatsAsync(): Promise<CacheAdapterStats> {
+    if (!this.isReady() || !this.client) {
+      return this.getStats();
+    }
+
+    try {
+      // Query Valkey/Redis INFO for real stats
+      const info = await this.client.info('stats');
+      const keyspaceInfo = await this.client.info('keyspace');
+
+      // Parse keyspace_hits and keyspace_misses from INFO stats
+      const hitsMatch = info.match(/keyspace_hits:(\d+)/);
+      const missesMatch = info.match(/keyspace_misses:(\d+)/);
+
+      // Parse db0 keys count from INFO keyspace
+      const keysMatch = keyspaceInfo.match(/db0:keys=(\d+)/);
+
+      return {
+        hits: hitsMatch ? parseInt(hitsMatch[1], 10) : this.stats.hits,
+        misses: missesMatch ? parseInt(missesMatch[1], 10) : this.stats.misses,
+        keys: keysMatch ? parseInt(keysMatch[1], 10) : -1,
+        connected: this.ready,
+      };
+    } catch (error) {
+      console.error('[ValkeyCacheAdapter] Failed to get async stats:', error);
+      return this.getStats();
+    }
+  }
+
   isReady(): boolean {
     return this.ready && this.client !== null;
   }

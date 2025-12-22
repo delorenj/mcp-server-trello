@@ -52,6 +52,18 @@ describe('ValkeyCacheAdapter', () => {
       expect(stats.hits).toBe(0);
       expect(stats.misses).toBe(0);
     });
+
+    it('should return sync stats from getStatsAsync when not connected', async () => {
+      const adapter = new ValkeyCacheAdapter({
+        url: 'redis://localhost:6379',
+        defaultTTL: 120,
+      });
+
+      const stats = await adapter.getStatsAsync();
+      expect(stats.connected).toBe(false);
+      expect(stats.hits).toBe(0);
+      expect(stats.misses).toBe(0);
+    });
   });
 
   describe('Graceful Fallback (No Valkey Server)', () => {
@@ -369,5 +381,66 @@ describe('ValkeyCacheAdapter Integration', () => {
     expect(await adapter.get('key1')).toBeUndefined();
     expect(await adapter.get('key2')).toBeUndefined();
     expect(await adapter.get('key3')).toBeUndefined();
+  });
+
+  it('should return real-time stats via getStatsAsync', async () => {
+    if (!serverAvailable) {
+      console.log('Skipping: Valkey server not available');
+      return;
+    }
+
+    // Create fresh adapter for clean stats
+    const freshAdapter = new ValkeyCacheAdapter({
+      url: process.env.TRELLO_VALKEY_URL || 'redis://localhost:6379',
+      defaultTTL: 10,
+      keyPrefix: 'test-async-stats',
+    });
+    await freshAdapter.connect();
+    await freshAdapter.flushAll();
+
+    // Set a key and get it to generate hits
+    await freshAdapter.set('stat-key', 'value');
+    await freshAdapter.get('stat-key');
+    await freshAdapter.get('stat-key');
+    await freshAdapter.get('nonexistent');
+
+    // Get async stats (should query Valkey INFO)
+    const stats = await freshAdapter.getStatsAsync();
+    expect(stats.connected).toBe(true);
+    // Note: Valkey INFO stats are server-wide, so we just verify the structure
+    expect(typeof stats.hits).toBe('number');
+    expect(typeof stats.misses).toBe('number');
+    expect(stats.hits).toBeGreaterThanOrEqual(0);
+    expect(stats.misses).toBeGreaterThanOrEqual(0);
+
+    await freshAdapter.disconnect();
+  });
+
+  it('should return key count via getStatsAsync', async () => {
+    if (!serverAvailable) {
+      console.log('Skipping: Valkey server not available');
+      return;
+    }
+
+    // Create fresh adapter
+    const freshAdapter = new ValkeyCacheAdapter({
+      url: process.env.TRELLO_VALKEY_URL || 'redis://localhost:6379',
+      defaultTTL: 10,
+      keyPrefix: 'test-keycount',
+    });
+    await freshAdapter.connect();
+
+    // Set some keys
+    await freshAdapter.set('key1', 'value1');
+    await freshAdapter.set('key2', 'value2');
+    await freshAdapter.set('key3', 'value3');
+
+    // Get async stats
+    const stats = await freshAdapter.getStatsAsync();
+    // Keys count should be >= 3 (could be more from other tests)
+    expect(stats.keys).toBeGreaterThanOrEqual(3);
+
+    await freshAdapter.flushAll();
+    await freshAdapter.disconnect();
   });
 });

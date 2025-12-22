@@ -97,6 +97,10 @@ export class MemoryCacheAdapter implements ICacheAdapter {
     };
   }
 
+  async getStatsAsync(): Promise<CacheAdapterStats> {
+    return this.getStats();
+  }
+
   isReady(): boolean {
     return true; // Memory cache is always ready
   }
