@@ -80,9 +80,12 @@ export class TrelloClient {
   }
 
   /**
-   * Load saved configuration from disk
+   * Load saved configuration from disk and initialize cache
    */
   public async loadConfig(): Promise<void> {
+    // Initialize cache adapter (connects to Valkey if configured)
+    await this.cache.initialize();
+
     try {
       await fs.mkdir(CONFIG_DIR, { recursive: true });
       const data = await fs.readFile(CONFIG_FILE, 'utf8');
