@@ -190,7 +190,7 @@ export class TrelloClient {
    */
   async listBoards(): Promise<TrelloBoard[]> {
     // Check cache first
-    const cached = this.cache.get<TrelloBoard[]>(CachePrefix.BOARDS);
+    const cached = await this.cache.getAsync<TrelloBoard[]>(CachePrefix.BOARDS);
     if (cached) {
       return cached;
     }
@@ -198,7 +198,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/boards');
       // Cache the result
-      this.cache.set(CachePrefix.BOARDS, response.data);
+      await this.cache.setAsync(CachePrefix.BOARDS, response.data);
       return response.data;
     });
   }
@@ -208,7 +208,7 @@ export class TrelloClient {
    */
   async getBoardById(boardId: string): Promise<TrelloBoard> {
     // Check cache first
-    const cached = this.cache.get<TrelloBoard>(CachePrefix.BOARD, boardId);
+    const cached = await this.cache.getAsync<TrelloBoard>(CachePrefix.BOARD, boardId);
     if (cached) {
       return cached;
     }
@@ -216,7 +216,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/boards/${boardId}`);
       // Cache the result
-      this.cache.set(CachePrefix.BOARD, response.data, boardId);
+      await this.cache.setAsync(CachePrefix.BOARD, response.data, boardId);
       return response.data;
     });
   }
@@ -226,7 +226,7 @@ export class TrelloClient {
    */
   async listWorkspaces(): Promise<TrelloWorkspace[]> {
     // Check cache first
-    const cached = this.cache.get<TrelloWorkspace[]>(CachePrefix.WORKSPACES);
+    const cached = await this.cache.getAsync<TrelloWorkspace[]>(CachePrefix.WORKSPACES);
     if (cached) {
       return cached;
     }
@@ -234,7 +234,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/organizations');
       // Cache the result
-      this.cache.set(CachePrefix.WORKSPACES, response.data);
+      await this.cache.setAsync(CachePrefix.WORKSPACES, response.data);
       return response.data;
     });
   }
@@ -244,7 +244,7 @@ export class TrelloClient {
    */
   async getWorkspaceById(workspaceId: string): Promise<TrelloWorkspace> {
     // Check cache first
-    const cached = this.cache.get<TrelloWorkspace>(CachePrefix.WORKSPACE, workspaceId);
+    const cached = await this.cache.getAsync<TrelloWorkspace>(CachePrefix.WORKSPACE, workspaceId);
     if (cached) {
       return cached;
     }
@@ -252,7 +252,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/organizations/${workspaceId}`);
       // Cache the result
-      this.cache.set(CachePrefix.WORKSPACE, response.data, workspaceId);
+      await this.cache.setAsync(CachePrefix.WORKSPACE, response.data, workspaceId);
       return response.data;
     });
   }
@@ -262,7 +262,7 @@ export class TrelloClient {
    */
   async listBoardsInWorkspace(workspaceId: string): Promise<TrelloBoard[]> {
     // Check cache first
-    const cached = this.cache.get<TrelloBoard[]>(CachePrefix.BOARDS_IN_WORKSPACE, workspaceId);
+    const cached = await this.cache.getAsync<TrelloBoard[]>(CachePrefix.BOARDS_IN_WORKSPACE, workspaceId);
     if (cached) {
       return cached;
     }
@@ -270,7 +270,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/organizations/${workspaceId}/boards`);
       // Cache the result
-      this.cache.set(CachePrefix.BOARDS_IN_WORKSPACE, response.data, workspaceId);
+      await this.cache.setAsync(CachePrefix.BOARDS_IN_WORKSPACE, response.data, workspaceId);
       return response.data;
     });
   }
@@ -294,10 +294,10 @@ export class TrelloClient {
         defaultLists: params.defaultLists,
       });
       // Invalidate boards caches
-      this.cache.invalidateByPrefix(CachePrefix.BOARDS);
+      await this.cache.invalidateByPrefixAsync(CachePrefix.BOARDS);
       const workspaceId = params.idOrganization ?? this.activeConfig.workspaceId;
       if (workspaceId) {
-        this.cache.del(CachePrefix.BOARDS_IN_WORKSPACE, workspaceId);
+        await this.cache.delAsync(CachePrefix.BOARDS_IN_WORKSPACE, workspaceId);
       }
       return response.data;
     });
@@ -305,7 +305,7 @@ export class TrelloClient {
 
   async getCardsByList(boardId: string | undefined, listId: string): Promise<TrelloCard[]> {
     // Check cache first
-    const cached = this.cache.get<TrelloCard[]>(CachePrefix.CARDS_BY_LIST, listId);
+    const cached = await this.cache.getAsync<TrelloCard[]>(CachePrefix.CARDS_BY_LIST, listId);
     if (cached) {
       return cached;
     }
@@ -313,7 +313,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`);
       // Cache the result
-      this.cache.set(CachePrefix.CARDS_BY_LIST, response.data, listId);
+      await this.cache.setAsync(CachePrefix.CARDS_BY_LIST, response.data, listId);
       return response.data;
     });
   }
@@ -328,7 +328,7 @@ export class TrelloClient {
     }
 
     // Check cache first
-    const cached = this.cache.get<TrelloList[]>(CachePrefix.LISTS, effectiveBoardId);
+    const cached = await this.cache.getAsync<TrelloList[]>(CachePrefix.LISTS, effectiveBoardId);
     if (cached) {
       return cached;
     }
@@ -336,7 +336,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/lists`);
       // Cache the result
-      this.cache.set(CachePrefix.LISTS, response.data, effectiveBoardId);
+      await this.cache.setAsync(CachePrefix.LISTS, response.data, effectiveBoardId);
       return response.data;
     });
   }
@@ -351,7 +351,7 @@ export class TrelloClient {
     }
 
     // Check cache first (include limit in cache key as it affects results)
-    const cached = this.cache.get<TrelloAction[]>(CachePrefix.RECENT_ACTIVITY, effectiveBoardId, limit);
+    const cached = await this.cache.getAsync<TrelloAction[]>(CachePrefix.RECENT_ACTIVITY, effectiveBoardId, limit);
     if (cached) {
       return cached;
     }
@@ -361,7 +361,7 @@ export class TrelloClient {
         params: { limit },
       });
       // Cache the result
-      this.cache.set(CachePrefix.RECENT_ACTIVITY, response.data, effectiveBoardId, limit);
+      await this.cache.setAsync(CachePrefix.RECENT_ACTIVITY, response.data, effectiveBoardId, limit);
       return response.data;
     });
   }
@@ -387,11 +387,11 @@ export class TrelloClient {
         idLabels: params.labels,
       });
       // Invalidate relevant caches
-      this.cache.del(CachePrefix.CARDS_BY_LIST, params.listId);
-      this.cache.invalidateByPrefix(CachePrefix.MY_CARDS);
+      await this.cache.delAsync(CachePrefix.CARDS_BY_LIST, params.listId);
+      await this.cache.invalidateByPrefixAsync(CachePrefix.MY_CARDS);
       const effectiveBoardId = boardId || this.activeConfig.boardId;
       if (effectiveBoardId) {
-        this.cache.del(CachePrefix.RECENT_ACTIVITY, effectiveBoardId);
+        await this.cache.delAsync(CachePrefix.RECENT_ACTIVITY, effectiveBoardId);
       }
       return response.data;
     });
@@ -419,7 +419,7 @@ export class TrelloClient {
         idLabels: params.labels,
       });
       // Invalidate card cache
-      this.cache.invalidateCard(params.cardId, response.data.idList, boardId || this.activeConfig.boardId);
+      await this.cache.invalidateCardAsync(params.cardId, response.data.idList, boardId || this.activeConfig.boardId);
       return response.data;
     });
   }
@@ -430,7 +430,7 @@ export class TrelloClient {
         closed: true,
       });
       // Invalidate card cache
-      this.cache.invalidateCard(cardId, response.data.idList, boardId || this.activeConfig.boardId);
+      await this.cache.invalidateCardAsync(cardId, response.data.idList, boardId || this.activeConfig.boardId);
       return response.data;
     });
   }
@@ -438,7 +438,7 @@ export class TrelloClient {
   async moveCard(boardId: string | undefined, cardId: string, listId: string): Promise<TrelloCard> {
     const effectiveBoardId = boardId || this.defaultBoardId;
     // Get current card to know the old list for cache invalidation
-    let currentCard = this.cache.get<TrelloCard>(CachePrefix.CARD, cardId);
+    let currentCard = await this.cache.getAsync<TrelloCard>(CachePrefix.CARD, cardId);
     // If not in cache, fetch from API to ensure we can invalidate the old list
     if (!currentCard) {
       try {
@@ -459,10 +459,10 @@ export class TrelloClient {
         ...(effectiveBoardId && { idBoard: effectiveBoardId }),
       });
       // Invalidate card cache
-      this.cache.invalidateCard(cardId, listId, effectiveBoardId);
+      await this.cache.invalidateCardAsync(cardId, listId, effectiveBoardId);
       // Also invalidate old list if we know it
       if (oldListId && oldListId !== listId) {
-        this.cache.del(CachePrefix.CARDS_BY_LIST, oldListId);
+        await this.cache.delAsync(CachePrefix.CARDS_BY_LIST, oldListId);
       }
       return response.data;
     });
@@ -482,7 +482,7 @@ export class TrelloClient {
         idBoard: effectiveBoardId,
       });
       // Invalidate lists cache
-      this.cache.invalidateList(effectiveBoardId);
+      await this.cache.invalidateListAsync(effectiveBoardId);
       return response.data;
     });
   }
@@ -495,7 +495,7 @@ export class TrelloClient {
       });
       // Invalidate lists cache
       if (effectiveBoardId) {
-        this.cache.invalidateList(effectiveBoardId);
+        await this.cache.invalidateListAsync(effectiveBoardId);
       }
       return response.data;
     });
@@ -503,7 +503,7 @@ export class TrelloClient {
 
   async getMyCards(): Promise<TrelloCard[]> {
     // Check cache first
-    const cached = this.cache.get<TrelloCard[]>(CachePrefix.MY_CARDS);
+    const cached = await this.cache.getAsync<TrelloCard[]>(CachePrefix.MY_CARDS);
     if (cached) {
       return cached;
     }
@@ -511,7 +511,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/cards');
       // Cache the result
-      this.cache.set(CachePrefix.MY_CARDS, response.data);
+      await this.cache.setAsync(CachePrefix.MY_CARDS, response.data);
       return response.data;
     });
   }
@@ -572,7 +572,7 @@ export class TrelloClient {
       });
 
       // Invalidate card cache
-      this.cache.del(CachePrefix.CARD, cardId);
+      await this.cache.delAsync(CachePrefix.CARD, cardId);
 
       return response.data;
     });
@@ -625,7 +625,7 @@ export class TrelloClient {
         });
 
         // Invalidate card cache
-        this.cache.del(CachePrefix.CARD, cardId);
+        await this.cache.delAsync(CachePrefix.CARD, cardId);
 
         return response.data;
       } else {
@@ -644,7 +644,7 @@ export class TrelloClient {
         });
 
         // Invalidate card cache
-        this.cache.del(CachePrefix.CARD, cardId);
+        await this.cache.delAsync(CachePrefix.CARD, cardId);
 
         return response.data;
       }
@@ -657,7 +657,7 @@ export class TrelloClient {
   ): Promise<EnhancedTrelloCard | string> {
     // Check cache first (only for non-markdown requests to avoid caching formatted strings)
     if (!includeMarkdown) {
-      const cached = this.cache.get<EnhancedTrelloCard>(CachePrefix.CARD, cardId);
+      const cached = await this.cache.getAsync<EnhancedTrelloCard>(CachePrefix.CARD, cardId);
       if (cached) {
         return cached;
       }
@@ -686,7 +686,7 @@ export class TrelloClient {
       const cardData: EnhancedTrelloCard = response.data;
 
       // Cache the raw card data
-      this.cache.set(CachePrefix.CARD, cardData, cardId);
+      await this.cache.setAsync(CachePrefix.CARD, cardData, cardId);
 
       if (includeMarkdown) {
         return this.formatCardAsMarkdown(cardData);
@@ -703,8 +703,8 @@ export class TrelloClient {
         `cards/${cardId}/actions/comments?text=${encodeURIComponent(text)}`
       );
       // Invalidate card and comment caches
-      this.cache.del(CachePrefix.CARD, cardId);
-      this.cache.invalidateByPrefix(CachePrefix.CARD_COMMENTS, cardId);
+      await this.cache.delAsync(CachePrefix.CARD, cardId);
+      await this.cache.invalidateByPrefixAsync(CachePrefix.CARD_COMMENTS, cardId);
       return response.data;
     });
   }
@@ -719,8 +719,8 @@ export class TrelloClient {
         return false;
       }
       // Invalidate card and comment caches
-      this.cache.del(CachePrefix.CARD, cardId);
-      this.cache.invalidateByPrefix(CachePrefix.CARD_COMMENTS, cardId);
+      await this.cache.delAsync(CachePrefix.CARD, cardId);
+      await this.cache.invalidateByPrefixAsync(CachePrefix.CARD_COMMENTS, cardId);
       return true;
     });
   }
@@ -730,8 +730,8 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.delete(`/actions/${commentId}`);
       // Invalidate card and comment caches
-      this.cache.del(CachePrefix.CARD, cardId);
-      this.cache.invalidateByPrefix(CachePrefix.CARD_COMMENTS, cardId);
+      await this.cache.delAsync(CachePrefix.CARD, cardId);
+      await this.cache.invalidateByPrefixAsync(CachePrefix.CARD_COMMENTS, cardId);
       return response.status === 200;
     });
   }
@@ -739,7 +739,7 @@ export class TrelloClient {
   // Get Card Comments
   async getCardComments(cardId: string, limit: number = 100): Promise<TrelloComment[]> {
     // Check cache first
-    const cached = this.cache.get<TrelloComment[]>(CachePrefix.CARD_COMMENTS, cardId, limit);
+    const cached = await this.cache.getAsync<TrelloComment[]>(CachePrefix.CARD_COMMENTS, cardId, limit);
     if (cached) {
       return cached;
     }
@@ -752,7 +752,7 @@ export class TrelloClient {
         },
       });
       // Cache the result
-      this.cache.set(CachePrefix.CARD_COMMENTS, response.data, cardId, limit);
+      await this.cache.setAsync(CachePrefix.CARD_COMMENTS, response.data, cardId, limit);
       return response.data;
     });
   }
@@ -839,7 +839,7 @@ export class TrelloClient {
 
     // Invalidate checklist cache
     if (cardId) {
-      this.cache.invalidateChecklist(cardId, checkListName);
+      await this.cache.invalidateChecklistAsync(cardId, checkListName);
     }
 
     return this.convertToCheckListItem(itemResponse.data, targetChecklist.id);
@@ -895,7 +895,7 @@ export class TrelloClient {
     }
     const response = await this.axiosInstance.post<TrelloChecklist>(`/cards/${cardId}/checklists`, { name });
     // Invalidate card cache
-    this.cache.invalidateChecklist(cardId);
+    await this.cache.invalidateChecklistAsync(cardId);
     return response.data;
   }
 
@@ -948,7 +948,7 @@ export class TrelloClient {
         }
       );
       // Invalidate card cache
-      this.cache.invalidateChecklist(cardId);
+      await this.cache.invalidateChecklistAsync(cardId);
       return response.data;
     });
   }
@@ -1157,7 +1157,7 @@ export class TrelloClient {
     }
 
     // Check cache first
-    const cached = this.cache.get<TrelloMember[]>(CachePrefix.BOARD_MEMBERS, effectiveBoardId);
+    const cached = await this.cache.getAsync<TrelloMember[]>(CachePrefix.BOARD_MEMBERS, effectiveBoardId);
     if (cached) {
       return cached;
     }
@@ -1165,7 +1165,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/members`);
       // Cache the result
-      this.cache.set(CachePrefix.BOARD_MEMBERS, response.data, effectiveBoardId);
+      await this.cache.setAsync(CachePrefix.BOARD_MEMBERS, response.data, effectiveBoardId);
       return response.data;
     });
   }
@@ -1179,7 +1179,7 @@ export class TrelloClient {
         value: memberId,
       });
       // Invalidate card cache
-      this.cache.del(CachePrefix.CARD, cardId);
+      await this.cache.delAsync(CachePrefix.CARD, cardId);
       return response.data;
     });
   }
@@ -1191,7 +1191,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.delete(`/cards/${cardId}/idMembers/${memberId}`);
       // Invalidate card cache
-      this.cache.del(CachePrefix.CARD, cardId);
+      await this.cache.delAsync(CachePrefix.CARD, cardId);
       return response.data;
     });
   }
@@ -1207,7 +1207,7 @@ export class TrelloClient {
     }
 
     // Check cache first
-    const cached = this.cache.get<TrelloLabelDetails[]>(CachePrefix.BOARD_LABELS, effectiveBoardId);
+    const cached = await this.cache.getAsync<TrelloLabelDetails[]>(CachePrefix.BOARD_LABELS, effectiveBoardId);
     if (cached) {
       return cached;
     }
@@ -1215,7 +1215,7 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/labels`);
       // Cache the result
-      this.cache.set(CachePrefix.BOARD_LABELS, response.data, effectiveBoardId);
+      await this.cache.setAsync(CachePrefix.BOARD_LABELS, response.data, effectiveBoardId);
       return response.data;
     });
   }
@@ -1238,7 +1238,7 @@ export class TrelloClient {
         color,
       });
       // Invalidate labels cache
-      this.cache.invalidateLabels(effectiveBoardId);
+      await this.cache.invalidateLabelsAsync(effectiveBoardId);
       return response.data;
     });
   }
@@ -1257,7 +1257,7 @@ export class TrelloClient {
       // Invalidate labels cache for the board this label belongs to
       const boardId = response.data.idBoard;
       if (boardId) {
-        this.cache.invalidateLabels(boardId);
+        await this.cache.invalidateLabelsAsync(boardId);
       }
       return response.data;
     });
@@ -1269,7 +1269,7 @@ export class TrelloClient {
       // Invalidate labels cache for the active board (we can't know the label's board after deletion)
       const activeBoardId = this.activeConfig.boardId || this.defaultBoardId;
       if (activeBoardId) {
-        this.cache.invalidateLabels(activeBoardId);
+        await this.cache.invalidateLabelsAsync(activeBoardId);
       }
       return true;
     });
@@ -1282,7 +1282,7 @@ export class TrelloClient {
     limit?: number
   ): Promise<TrelloAction[]> {
     // Check cache first (include filter and limit in cache key)
-    const cached = this.cache.get<TrelloAction[]>(
+    const cached = await this.cache.getAsync<TrelloAction[]>(
       CachePrefix.CARD_HISTORY,
       cardId,
       filter ?? 'all',
@@ -1299,7 +1299,7 @@ export class TrelloClient {
 
       const response = await this.axiosInstance.get(`/cards/${cardId}/actions`, { params });
       // Cache the result
-      this.cache.set(
+      await this.cache.setAsync(
         CachePrefix.CARD_HISTORY,
         response.data,
         cardId,

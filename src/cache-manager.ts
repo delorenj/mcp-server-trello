@@ -354,12 +354,53 @@ export class TrelloCacheManager {
   }
 
   /**
+   * Invalidate cache entries related to a card update (async version)
+   */
+  public async invalidateCardAsync(cardId: string, listId?: string, boardId?: string): Promise<void> {
+    // Invalidate specific card
+    await Promise.all([
+      this.delAsync(CachePrefix.CARD, cardId),
+      this.delAsync(CachePrefix.CARD_COMMENTS, cardId),
+      this.delAsync(CachePrefix.CARD_HISTORY, cardId),
+    ]);
+
+    // Invalidate cards by list if we know the list
+    if (listId) {
+      await this.delAsync(CachePrefix.CARDS_BY_LIST, listId);
+    }
+
+    // Invalidate my cards (user's assigned cards)
+    await this.invalidateByPrefixAsync(CachePrefix.MY_CARDS);
+
+    // Invalidate checklists for this card
+    await Promise.all([
+      this.invalidateByPrefixAsync(CachePrefix.CHECKLIST, cardId),
+      this.invalidateByPrefixAsync(CachePrefix.CHECKLIST_ITEMS, cardId),
+    ]);
+
+    // Invalidate recent activity if we know the board
+    if (boardId) {
+      await this.delAsync(CachePrefix.RECENT_ACTIVITY, boardId);
+    }
+  }
+
+  /**
    * Invalidate cache entries related to a list change
    */
   public invalidateList(boardId: string): void {
     this.del(CachePrefix.LISTS, boardId);
     // Also invalidate recent activity
     this.del(CachePrefix.RECENT_ACTIVITY, boardId);
+  }
+
+  /**
+   * Invalidate cache entries related to a list change (async version)
+   */
+  public async invalidateListAsync(boardId: string): Promise<void> {
+    await Promise.all([
+      this.delAsync(CachePrefix.LISTS, boardId),
+      this.delAsync(CachePrefix.RECENT_ACTIVITY, boardId),
+    ]);
   }
 
   /**
@@ -373,6 +414,17 @@ export class TrelloCacheManager {
   }
 
   /**
+   * Invalidate cache entries related to board metadata changes (async version)
+   */
+  public async invalidateBoardAsync(boardId: string): Promise<void> {
+    await Promise.all([
+      this.delAsync(CachePrefix.BOARD, boardId),
+      this.invalidateByPrefixAsync(CachePrefix.BOARDS),
+      this.delAsync(CachePrefix.LISTS, boardId),
+    ]);
+  }
+
+  /**
    * Invalidate cache entries related to label changes
    */
   public invalidateLabels(boardId: string): void {
@@ -380,10 +432,24 @@ export class TrelloCacheManager {
   }
 
   /**
+   * Invalidate cache entries related to label changes (async version)
+   */
+  public async invalidateLabelsAsync(boardId: string): Promise<void> {
+    await this.delAsync(CachePrefix.BOARD_LABELS, boardId);
+  }
+
+  /**
    * Invalidate cache entries related to member changes
    */
   public invalidateMembers(boardId: string): void {
     this.del(CachePrefix.BOARD_MEMBERS, boardId);
+  }
+
+  /**
+   * Invalidate cache entries related to member changes (async version)
+   */
+  public async invalidateMembersAsync(boardId: string): Promise<void> {
+    await this.delAsync(CachePrefix.BOARD_MEMBERS, boardId);
   }
 
   /**
@@ -397,6 +463,24 @@ export class TrelloCacheManager {
     } else {
       this.invalidateByPrefix(CachePrefix.CHECKLIST, cardId);
       this.invalidateByPrefix(CachePrefix.CHECKLIST_ITEMS, cardId);
+    }
+  }
+
+  /**
+   * Invalidate cache entries related to checklist changes (async version)
+   */
+  public async invalidateChecklistAsync(cardId: string, checklistName?: string): Promise<void> {
+    await this.delAsync(CachePrefix.CARD, cardId);
+    if (checklistName) {
+      await Promise.all([
+        this.delAsync(CachePrefix.CHECKLIST, cardId, checklistName),
+        this.delAsync(CachePrefix.CHECKLIST_ITEMS, cardId, checklistName),
+      ]);
+    } else {
+      await Promise.all([
+        this.invalidateByPrefixAsync(CachePrefix.CHECKLIST, cardId),
+        this.invalidateByPrefixAsync(CachePrefix.CHECKLIST_ITEMS, cardId),
+      ]);
     }
   }
 
