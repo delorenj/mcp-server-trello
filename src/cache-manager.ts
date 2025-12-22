@@ -1,4 +1,5 @@
-import NodeCache from 'node-cache';
+import type { ICacheAdapter, CacheConfig } from './cache/index.js';
+import { loadCacheConfig, createCacheAdapter, createMemoryCacheAdapter } from './cache/index.js';
 
 /**
  * Cache TTL configuration (in seconds)
@@ -55,54 +56,62 @@ export interface CacheStats {
   misses: number;
   keys: number;
   hitRate: number;
+  storeType: string;
+  connected: boolean;
 }
 
 /**
  * TrelloCacheManager - Intelligent caching layer for Trello API calls
  *
  * Features:
- * - Separate cache instances for different TTLs
+ * - Pluggable cache adapters (memory, Valkey/Redis)
  * - Configurable via environment variables
  * - Write-through invalidation
  * - Cache statistics for monitoring
+ * - Graceful fallback if external cache unavailable
+ *
+ * Environment Variables:
+ * - TRELLO_CACHE_ENABLED: Enable/disable caching (default: true)
+ * - TRELLO_CACHE_STORE: 'memory' (default) or 'valkey'
+ * - TRELLO_VALKEY_URL: Valkey/Redis URL (default: redis://localhost:6379)
+ * - TRELLO_CACHE_TTL_*: Override default TTLs for each resource type
  */
 export class TrelloCacheManager {
-  private longCache: NodeCache;    // boards, labels, members, workspaces
-  private mediumCache: NodeCache;  // lists
-  private shortCache: NodeCache;   // cards, checklists, activities
-
-  private stats = {
-    hits: 0,
-    misses: 0,
-  };
-
+  private adapter: ICacheAdapter;
   private enabled: boolean;
   private ttlConfig: CacheTTLConfig;
+  private storeType: string;
+  private initialized: boolean = false;
 
-  constructor() {
+  constructor(adapter?: ICacheAdapter) {
     this.ttlConfig = this.loadTTLConfig();
-    this.enabled = this.isCacheEnabled();
+    const config = loadCacheConfig();
+    this.enabled = config.enabled;
+    this.storeType = config.store;
 
-    // Long-lived cache for stable data
-    this.longCache = new NodeCache({
-      stdTTL: this.ttlConfig.boards,
-      checkperiod: 600, // Check for expired keys every 10 minutes
-      useClones: true,
-    });
+    // Use provided adapter or create a memory adapter (sync initialization)
+    this.adapter = adapter || createMemoryCacheAdapter(this.ttlConfig.cards, config.keyPrefix);
+  }
 
-    // Medium-lived cache for lists
-    this.mediumCache = new NodeCache({
-      stdTTL: this.ttlConfig.lists,
-      checkperiod: 120, // Check every 2 minutes
-      useClones: true,
-    });
+  /**
+   * Initialize async cache adapter (call this for Valkey support)
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
 
-    // Short-lived cache for volatile data
-    this.shortCache = new NodeCache({
-      stdTTL: this.ttlConfig.cards,
-      checkperiod: 30, // Check every 30 seconds
-      useClones: true,
-    });
+    const config = loadCacheConfig();
+
+    if (config.store === 'valkey' && config.enabled) {
+      try {
+        this.adapter = await createCacheAdapter(config, this.ttlConfig.cards);
+        this.storeType = this.adapter.isReady() ? 'valkey' : 'memory';
+      } catch (error) {
+        console.warn('[TrelloCacheManager] Failed to initialize Valkey, using memory cache');
+        this.storeType = 'memory';
+      }
+    }
+
+    this.initialized = true;
   }
 
   /**
@@ -117,18 +126,6 @@ export class TrelloCacheManager {
       cards: this.parseEnvInt('TRELLO_CACHE_TTL_CARDS', DEFAULT_TTL.cards),
       activities: this.parseEnvInt('TRELLO_CACHE_TTL_ACTIVITIES', DEFAULT_TTL.activities),
     };
-  }
-
-  /**
-   * Check if caching is enabled via environment variable
-   */
-  private isCacheEnabled(): boolean {
-    const envValue = process.env.TRELLO_CACHE_ENABLED;
-    // Default to enabled, can be disabled with "false" or "0"
-    if (envValue === 'false' || envValue === '0') {
-      return false;
-    }
-    return true;
   }
 
   /**
@@ -151,41 +148,6 @@ export class TrelloCacheManager {
   public generateKey(prefix: CachePrefix, ...parts: (string | number | undefined)[]): string {
     const validParts = parts.filter(p => p !== undefined && p !== null);
     return `${prefix}:${validParts.join(':')}`;
-  }
-
-  /**
-   * Get the appropriate cache instance for a prefix
-   */
-  private getCacheForPrefix(prefix: CachePrefix): NodeCache {
-    switch (prefix) {
-      // Long-lived data
-      case CachePrefix.BOARDS:
-      case CachePrefix.BOARD:
-      case CachePrefix.WORKSPACES:
-      case CachePrefix.WORKSPACE:
-      case CachePrefix.BOARDS_IN_WORKSPACE:
-      case CachePrefix.BOARD_LABELS:
-      case CachePrefix.BOARD_MEMBERS:
-        return this.longCache;
-
-      // Medium-lived data
-      case CachePrefix.LISTS:
-        return this.mediumCache;
-
-      // Short-lived data
-      case CachePrefix.CARDS_BY_LIST:
-      case CachePrefix.CARD:
-      case CachePrefix.MY_CARDS:
-      case CachePrefix.CARD_COMMENTS:
-      case CachePrefix.CARD_HISTORY:
-      case CachePrefix.CHECKLIST:
-      case CachePrefix.CHECKLIST_ITEMS:
-      case CachePrefix.RECENT_ACTIVITY:
-        return this.shortCache;
-
-      default:
-        return this.shortCache;
-    }
   }
 
   /**
@@ -235,16 +197,37 @@ export class TrelloCacheManager {
     }
 
     const key = this.generateKey(prefix, ...keyParts);
-    const cache = this.getCacheForPrefix(prefix);
-    const value = cache.get<T>(key);
+    // Synchronous wrapper for backward compatibility
+    // The adapter's get is async but we need sync for existing code
+    let result: T | undefined;
 
-    if (value !== undefined) {
-      this.stats.hits++;
-    } else {
-      this.stats.misses++;
+    // For memory adapter, we can access synchronously via a hack
+    // For Valkey, this will return undefined (use getAsync instead)
+    const adapter = this.adapter as any;
+    if (adapter.cache && typeof adapter.cache.get === 'function') {
+      // Memory adapter - direct access
+      const prefixedKey = adapter.prefixKey ? adapter.prefixKey(key) : key;
+      result = adapter.cache.get(prefixedKey);
+      if (result !== undefined) {
+        adapter.stats.hits++;
+      } else {
+        adapter.stats.misses++;
+      }
     }
 
-    return value;
+    return result;
+  }
+
+  /**
+   * Get a value from cache (async version)
+   */
+  public async getAsync<T>(prefix: CachePrefix, ...keyParts: (string | number | undefined)[]): Promise<T | undefined> {
+    if (!this.enabled) {
+      return undefined;
+    }
+
+    const key = this.generateKey(prefix, ...keyParts);
+    return this.adapter.get<T>(key);
   }
 
   /**
@@ -256,10 +239,31 @@ export class TrelloCacheManager {
     }
 
     const key = this.generateKey(prefix, ...keyParts);
-    const cache = this.getCacheForPrefix(prefix);
     const ttl = this.getTTLForPrefix(prefix);
 
-    return cache.set(key, value, ttl);
+    // Synchronous wrapper for backward compatibility
+    const adapter = this.adapter as any;
+    if (adapter.cache && typeof adapter.cache.set === 'function') {
+      const prefixedKey = adapter.prefixKey ? adapter.prefixKey(key) : key;
+      return adapter.cache.set(prefixedKey, value, ttl);
+    }
+
+    // For async adapters, fire and forget
+    this.adapter.set(key, value, ttl).catch(() => {});
+    return true;
+  }
+
+  /**
+   * Set a value in cache (async version)
+   */
+  public async setAsync<T>(prefix: CachePrefix, value: T, ...keyParts: (string | number | undefined)[]): Promise<boolean> {
+    if (!this.enabled) {
+      return false;
+    }
+
+    const key = this.generateKey(prefix, ...keyParts);
+    const ttl = this.getTTLForPrefix(prefix);
+    return this.adapter.set(key, value, ttl);
   }
 
   /**
@@ -267,27 +271,59 @@ export class TrelloCacheManager {
    */
   public del(prefix: CachePrefix, ...keyParts: (string | number | undefined)[]): number {
     const key = this.generateKey(prefix, ...keyParts);
-    const cache = this.getCacheForPrefix(prefix);
-    return cache.del(key);
+
+    // Synchronous wrapper
+    const adapter = this.adapter as any;
+    if (adapter.cache && typeof adapter.cache.del === 'function') {
+      const prefixedKey = adapter.prefixKey ? adapter.prefixKey(key) : key;
+      return adapter.cache.del(prefixedKey);
+    }
+
+    // For async adapters, fire and forget
+    this.adapter.del(key).catch(() => {});
+    return 1;
+  }
+
+  /**
+   * Delete a specific key from cache (async version)
+   */
+  public async delAsync(prefix: CachePrefix, ...keyParts: (string | number | undefined)[]): Promise<number> {
+    const key = this.generateKey(prefix, ...keyParts);
+    return this.adapter.del(key);
   }
 
   /**
    * Invalidate all keys matching a prefix pattern
    */
   public invalidateByPrefix(prefix: CachePrefix, ...partialKeyParts: (string | number | undefined)[]): number {
-    const cache = this.getCacheForPrefix(prefix);
-    const pattern = this.generateKey(prefix, ...partialKeyParts);
-    const keys = cache.keys();
+    const pattern = this.generateKey(prefix, ...partialKeyParts) + '*';
 
-    let deletedCount = 0;
-    for (const key of keys) {
-      if (key.startsWith(pattern)) {
-        cache.del(key);
-        deletedCount++;
+    // Synchronous wrapper
+    const adapter = this.adapter as any;
+    if (adapter.cache && typeof adapter.cache.keys === 'function') {
+      const prefixedPattern = adapter.prefixKey ? adapter.prefixKey(pattern.replace('*', '')) : pattern.replace('*', '');
+      const keys = adapter.cache.keys();
+      let deletedCount = 0;
+      for (const key of keys) {
+        if (key.startsWith(prefixedPattern)) {
+          adapter.cache.del(key);
+          deletedCount++;
+        }
       }
+      return deletedCount;
     }
 
-    return deletedCount;
+    // For async adapters, fire and forget
+    this.adapter.deleteByPattern(pattern).catch(() => {});
+    return 0;
+  }
+
+  /**
+   * Invalidate all keys matching a prefix pattern (async version)
+   */
+  public async invalidateByPrefixAsync(prefix: CachePrefix, ...partialKeyParts: (string | number | undefined)[]): Promise<number> {
+    const pattern = this.generateKey(prefix, ...partialKeyParts) + '*';
+    return this.adapter.deleteByPattern(pattern);
   }
 
   /**
@@ -368,21 +404,29 @@ export class TrelloCacheManager {
    * Flush all caches
    */
   public flushAll(): void {
-    this.longCache.flushAll();
-    this.mediumCache.flushAll();
-    this.shortCache.flushAll();
+    this.adapter.flushAll().catch(() => {});
+  }
+
+  /**
+   * Flush all caches (async version)
+   */
+  public async flushAllAsync(): Promise<void> {
+    await this.adapter.flushAll();
   }
 
   /**
    * Get cache statistics
    */
   public getStats(): CacheStats {
-    const totalRequests = this.stats.hits + this.stats.misses;
+    const adapterStats = this.adapter.getStats();
+    const totalRequests = adapterStats.hits + adapterStats.misses;
     return {
-      hits: this.stats.hits,
-      misses: this.stats.misses,
-      keys: this.longCache.keys().length + this.mediumCache.keys().length + this.shortCache.keys().length,
-      hitRate: totalRequests > 0 ? this.stats.hits / totalRequests : 0,
+      hits: adapterStats.hits,
+      misses: adapterStats.misses,
+      keys: adapterStats.keys,
+      hitRate: totalRequests > 0 ? adapterStats.hits / totalRequests : 0,
+      storeType: this.storeType,
+      connected: adapterStats.connected,
     };
   }
 
@@ -399,6 +443,20 @@ export class TrelloCacheManager {
   public getTTLConfig(): CacheTTLConfig {
     return { ...this.ttlConfig };
   }
+
+  /**
+   * Get the underlying adapter (for testing)
+   */
+  public getAdapter(): ICacheAdapter {
+    return this.adapter;
+  }
+
+  /**
+   * Disconnect from cache backend
+   */
+  public async disconnect(): Promise<void> {
+    await this.adapter.disconnect();
+  }
 }
 
 // Singleton instance for the cache manager
@@ -412,6 +470,15 @@ export function getCacheManager(): TrelloCacheManager {
     cacheManagerInstance = new TrelloCacheManager();
   }
   return cacheManagerInstance;
+}
+
+/**
+ * Initialize the cache manager with async adapter (for Valkey support)
+ */
+export async function initializeCacheManager(): Promise<TrelloCacheManager> {
+  const manager = getCacheManager();
+  await manager.initialize();
+  return manager;
 }
 
 /**
