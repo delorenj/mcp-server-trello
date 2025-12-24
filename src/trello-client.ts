@@ -446,8 +446,9 @@ export class TrelloClient {
           params: { fields: 'idList' }
         });
         currentCard = cardResponse.data;
-      } catch {
-        // If we can't fetch the card, proceed without old list info
+      } catch (error) {
+        // If we can't fetch the card, log and proceed without old list info
+        console.warn(`[TrelloClient] Could not fetch card ${cardId} for cache invalidation:`, error);
         currentCard = undefined;
       }
     }

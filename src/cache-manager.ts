@@ -248,8 +248,10 @@ export class TrelloCacheManager {
       return adapter.cache.set(prefixedKey, value, ttl);
     }
 
-    // For async adapters, fire and forget
-    this.adapter.set(key, value, ttl).catch(() => {});
+    // For async adapters, fire and forget (but log errors for debugging)
+    this.adapter.set(key, value, ttl).catch(error => {
+      console.warn(`[TrelloCacheManager] Async set failed for key '${key}':`, error);
+    });
     return true;
   }
 
@@ -279,8 +281,10 @@ export class TrelloCacheManager {
       return adapter.cache.del(prefixedKey);
     }
 
-    // For async adapters, fire and forget
-    this.adapter.del(key).catch(() => {});
+    // For async adapters, fire and forget (but log errors for debugging)
+    this.adapter.del(key).catch(error => {
+      console.warn(`[TrelloCacheManager] Async del failed for key '${key}':`, error);
+    });
     return 1;
   }
 
@@ -313,8 +317,10 @@ export class TrelloCacheManager {
       return deletedCount;
     }
 
-    // For async adapters, fire and forget
-    this.adapter.deleteByPattern(pattern).catch(() => {});
+    // For async adapters, fire and forget (but log errors for debugging)
+    this.adapter.deleteByPattern(pattern).catch(error => {
+      console.warn(`[TrelloCacheManager] Async deleteByPattern failed for pattern '${pattern}':`, error);
+    });
     return 0;
   }
 
