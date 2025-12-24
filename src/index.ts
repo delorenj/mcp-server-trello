@@ -254,9 +254,9 @@ class TrelloServer {
           cardId: z.string().describe('ID of the card to move'),
           listId: z.string().describe('ID of the target list'),
           pos: z
-            .union([z.string(), z.number()])
-            .optional()
-            .describe('Position in target list: "top", "bottom", or a positive number'),
+          .union([z.enum(['top', 'bottom']), z.number().positive()])
+          .optional()
+          .describe('Position in target list: "top", "bottom", or a positive number'),
         },
       },
       async ({ boardId, cardId, listId, pos }) => {
