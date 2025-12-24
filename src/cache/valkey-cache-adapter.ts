@@ -180,14 +180,8 @@ export class ValkeyCacheAdapter implements ICacheAdapter {
         return 0;
       }
 
-      // Delete keys individually
-      let deletedCount = 0;
-      for (const key of keysToDelete) {
-        if (key && typeof key === 'string' && key.length > 0) {
-          deletedCount += await this.client.del(key);
-        }
-      }
-      return deletedCount;
+      // Delete all keys in a single batch command for efficiency
+      return await this.client.del(keysToDelete);
     } catch (error) {
       console.error('[ValkeyCacheAdapter] DeleteByPattern error:', error);
       return 0;
