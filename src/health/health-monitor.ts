@@ -2,6 +2,7 @@ import { TrelloClient } from '../trello-client.js';
 import { AxiosError } from 'axios';
 import { performance } from 'perf_hooks';
 import { RateLimiter } from '../types.js';
+import { getCacheManager, CacheStats } from '../cache-manager.js';
 
 /**
  * Health status levels for our magnificent Trello organism
@@ -96,6 +97,7 @@ export class TrelloHealthMonitor {
       this.checkBoardAccess(),
       this.checkRateLimitHealth(),
       this.checkPerformanceMetrics(),
+      this.checkCacheHealth(),
     ];
 
     if (detailed) {
@@ -408,6 +410,53 @@ export class TrelloHealthMonitor {
         duration,
         isConfigError ? HealthStatus.DEGRADED : HealthStatus.CRITICAL
       );
+    }
+  }
+
+  /**
+   * Check cache health and statistics
+   */
+  private async checkCacheHealth(): Promise<HealthCheck> {
+    const startTime = performance.now();
+    const checkName = 'cache_health';
+
+    try {
+      const cacheManager = getCacheManager();
+      const stats = await cacheManager.getStatsAsync();
+      const duration = performance.now() - startTime;
+
+      let status = HealthStatus.HEALTHY;
+      let message = `Cache operational (${stats.storeType})`;
+
+      // Check for potential issues
+      if (!cacheManager.isEnabled()) {
+        status = HealthStatus.DEGRADED;
+        message = 'Cache is disabled';
+      } else if (stats.storeType === 'valkey' && !stats.connected) {
+        status = HealthStatus.DEGRADED;
+        message = 'Valkey cache configured but not connected, using memory fallback';
+      }
+
+      return {
+        name: checkName,
+        status,
+        message,
+        duration_ms: Math.round(duration),
+        timestamp: new Date().toISOString(),
+        metadata: {
+          enabled: cacheManager.isEnabled(),
+          store_type: stats.storeType,
+          connected: stats.connected,
+          hits: stats.hits,
+          misses: stats.misses,
+          hit_rate_percent: Math.round(stats.hitRate * 100),
+          keys_cached: stats.keys,
+          ttl_config: cacheManager.getTTLConfig(),
+        },
+      };
+    } catch (error) {
+      const duration = performance.now() - startTime;
+      return this.createErrorCheck(checkName, error, duration, HealthStatus.DEGRADED);
     }
   }
 

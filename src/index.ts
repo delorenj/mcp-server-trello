@@ -733,13 +733,14 @@ class TrelloServer {
         title: 'Update Comment on Card',
         description: 'Update the given comment with the new text',
         inputSchema: {
+          cardId: z.string().describe('ID of the card containing the comment'),
           commentId: z.string().describe('ID of the comment to change'),
           text: z.string().describe('The new text of the comment'),
         },
       },
-      async ({ commentId, text }) => {
+      async ({ cardId, commentId, text }) => {
         try {
-          const success = await this.trelloClient.updateCommentOnCard(commentId, text);
+          const success = await this.trelloClient.updateCommentOnCard(commentId, text, cardId);
           return {
             content: [{ type: 'text' as const, text: success ? 'success' : 'failure' }],
           };
@@ -756,12 +757,13 @@ class TrelloServer {
         title: 'Delete Comment from Card',
         description: 'Delete a comment from a Trello card',
         inputSchema: {
+          cardId: z.string().describe('ID of the card containing the comment'),
           commentId: z.string().describe('ID of the comment to delete'),
         },
       },
-      async ({ commentId }) => {
+      async ({ cardId, commentId }) => {
         try {
-          const success = await this.trelloClient.deleteCommentFromCard(commentId);
+          const success = await this.trelloClient.deleteCommentFromCard(commentId, cardId);
           return {
             content: [{ type: 'text' as const, text: success ? 'success' : 'failure' }],
           };
