@@ -303,17 +303,26 @@ export class TrelloClient {
     });
   }
 
-  async getCardsByList(boardId: string | undefined, listId: string): Promise<TrelloCard[]> {
-    // Check cache first
-    const cached = await this.cache.getAsync<TrelloCard[]>(CachePrefix.CARDS_BY_LIST, listId);
-    if (cached) {
-      return cached;
+  async getCardsByList(
+    boardId: string | undefined,
+    listId: string,
+    fields?: string
+  ): Promise<TrelloCard[]> {
+    // Skip cache when using field filtering (partial data shouldn't be cached as full)
+    if (!fields) {
+      const cached = await this.cache.getAsync<TrelloCard[]>(CachePrefix.CARDS_BY_LIST, listId);
+      if (cached) {
+        return cached;
+      }
     }
 
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/lists/${listId}/cards`);
-      // Cache the result
-      await this.cache.setAsync(CachePrefix.CARDS_BY_LIST, response.data, listId);
+      const params = fields ? { fields } : {};
+      const response = await this.axiosInstance.get(`/lists/${listId}/cards`, { params });
+      // Only cache full results (no field filtering)
+      if (!fields) {
+        await this.cache.setAsync(CachePrefix.CARDS_BY_LIST, response.data, listId);
+      }
       return response.data;
     });
   }

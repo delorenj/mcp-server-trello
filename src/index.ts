@@ -61,18 +61,25 @@ class TrelloServer {
       'get_cards_by_list_id',
       {
         title: 'Get Cards by List ID',
-        description: 'Fetch cards from a specific Trello list on a specific board',
+        description:
+          'Fetch cards from a specific Trello list. Use the fields parameter to reduce response size (e.g., "id,name" returns only card IDs and names).',
         inputSchema: {
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
           listId: z.string().describe('ID of the Trello list'),
+          fields: z
+            .string()
+            .optional()
+            .describe(
+              'Comma-separated list of card fields to return (e.g., "id,name,desc"). If omitted, all fields are returned. Common fields: id, name, desc, idList, labels, due, closed'
+            ),
         },
       },
-      async ({ boardId, listId }) => {
+      async ({ boardId, listId, fields }) => {
         try {
-          const cards = await this.trelloClient.getCardsByList(boardId, listId);
+          const cards = await this.trelloClient.getCardsByList(boardId, listId, fields);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
           };
