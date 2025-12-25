@@ -247,3 +247,13 @@ export interface CheckListItem {
   complete: boolean;
   parentCheckListId: string;
 }
+
+export interface TrelloSearchResult {
+  cards: TrelloCard[];
+  options: {
+    terms: Array<{ text: string }>;
+    modifiers: unknown[];
+    modelTypes: string[];
+    partial: boolean;
+  };
+}

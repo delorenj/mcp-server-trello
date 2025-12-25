@@ -16,6 +16,7 @@ import {
   TrelloComment,
   TrelloMember,
   TrelloLabelDetails,
+  TrelloSearchResult,
 } from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
@@ -1308,6 +1309,41 @@ export class TrelloClient {
         limit ?? 'default'
       );
       return response.data;
+    });
+  }
+
+  /**
+   * Search for cards across boards using Trello's native search API
+   */
+  async searchCards(params: {
+    query: string;
+    boardId?: string;
+    fields?: string;
+    limit?: number;
+  }): Promise<TrelloCard[]> {
+    const { query, boardId, fields = 'id,name,idList,desc,url', limit = 10 } = params;
+
+    // Search results are not cached as they depend on the query
+    return this.handleRequest(async () => {
+      const searchParams: Record<string, string | number | boolean> = {
+        query,
+        modelTypes: 'cards',
+        card_fields: fields,
+        cards_limit: Math.min(limit, 1000), // Trello API max is 1000
+        partial: true, // Allow partial matches
+      };
+
+      // If boardId is provided, limit search to that board
+      const effectiveBoardId = boardId || this.activeConfig.boardId;
+      if (effectiveBoardId) {
+        searchParams.idBoards = effectiveBoardId;
+      }
+
+      const response = await this.axiosInstance.get<TrelloSearchResult>('/search', {
+        params: searchParams,
+      });
+
+      return response.data.cards;
     });
   }
 

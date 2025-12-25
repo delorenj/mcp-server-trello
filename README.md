@@ -381,6 +381,28 @@ Get a complete checklist with all items and completion percentage.
   - `items`: Array of `CheckListItem` objects
   - `percentComplete`: Completion percentage (0-100)
 
+### search\_cards 🆕
+
+Search for cards by name or content across boards using Trello's native search API. Much more efficient than iterating through lists.
+
+```typescript
+{
+  name: 'search_cards',
+  arguments: {
+    query: string,        // Search query (e.g., card name, keyword, or Trello search operators)
+    boardId?: string,     // Optional: Limit search to a specific board (uses active board if not provided)
+    fields?: string,      // Optional: Comma-separated list of card fields to return (default: id,name,idList,desc,url)
+    limit?: number        // Optional: Maximum number of results to return (default: 10, max: 1000)
+  }
+}
+```
+
+**Token Savings:** This tool can reduce token usage by ~98% compared to iterating through lists manually:
+- Old approach: `list_boards` (~3k) + `get_lists` (~500) + `get_cards_by_list_id` per list (100k+) = **~150k tokens**
+- With `search_cards`: Single API call = **~2k tokens**
+
+**Trello Search Operators:** You can use Trello's search operators like `@me` (assigned to me), `#label` (by label), `list:name` (by list name), `is:open` (open cards only), and more.
+
 ### get\_card 🆕
 
 Get comprehensive details of a specific Trello card with human-level parity.

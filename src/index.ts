@@ -1204,6 +1204,43 @@ class TrelloServer {
         }
       }
     );
+
+    // Search cards using Trello's native search API
+    this.server.registerTool(
+      'search_cards',
+      {
+        title: 'Search Cards',
+        description:
+          'Search for cards by name or content across boards using Trello\'s native search API. Much more efficient than iterating through lists.',
+        inputSchema: {
+          query: z.string().describe('Search query (e.g., card name, keyword, or Trello search operators)'),
+          boardId: z
+            .string()
+            .optional()
+            .describe('Optional: Limit search to a specific board (uses active board if not provided)'),
+          fields: z
+            .string()
+            .optional()
+            .default('id,name,idList,desc,url')
+            .describe('Optional: Comma-separated list of card fields to return (default: id,name,idList,desc,url)'),
+          limit: z
+            .number()
+            .optional()
+            .default(10)
+            .describe('Optional: Maximum number of results to return (default: 10, max: 1000)'),
+        },
+      },
+      async ({ query, boardId, fields, limit }) => {
+        try {
+          const cards = await this.trelloClient.searchCards({ query, boardId, fields, limit });
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
   }
 
   private setupHealthEndpoints() {
