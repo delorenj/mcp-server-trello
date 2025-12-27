@@ -183,7 +183,10 @@ class TrelloServer {
         inputSchema: {
           templateCardId: z.string().describe('ID of the template card to copy from'),
           listId: z.string().describe('ID of the list where the new card will be created'),
-          name: z.string().optional().describe('Optional name for the new card (defaults to template name)'),
+          name: z
+            .string()
+            .optional()
+            .describe('Optional name for the new card (defaults to template name)'),
           description: z.string().optional().describe('Optional description override'),
         },
       },
@@ -462,7 +465,8 @@ class TrelloServer {
       'attach_image_data_to_card',
       {
         title: 'Attach Image Data to Card',
-        description: 'Attach an image to a card from base64 data or data URL (for screenshot uploads)',
+        description:
+          'Attach an image to a card from base64 data or data URL (for screenshot uploads)',
         inputSchema: {
           boardId: z
             .string()
@@ -471,11 +475,10 @@ class TrelloServer {
               'ID of the Trello board where the card exists (uses default if not provided)'
             ),
           cardId: z.string().describe('ID of the card to attach the image to'),
-          imageData: z.string().describe('Base64 encoded image data or data URL (e.g., data:image/png;base64,...)'),
-          name: z
+          imageData: z
             .string()
-            .optional()
-            .describe('Optional name for the attachment'),
+            .describe('Base64 encoded image data or data URL (e.g., data:image/png;base64,...)'),
+          name: z.string().optional().describe('Optional name for the attachment'),
           mimeType: z
             .string()
             .optional()
@@ -857,7 +860,9 @@ class TrelloServer {
           cardId: z
             .string()
             .optional()
-            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
+            .describe(
+              'ID of the card to scope checklist search to (recommended to avoid ambiguity)'
+            ),
           boardId: z
             .string()
             .optional()
@@ -887,7 +892,9 @@ class TrelloServer {
           cardId: z
             .string()
             .optional()
-            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
+            .describe(
+              'ID of the card to scope checklist search to (recommended to avoid ambiguity)'
+            ),
           boardId: z
             .string()
             .optional()
@@ -896,7 +903,12 @@ class TrelloServer {
       },
       async ({ text, checkListName, cardId, boardId }) => {
         try {
-          const item = await this.trelloClient.addChecklistItem(text, checkListName, cardId, boardId);
+          const item = await this.trelloClient.addChecklistItem(
+            text,
+            checkListName,
+            cardId,
+            boardId
+          );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(item, null, 2) }],
           };
@@ -916,7 +928,9 @@ class TrelloServer {
           cardId: z
             .string()
             .optional()
-            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
+            .describe(
+              'ID of the card to scope checklist search to (recommended to avoid ambiguity)'
+            ),
           boardId: z
             .string()
             .optional()
@@ -948,7 +962,9 @@ class TrelloServer {
           cardId: z
             .string()
             .optional()
-            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
+            .describe(
+              'ID of the card to scope checklist search to (recommended to avoid ambiguity)'
+            ),
           boardId: z
             .string()
             .optional()
@@ -977,7 +993,9 @@ class TrelloServer {
           cardId: z
             .string()
             .optional()
-            .describe('ID of the card to scope checklist search to (recommended to avoid ambiguity)'),
+            .describe(
+              'ID of the card to scope checklist search to (recommended to avoid ambiguity)'
+            ),
           boardId: z
             .string()
             .optional()
@@ -1010,9 +1028,7 @@ class TrelloServer {
         inputSchema: {
           cardId: z.string().describe('ID of the card containing the checklist item'),
           checkItemId: z.string().describe('ID of the checklist item to update'),
-          state: z
-            .enum(['complete', 'incomplete'])
-            .describe('New state for the checklist item'),
+          state: z.enum(['complete', 'incomplete']).describe('New state for the checklist item'),
         },
       },
       async ({ cardId, checkItemId, state }) => {
