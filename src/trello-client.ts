@@ -28,6 +28,10 @@ import { fileURLToPath } from 'url';
 const CONFIG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.trello-mcp');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
+// Properties to copy when creating a card from a template
+const TEMPLATE_COPY_PROPERTIES =
+  'attachments,checklists,customFields,labels,members,start,stickers';
+
 type TrelloRequestReturn =
   | TrelloAction
   | TrelloAttachment
@@ -322,7 +326,7 @@ export class TrelloClient {
       const response = await this.axiosInstance.post('/cards', {
         idCardSource: params.templateCardId,
         idList: params.listId,
-        keepFromSource: 'attachments,checklists,customFields,labels,members,start,stickers',
+        keepFromSource: TEMPLATE_COPY_PROPERTIES,
         ...(params.name && { name: params.name }),
         ...(params.description && { desc: params.description }),
       });
