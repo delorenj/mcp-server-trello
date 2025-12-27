@@ -76,6 +76,18 @@ const mark_card_completeEval: EvalFunction = {
   },
 };
 
+const create_card_from_templateEval: EvalFunction = {
+  name: 'create_card_from_template Evaluation',
+  description: 'Evaluates the ability to create a new card from a template card',
+  run: async () => {
+    const result = await grade(
+      openai('gpt-4'),
+      "Please create a new card from the template card with ID 'template123' and add it to the list with ID 'list456'. Name the new card 'My New Task'."
+    );
+    return JSON.parse(result);
+  },
+};
+
 const config: EvalConfig = {
   model: openai('gpt-4'),
   evals: [
@@ -85,6 +97,7 @@ const config: EvalConfig = {
     add_card_to_listEval,
     update_card_detailsEval,
     mark_card_completeEval,
+    create_card_from_templateEval,
   ],
 };
 
@@ -97,4 +110,5 @@ export const evals = [
   add_card_to_listEval,
   update_card_detailsEval,
   mark_card_completeEval,
+  create_card_from_templateEval,
 ];

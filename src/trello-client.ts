@@ -312,6 +312,24 @@ export class TrelloClient {
     });
   }
 
+  async createCardFromTemplate(params: {
+    templateCardId: string;
+    listId: string;
+    name?: string;
+    description?: string;
+  }): Promise<TrelloCard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post('/cards', {
+        idCardSource: params.templateCardId,
+        idList: params.listId,
+        keepFromSource: 'attachments,checklists,customFields,labels,members,start,stickers',
+        ...(params.name && { name: params.name }),
+        ...(params.description && { desc: params.description }),
+      });
+      return response.data;
+    });
+  }
+
   async updateCard(
     boardId: string | undefined,
     params: {

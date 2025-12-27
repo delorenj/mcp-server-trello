@@ -174,6 +174,31 @@ class TrelloServer {
       }
     );
 
+    // Create card from template
+    this.server.registerTool(
+      'create_card_from_template',
+      {
+        title: 'Create Card from Template',
+        description: 'Create a new card based on an existing template card',
+        inputSchema: {
+          templateCardId: z.string().describe('ID of the template card to copy from'),
+          listId: z.string().describe('ID of the list where the new card will be created'),
+          name: z.string().optional().describe('Optional name for the new card (defaults to template name)'),
+          description: z.string().optional().describe('Optional description override'),
+        },
+      },
+      async args => {
+        try {
+          const card = await this.trelloClient.createCardFromTemplate(args);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Update card details
     this.server.registerTool(
       'update_card_details',
