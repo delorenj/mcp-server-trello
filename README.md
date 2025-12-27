@@ -466,6 +466,22 @@ Add a new card to a specified list.
 }
 ```
 
+### create\_card\_from\_template
+
+Create a new card based on an existing template card. Copies attachments, checklists, custom fields, labels, members, start date, and stickers from the template.
+
+```typescript
+{
+  name: 'create_card_from_template',
+  arguments: {
+    templateCardId: string, // ID of the template card to copy from
+    listId: string,         // ID of the list where the new card will be created
+    name?: string,          // Optional: Name for the new card (defaults to template name)
+    description?: string    // Optional: Description override
+  }
+}
+```
+
 ### update\_card\_details
 
 Update an existing card's details.
