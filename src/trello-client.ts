@@ -1083,6 +1083,41 @@ export class TrelloClient {
       return response.data;
     });
   }
+
+  /**
+   * Download an attachment from a card with authentication
+   * Returns base64-encoded data along with metadata
+   */
+  async downloadAttachment(
+    cardId: string,
+    attachmentId: string
+  ): Promise<{ data: string; mimeType: string; fileName: string }> {
+    return this.handleRequest(async () => {
+      // First get attachment metadata to get the filename
+      const metaResponse = await this.axiosInstance.get(
+        `/cards/${cardId}/attachments/${attachmentId}`
+      );
+      const attachment = metaResponse.data;
+
+      // Download using OAuth header (required for attachment downloads)
+      const downloadUrl = `https://api.trello.com/1/cards/${cardId}/attachments/${attachmentId}/download/${encodeURIComponent(attachment.fileName)}`;
+      const response = await axios.get(downloadUrl, {
+        headers: {
+          Authorization: `OAuth oauth_consumer_key="${this.config.apiKey}", oauth_token="${this.config.token}"`,
+        },
+        responseType: 'arraybuffer',
+      });
+
+      // Convert to base64
+      const base64Data = Buffer.from(response.data).toString('base64');
+
+      return {
+        data: base64Data,
+        mimeType: attachment.mimeType || 'application/octet-stream',
+        fileName: attachment.fileName || 'attachment',
+      };
+    });
+  }
 }
 
 const MIME_TYPES: Readonly<{ [key: string]: string }> = Object.freeze({
