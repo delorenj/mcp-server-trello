@@ -76,7 +76,7 @@ class TrelloServer {
       },
       async ({ boardId, listId, fields }) => {
         try {
-          const cards = await this.trelloClient.getCardsByList(boardId, listId, fields);
+          const cards = await this.trelloClient.getCardsByList(listId, fields);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
           };
