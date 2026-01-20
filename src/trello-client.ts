@@ -251,7 +251,7 @@ export class TrelloClient {
     });
   }
 
-  async getCardsByList(boardId: string | undefined, listId: string, fields?: string): Promise<TrelloCard[]> {
+  async getCardsByList(listId: string, fields?: string): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const params = fields ? { fields } : {};
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`, { params });
