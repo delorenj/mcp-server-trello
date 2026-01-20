@@ -74,7 +74,7 @@ class TrelloServer {
             .describe('Comma-separated list of fields to return (e.g., "name,idShort,labels,due,dueComplete"). Omit for all fields.'),
         },
       },
-      async ({ boardId, listId, fields }) => {
+      async ({ listId, fields }) => {
         try {
           const cards = await this.trelloClient.getCardsByList(listId, fields);
           return {
