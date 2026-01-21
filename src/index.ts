@@ -1202,6 +1202,57 @@ class TrelloServer {
         }
       }
     );
+
+    // Download attachment tool
+    this.server.registerTool(
+      'download_attachment',
+      {
+        title: 'Download Attachment',
+        description: 'Download an attachment from a card. Returns base64-encoded data that can be saved or viewed.',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card containing the attachment'),
+          attachmentId: z.string().describe('ID of the attachment to download'),
+        },
+      },
+      async ({ cardId, attachmentId }) => {
+        try {
+          const result = await this.trelloClient.downloadAttachment(cardId, attachmentId);
+
+          // For images, return as image content type for direct viewing
+          if (result.mimeType.startsWith('image/')) {
+            return {
+              content: [
+                {
+                  type: 'image' as const,
+                  data: result.data,
+                  mimeType: result.mimeType,
+                },
+                {
+                  type: 'text' as const,
+                  text: `Downloaded: ${result.fileName} (${result.mimeType})`,
+                },
+              ],
+            };
+          }
+
+          // For non-images, return base64 data as text
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: JSON.stringify({
+                  fileName: result.fileName,
+                  mimeType: result.mimeType,
+                  data: result.data,
+                }, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
   }
 
   private setupHealthEndpoints() {
