@@ -184,7 +184,9 @@ export class TrelloClient {
    */
   async listBoards(): Promise<TrelloBoard[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get('/members/me/boards');
+      const response = await this.axiosInstance.get('/members/me/boards', {
+        params: { fields: 'id,name,desc,closed,idOrganization,url,shortUrl' }
+      });
       return response.data;
     });
   }
@@ -194,7 +196,9 @@ export class TrelloClient {
    */
   async getBoardById(boardId: string): Promise<TrelloBoard> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${boardId}`);
+      const response = await this.axiosInstance.get(`/boards/${boardId}`, {
+        params: { fields: 'id,name,desc,closed,idOrganization,url,shortUrl' }
+      });
       return response.data;
     });
   }
@@ -224,7 +228,9 @@ export class TrelloClient {
    */
   async listBoardsInWorkspace(workspaceId: string): Promise<TrelloBoard[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/organizations/${workspaceId}/boards`);
+      const response = await this.axiosInstance.get(`/organizations/${workspaceId}/boards`, {
+        params: { fields: 'id,name,desc,closed,idOrganization,url,shortUrl' }
+      });
       return response.data;
     });
   }
@@ -253,7 +259,9 @@ export class TrelloClient {
 
   async getCardsByList(boardId: string | undefined, listId: string): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/lists/${listId}/cards`);
+      const response = await this.axiosInstance.get(`/lists/${listId}/cards`, {
+        params: { fields: 'id,name,desc,due,idList,idLabels,closed,url,dateLastActivity' }
+      });
       return response.data;
     });
   }
@@ -526,16 +534,12 @@ export class TrelloClient {
           checklists: 'all',
           checkItemStates: true,
           members: true,
-          membersVoted: true,
           labels: true,
           actions: 'commentCard',
           actions_limit: 100,
-          fields: 'all',
-          customFieldItems: true,
+          fields: 'id,name,desc,due,dueComplete,start,idList,idBoard,idLabels,closed,url,shortUrl,dateLastActivity,pos',
           list: true,
           board: true,
-          stickers: true,
-          pluginData: true,
         },
       });
 
