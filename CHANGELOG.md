@@ -5,11 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.7.0] - 2025-12-09
+## [1.7.0] - 2025-12-17
 
-### Changed
+### Added
+- **Checklist Management**: Comprehensive tools for checklist operations:
+  - `create_checklist(name, cardId)` - Create new checklists
+  - `get_checklist_items(name, cardId?)` - Get items from a checklist (enhanced with optional cardId)
+  - `add_checklist_item(text, checkListName, cardId?)` - Add items to checklists
+  - `find_checklist_items_by_description(description, cardId?)` - Search items by description
+  - `get_acceptance_criteria(cardId?)` - Get acceptance criteria checklist
+  - `get_checklist_by_name(name, cardId?)` - Get complete checklist with completion percentage
+  - `update_checklist_item(cardId, checkItemId, state)` - Mark items as complete/incomplete
 
-- **Release Preparation**: Version bump for PR #34 merge and 1.7.0 release
+- **Member Management**: Tools for managing board members:
+  - `get_board_members(boardId?)` - Get all board members
+  - `assign_member_to_card(cardId, memberId)` - Assign members to cards
+  - `remove_member_from_card(cardId, memberId)` - Remove members from cards
+
+- **Label Management**: Full suite of label management tools:
+  - `get_board_labels(boardId?)` - Get all board labels
+  - `create_label(boardId?, name, color?)` - Create new labels
+  - `update_label(labelId, name?, color?)` - Update existing labels
+  - `delete_label(labelId)` - Delete labels
+
+- **Attachment Enhancements**:
+  - `attach_image_data_to_card` - Attach images directly from base64/data URLs (useful for screenshots)
+
+- **Card History**:
+  - `get_card_history(cardId, filter?, limit?)` - Fetch history and actions for a specific card
 
 ## [1.6.3] - 2025-10-22
 
