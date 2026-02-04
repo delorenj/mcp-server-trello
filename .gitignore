@@ -64,3 +64,4 @@ mcp-publisher
 # MCP Registry tokens (secrets)
 .mcpregistry_github_token
 .mcpregistry_registry_token
+.claude-flow/metrics/**/*

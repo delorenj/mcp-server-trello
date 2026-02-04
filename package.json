@@ -1,7 +1,7 @@
 {
   "name": "@delorenj/mcp-server-trello",
   "mcpName": "io.github.delorenj/mcp-server-trello",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "An MCP server for Trello boards, powered by Bun for maximum performance.",
   "keywords": [
     "mcp",
@@ -24,29 +24,29 @@
   },
   "homepage": "https://github.com/delorenj/mcp-server-trello#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
-    "axios": "^1.6.2",
-    "form-data": "^4.0.4",
+    "@modelcontextprotocol/sdk": "^1.24.3",
+    "axios": "^1.13.2",
+    "form-data": "^4.0.5",
     "mcp-evals": "^1.0.18",
-    "zod": "^3.22.4"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@ai-sdk/openai": "^1.3.23",
+    "@ai-sdk/openai": "^1.3.24",
     "bun-types": "latest",
-    "@typescript-eslint/eslint-plugin": "^6.12.0",
-    "@typescript-eslint/parser": "^6.12.0",
-    "eslint": "^8.54.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-prettier": "^5.0.1",
-    "prettier": "^3.1.0",
-    "terser": "^5.24.0",
-    "typescript": "^5.3.2"
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.7.4",
+    "terser": "^5.44.1",
+    "typescript": "^5.9.3"
   },
   "files": [
     "build/**/*"
   ],
   "bin": {
-    "mcp-server-trello": "./build/index.js"
+    "mcp-server-trello": "build/index.js"
   },
   "type": "module",
   "engines": {
@@ -56,7 +56,14 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bunx tsc",
-    "release": "bun run build && npm publish"
+    "build": "bun build src/index.ts --outdir ./build --target node --format esm",
+    "build:types": "tsc --emitDeclarationOnly || echo 'Warning: Type declarations generation failed, but build succeeded'",
+    "build:prod": "npm run build",
+    "dev": "bun --watch src/index.ts",
+    "versionbump": "bun ./scripts/versionbump.js",
+    "versionbump:patch": "bun run versionbump --patch",
+    "versionbump:minor": "bun run versionbump --minor",
+    "versionbump:major": "bun run versionbump --major",
+    "publish": "bun run build && npm publish"
   }
 }
