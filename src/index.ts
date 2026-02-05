@@ -14,16 +14,23 @@ class TrelloServer {
     const apiKey = process.env.TRELLO_API_KEY;
     const token = process.env.TRELLO_TOKEN;
     const defaultBoardId = process.env.TRELLO_BOARD_ID;
+    const allowedWorkspacesEnv = process.env.TRELLO_ALLOWED_WORKSPACES;
 
     if (!apiKey || !token) {
       throw new Error('TRELLO_API_KEY and TRELLO_TOKEN environment variables are required');
     }
+
+    // Parse allowed workspaces from comma-separated string
+    const allowedWorkspaceIds = allowedWorkspacesEnv
+      ? allowedWorkspacesEnv.split(',').map(id => id.trim()).filter(id => id.length > 0)
+      : undefined;
 
     this.trelloClient = new TrelloClient({
       apiKey,
       token,
       defaultBoardId,
       boardId: defaultBoardId,
+      allowedWorkspaceIds,
     });
 
     this.healthEndpoints = new TrelloHealthEndpoints(this.trelloClient);
