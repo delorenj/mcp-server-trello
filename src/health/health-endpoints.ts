@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { TrelloHealthMonitor, SystemHealthReport, HealthStatus } from './health-monitor.js';
 import { TrelloClient } from '../trello-client.js';
+import { getCacheManager } from '../cache-manager.js';
 
 /**
  * Health endpoint result structure for MCP tools
@@ -141,7 +142,7 @@ export class TrelloHealthEndpoints {
   async getPerformanceHealth(): Promise<HealthEndpointResult> {
     try {
       const healthReport = await this.healthMonitor.getSystemHealth(false);
-      const performanceAnalysis = this.analyzePerformanceMetrics(healthReport);
+      const performanceAnalysis = await this.analyzePerformanceMetrics(healthReport);
 
       return {
         content: [
@@ -310,9 +311,13 @@ export class TrelloHealthEndpoints {
   /**
    * Analyze performance metrics in detail
    */
-  private analyzePerformanceMetrics(healthReport: SystemHealthReport) {
+  private async analyzePerformanceMetrics(healthReport: SystemHealthReport) {
     const metrics = healthReport.performance_metrics;
     const performanceGrade = this.calculatePerformanceGrade(metrics);
+
+    // Get cache statistics (async for real-time Valkey stats)
+    const cacheManager = getCacheManager();
+    const cacheStats = await cacheManager.getStatsAsync();
 
     return {
       status: this.getPerformanceStatus(performanceGrade),
@@ -323,14 +328,35 @@ export class TrelloHealthEndpoints {
         uptime_hours: Math.round((healthReport.uptime_ms / (1000 * 60 * 60)) * 100) / 100,
         health_check_duration_ms: healthReport.checks.reduce((sum, c) => sum + c.duration_ms, 0),
       },
+      cache: {
+        enabled: cacheManager.isEnabled(),
+        store_type: cacheStats.storeType,
+        connected: cacheStats.connected,
+        hits: cacheStats.hits,
+        misses: cacheStats.misses,
+        hit_rate_percent: Math.round(cacheStats.hitRate * 100),
+        keys_cached: cacheStats.keys,
+      },
       analysis: {
         response_time_rating: this.rateResponseTime(metrics.avg_response_time_ms),
         success_rate_rating: this.rateSuccessRate(metrics.success_rate_percent),
         throughput_rating: this.rateThroughput(metrics.requests_per_minute),
         rate_limit_health: this.rateRateLimitUtilization(metrics.rate_limit_utilization_percent),
+        cache_efficiency: this.rateCacheEfficiency(cacheStats.hitRate * 100),
       },
-      recommendations: this.generatePerformanceRecommendations(metrics),
+      recommendations: this.generatePerformanceRecommendations(metrics, cacheStats),
     };
+  }
+
+  /**
+   * Rate cache efficiency
+   */
+  private rateCacheEfficiency(hitRatePercent: number): string {
+    if (hitRatePercent >= 80) return 'excellent';
+    if (hitRatePercent >= 60) return 'good';
+    if (hitRatePercent >= 40) return 'fair';
+    if (hitRatePercent >= 20) return 'poor';
+    return 'cold_cache';
   }
 
   /**
@@ -414,7 +440,7 @@ export class TrelloHealthEndpoints {
   /**
    * Generate performance-specific recommendations
    */
-  private generatePerformanceRecommendations(metrics: any): string[] {
+  private generatePerformanceRecommendations(metrics: any, cacheStats?: any): string[] {
     const recommendations: string[] = [];
 
     if (metrics.avg_response_time_ms > 1000) {
@@ -437,6 +463,21 @@ export class TrelloHealthEndpoints {
 
     if (metrics.requests_per_minute < 1) {
       recommendations.push('Very low API usage - ensure the MCP server is being actively used');
+    }
+
+    // Cache-specific recommendations
+    if (cacheStats) {
+      const hitRate = cacheStats.hitRate * 100;
+      if (hitRate < 20 && cacheStats.hits + cacheStats.misses > 10) {
+        recommendations.push(
+          'Low cache hit rate - cache may be cold or TTL values too short'
+        );
+      }
+      if (!cacheStats.connected && cacheStats.storeType === 'valkey') {
+        recommendations.push(
+          'Valkey cache not connected - check TRELLO_VALKEY_URL configuration'
+        );
+      }
     }
 
     if (recommendations.length === 0) {
