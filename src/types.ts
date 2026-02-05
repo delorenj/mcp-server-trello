@@ -4,6 +4,8 @@ export interface TrelloConfig {
   defaultBoardId?: string;
   boardId?: string;
   workspaceId?: string;
+  /** Optional list of workspace IDs to restrict access to. If set, only these workspaces can be accessed. */
+  allowedWorkspaceIds?: string[];
 }
 
 export interface TrelloBoard {
