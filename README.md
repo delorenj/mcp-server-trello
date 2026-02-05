@@ -57,8 +57,8 @@ If you have [Bun](https://bun.sh) installed, using `bunx` is the fastest way to 
 {
   "mcpServers": {
     "trello": {
-      "command": "bunx",
-      "args": ["@delorenj/mcp-server-trello"],
+      "command": "bun",
+      "args": ["x", "@delorenj/mcp-server-trello"],
       "env": {
         "TRELLO_API_KEY": "your-api-key",
         "TRELLO_TOKEN": "your-token"
