@@ -47,12 +47,10 @@ export class TrelloClient {
   private rateLimiter;
   private defaultBoardId?: string;
   private activeConfig: TrelloConfig;
-  private allowedWorkspaceIds?: string[];
 
   constructor(private config: TrelloConfig) {
     this.defaultBoardId = config.defaultBoardId;
     this.activeConfig = { ...config };
-    this.allowedWorkspaceIds = config.allowedWorkspaceIds;
     // If boardId is provided in config, use it as the active board
     if (config.boardId && !this.activeConfig.boardId) {
       this.activeConfig.boardId = config.boardId;
@@ -137,7 +135,7 @@ export class TrelloClient {
    * Check if workspace restriction is enabled
    */
   get hasWorkspaceRestriction(): boolean {
-    return this.allowedWorkspaceIds !== undefined && this.allowedWorkspaceIds.length > 0;
+    return this.config.allowedWorkspaceIds !== undefined && this.config.allowedWorkspaceIds.length > 0;
   }
 
   /**
@@ -147,7 +145,7 @@ export class TrelloClient {
     if (!this.hasWorkspaceRestriction) {
       return true;
     }
-    return this.allowedWorkspaceIds!.includes(workspaceId);
+    return this.config.allowedWorkspaceIds!.includes(workspaceId);
   }
 
   /**
@@ -157,7 +155,7 @@ export class TrelloClient {
     if (!this.isWorkspaceAllowed(workspaceId)) {
       throw new McpError(
         ErrorCode.InvalidParams,
-        `Access to workspace '${workspaceId}' is not allowed. Allowed workspaces: ${this.allowedWorkspaceIds!.join(', ')}`
+        `Access to workspace '${workspaceId}' is not allowed. Allowed workspaces: ${this.config.allowedWorkspaceIds!.join(', ')}`
       );
     }
   }
@@ -225,7 +223,7 @@ export class TrelloClient {
 
       // Filter by allowed workspaces if restriction is enabled
       if (this.hasWorkspaceRestriction) {
-        return boards.filter(board => this.isWorkspaceAllowed(board.idOrganization));
+        return boards.filter(board => board.idOrganization && this.isWorkspaceAllowed(board.idOrganization));
       }
       return boards;
     });
@@ -296,8 +294,14 @@ export class TrelloClient {
     // Determine the target workspace
     const targetWorkspace = params.idOrganization ?? this.activeConfig.workspaceId;
 
-    // Validate workspace access if a workspace is specified and restrictions are enabled
-    if (targetWorkspace && this.hasWorkspaceRestriction) {
+    // When workspace restrictions are enabled, require a valid workspace
+    if (this.hasWorkspaceRestriction) {
+      if (!targetWorkspace) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Workspace restrictions are enabled but no workspace was specified. Provide idOrganization or set an active workspace. Allowed workspaces: ${this.config.allowedWorkspaceIds!.join(', ')}`
+        );
+      }
       this.validateWorkspaceAccess(targetWorkspace);
     }
 

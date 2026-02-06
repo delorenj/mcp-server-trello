@@ -252,7 +252,7 @@ When `TRELLO_ALLOWED_WORKSPACES` is set:
 Example configuration:
 ```bash
 # Only allow access to two specific workspaces
-TRELLO_ALLOWED_WORKSPACES=697c549ce04dc460af133a75,5f8a3b2c1d4e5f6g7h8i9j0k
+TRELLO_ALLOWED_WORKSPACES=697c549ce04dc460af133a75,5f8a3b2c1d4e5f6a7b8c9d0e
 ```
 
 If `TRELLO_ALLOWED_WORKSPACES` is not set or empty, all workspaces the token has access to will be available (default behaviour).
