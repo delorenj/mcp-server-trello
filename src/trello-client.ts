@@ -132,6 +132,35 @@ export class TrelloClient {
   }
 
   /**
+   * Check if workspace restriction is enabled
+   */
+  get hasWorkspaceRestriction(): boolean {
+    return this.config.allowedWorkspaceIds !== undefined && this.config.allowedWorkspaceIds.length > 0;
+  }
+
+  /**
+   * Check if a workspace ID is in the allowed list (or if no restriction is set)
+   */
+  isWorkspaceAllowed(workspaceId: string): boolean {
+    if (!this.hasWorkspaceRestriction) {
+      return true;
+    }
+    return this.config.allowedWorkspaceIds!.includes(workspaceId);
+  }
+
+  /**
+   * Validate workspace access, throwing an error if restricted
+   */
+  private validateWorkspaceAccess(workspaceId: string): void {
+    if (!this.isWorkspaceAllowed(workspaceId)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Access to workspace '${workspaceId}' is not allowed. Allowed workspaces: ${this.config.allowedWorkspaceIds!.join(', ')}`
+      );
+    }
+  }
+
+  /**
    * Set the active board
    */
   async setActiveBoard(boardId: string): Promise<TrelloBoard> {
@@ -144,8 +173,12 @@ export class TrelloClient {
 
   /**
    * Set the active workspace
+   * Validates against allowedWorkspaceIds if configured
    */
   async setActiveWorkspace(workspaceId: string): Promise<TrelloWorkspace> {
+    // Validate workspace access before proceeding
+    this.validateWorkspaceAccess(workspaceId);
+
     // Verify the workspace exists
     const workspace = await this.getWorkspaceById(workspaceId);
     this.activeConfig.workspaceId = workspaceId;
@@ -181,11 +214,18 @@ export class TrelloClient {
 
   /**
    * List all boards the user has access to
+   * If allowedWorkspaceIds is configured, only returns boards from allowed workspaces
    */
   async listBoards(): Promise<TrelloBoard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/boards');
-      return response.data;
+      const boards: TrelloBoard[] = response.data;
+
+      // Filter by allowed workspaces if restriction is enabled
+      if (this.hasWorkspaceRestriction) {
+        return boards.filter(board => board.idOrganization && this.isWorkspaceAllowed(board.idOrganization));
+      }
+      return boards;
     });
   }
 
@@ -201,11 +241,18 @@ export class TrelloClient {
 
   /**
    * List all workspaces the user has access to
+   * If allowedWorkspaceIds is configured, only returns workspaces in that list
    */
   async listWorkspaces(): Promise<TrelloWorkspace[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/organizations');
-      return response.data;
+      const workspaces: TrelloWorkspace[] = response.data;
+
+      // Filter by allowed workspaces if restriction is enabled
+      if (this.hasWorkspaceRestriction) {
+        return workspaces.filter(ws => this.isWorkspaceAllowed(ws.id));
+      }
+      return workspaces;
     });
   }
 
@@ -221,8 +268,12 @@ export class TrelloClient {
 
   /**
    * List boards in a specific workspace
+   * Validates against allowedWorkspaceIds if configured
    */
   async listBoardsInWorkspace(workspaceId: string): Promise<TrelloBoard[]> {
+    // Validate workspace access before proceeding
+    this.validateWorkspaceAccess(workspaceId);
+
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/organizations/${workspaceId}/boards`);
       return response.data;
@@ -231,6 +282,7 @@ export class TrelloClient {
 
   /**
    * Create a new board
+   * Validates target workspace against allowedWorkspaceIds if configured
    */
   async createBoard(params: {
     name: string;
@@ -239,11 +291,25 @@ export class TrelloClient {
     defaultLabels?: boolean;
     defaultLists?: boolean;
   }): Promise<TrelloBoard> {
+    // Determine the target workspace
+    const targetWorkspace = params.idOrganization ?? this.activeConfig.workspaceId;
+
+    // When workspace restrictions are enabled, require a valid workspace
+    if (this.hasWorkspaceRestriction) {
+      if (!targetWorkspace) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Workspace restrictions are enabled but no workspace was specified. Provide idOrganization or set an active workspace. Allowed workspaces: ${this.config.allowedWorkspaceIds!.join(', ')}`
+        );
+      }
+      this.validateWorkspaceAccess(targetWorkspace);
+    }
+
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.post('/boards', {
         name: params.name,
         desc: params.desc,
-        idOrganization: params.idOrganization ?? this.activeConfig.workspaceId,
+        idOrganization: targetWorkspace,
         defaultLabels: params.defaultLabels,
         defaultLists: params.defaultLists,
       });
