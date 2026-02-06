@@ -651,7 +651,8 @@ class TrelloServer {
       'list_workspaces',
       {
         title: 'List Workspaces',
-        description: 'List all workspaces the user has access to',
+        description:
+          'List workspaces the user has access to. If TRELLO_ALLOWED_WORKSPACES is configured, only allowed workspaces are returned.',
         inputSchema: {},
       },
       async () => {
