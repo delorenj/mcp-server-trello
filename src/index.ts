@@ -319,6 +319,55 @@ class TrelloServer {
       }
     );
 
+    // Update a list
+    this.server.registerTool(
+      'update_list',
+      {
+        title: 'Update List',
+        description: "Update a list's name, position, or closed state on a specific board",
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+          listId: z.string().describe('ID of the Trello list to update'),
+          name: z.string().optional().describe('New name for the list'),
+          pos: z
+            .union([z.number(), z.enum(['top', 'bottom'])])
+            .optional()
+            .describe('New position: a positive number, "top", or "bottom"'),
+          closed: z.boolean().optional().describe('Whether to close (archive) the list'),
+          subscribed: z
+            .boolean()
+            .optional()
+            .describe('Whether the authenticated user is subscribed to the list'),
+          idBoard: z.string().optional().describe('ID of a board to move the list to'),
+        },
+      },
+      async ({ listId, name, pos, closed, subscribed, idBoard }) => {
+        try {
+          const params: {
+            name?: string;
+            pos?: number | 'top' | 'bottom';
+            closed?: boolean;
+            subscribed?: boolean;
+            idBoard?: string;
+          } = {};
+          if (name !== undefined) params.name = name;
+          if (pos !== undefined) params.pos = pos;
+          if (closed !== undefined) params.closed = closed;
+          if (subscribed !== undefined) params.subscribed = subscribed;
+          if (idBoard !== undefined) params.idBoard = idBoard;
+          const list = await this.trelloClient.updateList(listId, params);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Get cards assigned to current user
     this.server.registerTool(
       'get_my_cards',
