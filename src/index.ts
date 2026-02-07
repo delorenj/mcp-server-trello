@@ -343,6 +343,52 @@ class TrelloServer {
       }
     );
 
+    // Update a list
+    this.server.registerTool(
+      'update_list',
+      {
+        title: 'Update List',
+        description:
+          'Update a list name, archive state, subscription state, or board. Use update_list_position for moving a list within a board.',
+        inputSchema: {
+          listId: z.string().describe('ID of the Trello list to update'),
+          name: z.string().optional().describe('New name for the list'),
+          closed: z.boolean().optional().describe('Whether to close (archive) the list'),
+          subscribed: z
+            .boolean()
+            .optional()
+            .describe('Whether the authenticated user is subscribed to the list'),
+          idBoard: z.string().optional().describe('ID of a board to move the list to'),
+        },
+      },
+      async ({ listId, name, closed, subscribed, idBoard }) => {
+        try {
+          const params: {
+            name?: string;
+            closed?: boolean;
+            subscribed?: boolean;
+            idBoard?: string;
+          } = {};
+          if (name !== undefined) params.name = name;
+          if (closed !== undefined) params.closed = closed;
+          if (subscribed !== undefined) params.subscribed = subscribed;
+          if (idBoard !== undefined) params.idBoard = idBoard;
+          if (Object.keys(params).length === 0) {
+            throw new McpError(
+              ErrorCode.InvalidParams,
+              'At least one of name, closed, subscribed, or idBoard must be provided'
+            );
+          }
+          const list = await this.trelloClient.updateList(listId, params);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Update list position
     this.server.registerTool(
       'update_list_position',
@@ -371,7 +417,8 @@ class TrelloServer {
       },
       async ({ listId, position }) => {
         try {
-          const parsedPosition = position === 'top' || position === 'bottom' ? position : Number(position);
+          const parsedPosition =
+            position === 'top' || position === 'bottom' ? position : Number(position);
           const list = await this.trelloClient.updateListPosition(listId, parsedPosition);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
