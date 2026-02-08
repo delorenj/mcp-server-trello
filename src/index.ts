@@ -324,12 +324,8 @@ class TrelloServer {
       'update_list',
       {
         title: 'Update List',
-        description: "Update a list's name, position, or closed state on a specific board",
+        description: "Update a list's name, position, or other properties",
         inputSchema: {
-          boardId: z
-            .string()
-            .optional()
-            .describe('ID of the Trello board (uses default if not provided)'),
           listId: z.string().describe('ID of the Trello list to update'),
           name: z.string().optional().describe('New name for the list'),
           pos: z
@@ -346,19 +342,7 @@ class TrelloServer {
       },
       async ({ listId, name, pos, closed, subscribed, idBoard }) => {
         try {
-          const params: {
-            name?: string;
-            pos?: number | 'top' | 'bottom';
-            closed?: boolean;
-            subscribed?: boolean;
-            idBoard?: string;
-          } = {};
-          if (name !== undefined) params.name = name;
-          if (pos !== undefined) params.pos = pos;
-          if (closed !== undefined) params.closed = closed;
-          if (subscribed !== undefined) params.subscribed = subscribed;
-          if (idBoard !== undefined) params.idBoard = idBoard;
-          const list = await this.trelloClient.updateList(listId, params);
+          const list = await this.trelloClient.updateList(listId, { name, pos, closed, subscribed, idBoard });
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
           };

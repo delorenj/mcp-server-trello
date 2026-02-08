@@ -536,7 +536,6 @@ Update a list's name, position, or other properties.
 {
   name: 'update_list',
   arguments: {
-    boardId?: string,        // Optional: ID of the board (uses default if not provided)
     listId: string,          // ID of the list to update
     name?: string,           // Optional: New name for the list
     pos?: number | 'top' | 'bottom', // Optional: New position
