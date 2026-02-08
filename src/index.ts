@@ -331,9 +331,13 @@ class TrelloServer {
           position: z
             .string()
             .refine(
-              (val) => val === 'top' || val === 'bottom' || Number(val) > 0,
+              (val) => {
+                if (val === 'top' || val === 'bottom') return true;
+                const num = Number(val);
+                return num > 0 && isFinite(num);
+              },
               {
-                message: "Position must be 'top', 'bottom', or a positive numeric string.",
+                message: "Position must be 'top', 'bottom', or a positive finite numeric string.",
               }
             )
             .describe(
