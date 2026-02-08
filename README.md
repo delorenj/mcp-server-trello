@@ -537,7 +537,7 @@ Update the position of a list on the board. Trello uses fractional indexing: eac
   name: 'update_list_position',
   arguments: {
     listId: string,              // ID of the list to reposition
-    position: string | number    // "top", "bottom", or a float (average of neighbors to insert between)
+    position: string             // "top", "bottom", or a positive numeric string (e.g. "1536")
   }
 }
 ```

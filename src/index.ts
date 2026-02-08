@@ -331,9 +331,9 @@ class TrelloServer {
           position: z
             .string()
             .refine(
-              (val) => val === 'top' || val === 'bottom' || !Number.isNaN(Number(val)),
+              (val) => val === 'top' || val === 'bottom' || Number(val) > 0,
               {
-                message: "Position must be 'top', 'bottom', or a numeric string.",
+                message: "Position must be 'top', 'bottom', or a positive numeric string.",
               }
             )
             .describe(
@@ -343,8 +343,7 @@ class TrelloServer {
       },
       async ({ listId, position }) => {
         try {
-          const numericPosition = Number(position);
-          const parsedPosition = Number.isNaN(numericPosition) ? position : numericPosition;
+          const parsedPosition = position === 'top' || position === 'bottom' ? position : Number(position);
           const list = await this.trelloClient.updateListPosition(listId, parsedPosition);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
