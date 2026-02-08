@@ -319,6 +319,39 @@ class TrelloServer {
       }
     );
 
+    // Update a list
+    this.server.registerTool(
+      'update_list',
+      {
+        title: 'Update List',
+        description: "Update a list's name, position, or other properties",
+        inputSchema: {
+          listId: z.string().describe('ID of the Trello list to update'),
+          name: z.string().optional().describe('New name for the list'),
+          pos: z
+            .union([z.number(), z.enum(['top', 'bottom'])])
+            .optional()
+            .describe('New position: a positive number, "top", or "bottom"'),
+          closed: z.boolean().optional().describe('Whether to close (archive) the list'),
+          subscribed: z
+            .boolean()
+            .optional()
+            .describe('Whether the authenticated user is subscribed to the list'),
+          idBoard: z.string().optional().describe('ID of a board to move the list to'),
+        },
+      },
+      async ({ listId, name, pos, closed, subscribed, idBoard }) => {
+        try {
+          const list = await this.trelloClient.updateList(listId, { name, pos, closed, subscribed, idBoard });
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Get cards assigned to current user
     this.server.registerTool(
       'get_my_cards',

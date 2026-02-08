@@ -528,6 +528,24 @@ Send a list to the archive.
 }
 ```
 
+### update\_list
+
+Update a list's name, position, or other properties.
+
+```typescript
+{
+  name: 'update_list',
+  arguments: {
+    listId: string,          // ID of the list to update
+    name?: string,           // Optional: New name for the list
+    pos?: number | 'top' | 'bottom', // Optional: New position
+    closed?: boolean,        // Optional: Whether to close (archive) the list
+    subscribed?: boolean,    // Optional: Whether to subscribe to the list
+    idBoard?: string         // Optional: ID of a board to move the list to
+  }
+}
+```
+
 ### get\_my\_cards
 
 Fetch all cards assigned to the current user.
