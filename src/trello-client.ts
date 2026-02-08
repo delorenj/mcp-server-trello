@@ -346,12 +346,13 @@ export class TrelloClient {
     });
   }
 
-  async moveCard(boardId: string | undefined, cardId: string, listId: string): Promise<TrelloCard> {
+  async moveCard(boardId: string | undefined, cardId: string, listId: string, pos?: string | number): Promise<TrelloCard> {
     const effectiveBoardId = boardId || this.defaultBoardId;
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${cardId}`, {
         idList: listId,
         ...(effectiveBoardId && { idBoard: effectiveBoardId }),
+        ...(pos && { pos }),
       });
       return response.data;
     });

@@ -253,11 +253,15 @@ class TrelloServer {
             ),
           cardId: z.string().describe('ID of the card to move'),
           listId: z.string().describe('ID of the target list'),
+          pos: z
+          .union([z.enum(['top', 'bottom']), z.number().positive()])
+          .optional()
+          .describe('Position in target list: "top", "bottom", or a positive number'),
         },
       },
-      async ({ boardId, cardId, listId }) => {
+      async ({ boardId, cardId, listId, pos }) => {
         try {
-          const card = await this.trelloClient.moveCard(boardId, cardId, listId);
+          const card = await this.trelloClient.moveCard(boardId, cardId, listId, pos);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
