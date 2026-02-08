@@ -330,6 +330,12 @@ class TrelloServer {
           listId: z.string().describe('ID of the list to reposition'),
           position: z
             .string()
+            .refine(
+              (val) => val === 'top' || val === 'bottom' || !Number.isNaN(Number(val)),
+              {
+                message: "Position must be 'top', 'bottom', or a numeric string.",
+              }
+            )
             .describe(
               'New position: "top" (move to leftmost), "bottom" (move to rightmost), or a numeric string (e.g. "1536"). To place between two lists, use the average of their pos values.'
             ),
