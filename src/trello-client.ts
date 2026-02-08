@@ -28,6 +28,10 @@ import { fileURLToPath } from 'url';
 const CONFIG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.trello-mcp');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
+// Properties to copy when creating a card from a template
+const TEMPLATE_COPY_PROPERTIES =
+  'attachments,checklists,customFields,labels,members,start,stickers';
+
 type TrelloRequestReturn =
   | TrelloAction
   | TrelloAttachment
@@ -307,6 +311,24 @@ export class TrelloClient {
         due: params.dueDate,
         start: params.start,
         idLabels: params.labels,
+      });
+      return response.data;
+    });
+  }
+
+  async createCardFromTemplate(params: {
+    templateCardId: string;
+    listId: string;
+    name?: string;
+    description?: string;
+  }): Promise<TrelloCard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post('/cards', {
+        idCardSource: params.templateCardId,
+        idList: params.listId,
+        keepFromSource: TEMPLATE_COPY_PROPERTIES,
+        ...(params.name && { name: params.name }),
+        ...(params.description && { desc: params.description }),
       });
       return response.data;
     });
@@ -594,20 +616,27 @@ export class TrelloClient {
   }
 
   // Checklist methods
-  async getChecklistItems(name: string, cardId?: string, boardId?: string): Promise<CheckListItem[]> {
+  async getChecklistItems(
+    name: string,
+    cardId?: string,
+    boardId?: string
+  ): Promise<CheckListItem[]> {
     let checklists: TrelloChecklist[];
 
     if (cardId) {
       // Get checklists from the specific card
       const cardResponse = await this.axiosInstance.get<EnhancedTrelloCard>(`/cards/${cardId}`, {
-        params: { checklists: 'all' }
+        params: { checklists: 'all' },
       });
       checklists = cardResponse.data.checklists || [];
     } else {
       // Fall back to board-level search
       const effectiveBoardId = boardId || this.activeConfig.boardId;
       if (!effectiveBoardId) {
-        throw new McpError(ErrorCode.InvalidParams, 'No board ID or card ID provided and no active board set');
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          'No board ID or card ID provided and no active board set'
+        );
       }
 
       const response = await this.axiosInstance.get<TrelloChecklist[]>(
@@ -641,14 +670,17 @@ export class TrelloClient {
     if (cardId) {
       // Get checklists from the specific card
       const cardResponse = await this.axiosInstance.get<EnhancedTrelloCard>(`/cards/${cardId}`, {
-        params: { checklists: 'all' }
+        params: { checklists: 'all' },
       });
       checklists = cardResponse.data.checklists || [];
     } else {
       // Fall back to board-level search
       const effectiveBoardId = boardId || this.activeConfig.boardId;
       if (!effectiveBoardId) {
-        throw new McpError(ErrorCode.InvalidParams, 'No board ID or card ID provided and no active board set');
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          'No board ID or card ID provided and no active board set'
+        );
       }
 
       const checklistsResponse = await this.axiosInstance.get<TrelloChecklist[]>(
@@ -662,7 +694,10 @@ export class TrelloClient {
     );
 
     if (!targetChecklist) {
-      throw new McpError(ErrorCode.InvalidParams, `Checklist "${checkListName}" not found${cardId ? ' on card' : ' on board'}`);
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Checklist "${checkListName}" not found${cardId ? ' on card' : ' on board'}`
+      );
     }
 
     // Add the check item to the checklist
@@ -686,14 +721,17 @@ export class TrelloClient {
     if (cardId) {
       // Get checklists from the specific card
       const cardResponse = await this.axiosInstance.get<EnhancedTrelloCard>(`/cards/${cardId}`, {
-        params: { checklists: 'all' }
+        params: { checklists: 'all' },
       });
       checklists = cardResponse.data.checklists || [];
     } else {
       // Fall back to board-level search
       const effectiveBoardId = boardId || this.activeConfig.boardId;
       if (!effectiveBoardId) {
-        throw new McpError(ErrorCode.InvalidParams, 'No board ID or card ID provided and no active board set');
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          'No board ID or card ID provided and no active board set'
+        );
       }
 
       const response = await this.axiosInstance.get<TrelloChecklist[]>(
@@ -724,24 +762,33 @@ export class TrelloClient {
     if (!cardId) {
       throw new McpError(ErrorCode.InvalidParams, 'No card ID provided and no active card set');
     }
-    const response = await this.axiosInstance.post<TrelloChecklist>(`/cards/${cardId}/checklists`, { name });
+    const response = await this.axiosInstance.post<TrelloChecklist>(`/cards/${cardId}/checklists`, {
+      name,
+    });
     return response.data;
   }
 
-  async getChecklistByName(name: string, cardId?: string, boardId?: string): Promise<CheckList | null> {
+  async getChecklistByName(
+    name: string,
+    cardId?: string,
+    boardId?: string
+  ): Promise<CheckList | null> {
     let checklists: TrelloChecklist[];
 
     if (cardId) {
       // Get checklists from the specific card
       const cardResponse = await this.axiosInstance.get<EnhancedTrelloCard>(`/cards/${cardId}`, {
-        params: { checklists: 'all' }
+        params: { checklists: 'all' },
       });
       checklists = cardResponse.data.checklists || [];
     } else {
       // Fall back to board-level search
       const effectiveBoardId = boardId || this.activeConfig.boardId;
       if (!effectiveBoardId) {
-        throw new McpError(ErrorCode.InvalidParams, 'No board ID or card ID provided and no active board set');
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          'No board ID or card ID provided and no active board set'
+        );
       }
 
       const response = await this.axiosInstance.get<TrelloChecklist[]>(
@@ -988,10 +1035,7 @@ export class TrelloClient {
     });
   }
 
-  async assignMemberToCard(
-    cardId: string,
-    memberId: string
-  ): Promise<TrelloCard> {
+  async assignMemberToCard(cardId: string, memberId: string): Promise<TrelloCard> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.post(`/cards/${cardId}/idMembers`, {
         value: memberId,
@@ -1000,10 +1044,7 @@ export class TrelloClient {
     });
   }
 
-  async removeMemberFromCard(
-    cardId: string,
-    memberId: string
-  ): Promise<any[]> {
+  async removeMemberFromCard(cardId: string, memberId: string): Promise<any[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.delete(`/cards/${cardId}/idMembers/${memberId}`);
       return response.data;
@@ -1046,11 +1087,7 @@ export class TrelloClient {
     });
   }
 
-  async updateLabel(
-    labelId: string,
-    name?: string,
-    color?: string
-  ): Promise<TrelloLabelDetails> {
+  async updateLabel(labelId: string, name?: string, color?: string): Promise<TrelloLabelDetails> {
     return this.handleRequest(async () => {
       const updateData: { name?: string; color?: string } = {};
       if (name !== undefined) updateData.name = name;
@@ -1069,11 +1106,7 @@ export class TrelloClient {
   }
 
   // Card history method
-  async getCardHistory(
-    cardId: string,
-    filter?: string,
-    limit?: number
-  ): Promise<TrelloAction[]> {
+  async getCardHistory(cardId: string, filter?: string, limit?: number): Promise<TrelloAction[]> {
     return this.handleRequest(async () => {
       const params: { filter?: string; limit?: number } = {};
       if (filter) params.filter = filter;
