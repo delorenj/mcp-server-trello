@@ -528,6 +528,20 @@ Send a list to the archive.
 }
 ```
 
+### update\_list\_position
+
+Update the position of a list on the board. Trello uses fractional indexing: each list has a float position, and to place a list between two others, use the average of their positions (e.g., between pos 1024 and 2048, use 1536). Use `"top"`/`"bottom"` shortcuts to move to the edges.
+
+```typescript
+{
+  name: 'update_list_position',
+  arguments: {
+    listId: string,              // ID of the list to reposition
+    position: string             // "top", "bottom", or a positive numeric string (e.g. "1536")
+  }
+}
+```
+
 ### get\_my\_cards
 
 Fetch all cards assigned to the current user.
