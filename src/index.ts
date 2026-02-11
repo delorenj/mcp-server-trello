@@ -80,33 +80,39 @@ class TrelloServer {
           const descLimit = TrelloServer.CARD_LIST_DESC_LIMIT;
 
           // Truncate descriptions to keep response size manageable
-          const previews = cards.map(card => ({
-            ...card,
-            desc:
-              card.desc && card.desc.length > descLimit
-                ? card.desc.slice(0, descLimit) + '...'
-                : card.desc,
-          }));
+          let anyTruncated = false;
+          const previews = cards.map(card => {
+            if (card.desc && card.desc.length > descLimit) {
+              anyTruncated = true;
+              return { ...card, desc: card.desc.slice(0, descLimit) + '...' };
+            }
+            return card;
+          });
 
           let result = JSON.stringify(previews, null, 2);
-          let truncated = false;
+          let descriptionsOmitted = false;
 
           // If total response is still too large, drop descriptions entirely
           if (result.length > TrelloServer.CARD_LIST_TOTAL_CHAR_LIMIT) {
             const minimal = cards.map(({ desc, ...rest }) => rest);
             result = JSON.stringify(minimal, null, 2);
-            truncated = true;
+            descriptionsOmitted = true;
           }
 
-          if (truncated) {
-            result += '\n\n(Descriptions omitted due to response size. Use get_card with a specific cardId for full details.)';
-          } else if (cards.some(c => c.desc && c.desc.length > descLimit)) {
-            result += '\n\n(Some descriptions were truncated. Use get_card with a specific cardId for full details.)';
+          const notice = descriptionsOmitted
+            ? '(Descriptions omitted due to response size. Use get_card with a specific cardId for full details.)'
+            : anyTruncated
+              ? '(Some descriptions were truncated. Use get_card with a specific cardId for full details.)'
+              : null;
+
+          const content: Array<{ type: 'text'; text: string }> = [
+            { type: 'text' as const, text: result },
+          ];
+          if (notice) {
+            content.push({ type: 'text' as const, text: notice });
           }
 
-          return {
-            content: [{ type: 'text' as const, text: result }],
-          };
+          return { content };
         } catch (error) {
           return this.handleError(error);
         }
