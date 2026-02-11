@@ -1068,6 +1068,97 @@ export class TrelloClient {
     });
   }
 
+  /**
+   * Copy a card (can copy across boards). Uses idCardSource to clone a card.
+   */
+  async copyCard(params: {
+    sourceCardId: string;
+    listId: string;
+    name?: string;
+    description?: string;
+    keepFromSource?: string;
+    pos?: string;
+  }): Promise<TrelloCard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post('/cards', {
+        idCardSource: params.sourceCardId,
+        idList: params.listId,
+        name: params.name,
+        desc: params.description,
+        keepFromSource: params.keepFromSource || 'all',
+        pos: params.pos,
+      });
+      return response.data;
+    });
+  }
+
+  /**
+   * Copy a checklist from one card to another (can copy across boards).
+   */
+  async copyChecklist(params: {
+    sourceChecklistId: string;
+    cardId: string;
+    name?: string;
+    pos?: string;
+  }): Promise<TrelloChecklist> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post('/checklists', {
+        idCard: params.cardId,
+        idChecklistSource: params.sourceChecklistId,
+        name: params.name,
+        pos: params.pos,
+      });
+      return response.data;
+    });
+  }
+
+  static readonly BATCH_ADD_CARDS_LIMIT = 50;
+
+  /**
+   * Add multiple cards to a list. Trello has no native batch write endpoint,
+   * so this makes sequential POST /1/cards calls.
+   * Returns created cards and any errors, so callers can see partial progress.
+   */
+  async batchAddCards(
+    listId: string,
+    cards: Array<{
+      name: string;
+      description?: string;
+      dueDate?: string;
+      start?: string;
+      labels?: string[];
+    }>
+  ): Promise<{ created: TrelloCard[]; errors: Array<{ index: number; name: string; error: string }> }> {
+    if (cards.length > TrelloClient.BATCH_ADD_CARDS_LIMIT) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Cannot create more than ${TrelloClient.BATCH_ADD_CARDS_LIMIT} cards at once (got ${cards.length})`
+      );
+    }
+    const created: TrelloCard[] = [];
+    const errors: Array<{ index: number; name: string; error: string }> = [];
+    for (let i = 0; i < cards.length; i++) {
+      try {
+        const result = await this.addCard(undefined, {
+          listId,
+          name: cards[i].name,
+          description: cards[i].description,
+          dueDate: cards[i].dueDate,
+          start: cards[i].start,
+          labels: cards[i].labels,
+        });
+        created.push(result);
+      } catch (error) {
+        errors.push({
+          index: i,
+          name: cards[i].name,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+    return { created, errors };
+  }
+
   // Card history method
   async getCardHistory(
     cardId: string,
