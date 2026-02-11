@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 
 const TRELLO_API_KEY = process.env.TRELLO_API_KEY;
 const TRELLO_TOKEN = process.env.TRELLO_TOKEN;
-const TEST_BOARD_ID = process.env.TRELLO_TEST_BOARD_ID || '698bd319de70fa4f7a3c7ccd';
+const TEST_BOARD_ID = process.env.TRELLO_TEST_BOARD_ID;
 
-const canRunSmoke = Boolean(TRELLO_API_KEY && TRELLO_TOKEN);
+const canRunSmoke = Boolean(TRELLO_API_KEY && TRELLO_TOKEN && TEST_BOARD_ID);
 
 /**
  * Helper to communicate with the MCP server over stdio JSON-RPC.
@@ -394,12 +394,12 @@ describe.skipIf(!canRunSmoke)('Smoke Tests (Live Trello API)', () => {
           { name: 'Batch 3' },
         ],
       });
-      expect(result.created).toBe(3);
-      expect(result.cards).toHaveLength(3);
-      expect(result.cards[0].name).toBe('Batch 1');
-      expect(result.cards[1].name).toBe('Batch 2');
-      expect(result.cards[2].name).toBe('Batch 3');
-      result.cards.forEach((c: any) => createdCardIds.push(c.id));
+      expect(result.created).toHaveLength(3);
+      expect(result.errors).toHaveLength(0);
+      expect(result.created[0].name).toBe('Batch 1');
+      expect(result.created[1].name).toBe('Batch 2');
+      expect(result.created[2].name).toBe('Batch 3');
+      result.created.forEach((c: any) => createdCardIds.push(c.id));
     });
 
     it('should handle single card in batch', async () => {
@@ -407,8 +407,8 @@ describe.skipIf(!canRunSmoke)('Smoke Tests (Live Trello API)', () => {
         listId: testListId,
         cards: [{ name: 'Single Batch Card' }],
       });
-      expect(result.created).toBe(1);
-      createdCardIds.push(result.cards[0].id);
+      expect(result.created).toHaveLength(1);
+      createdCardIds.push(result.created[0].id);
     });
   });
 

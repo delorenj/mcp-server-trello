@@ -521,34 +521,50 @@ describe('TrelloClient', () => {
         .mockResolvedValueOnce({ data: { id: 'c3', name: 'Card 3' } });
 
       const client = createClient();
-      const results = await client.batchAddCards('l1', [
+      const { created, errors } = await client.batchAddCards('l1', [
         { name: 'Card 1' },
         { name: 'Card 2', description: 'Desc' },
         { name: 'Card 3', labels: ['lbl1'] },
       ]);
 
-      expect(results).toHaveLength(3);
+      expect(created).toHaveLength(3);
+      expect(errors).toHaveLength(0);
       expect(mockAxiosInstance.post).toHaveBeenCalledTimes(3);
-      expect(results[0].name).toBe('Card 1');
-      expect(results[2].name).toBe('Card 3');
+      expect(created[0].name).toBe('Card 1');
+      expect(created[2].name).toBe('Card 3');
     });
 
     it('should handle empty array', async () => {
       const client = createClient();
-      const results = await client.batchAddCards('l1', []);
-      expect(results).toEqual([]);
+      const { created, errors } = await client.batchAddCards('l1', []);
+      expect(created).toEqual([]);
+      expect(errors).toEqual([]);
       expect(mockAxiosInstance.post).not.toHaveBeenCalled();
     });
 
-    it('should propagate errors from individual card creation', async () => {
+    it('should collect errors without aborting remaining cards', async () => {
       mockAxiosInstance.post
-        .mockResolvedValueOnce({ data: { id: 'c1' } })
-        .mockRejectedValueOnce(new Error('API Error'));
+        .mockResolvedValueOnce({ data: { id: 'c1', name: 'Card 1' } })
+        .mockRejectedValueOnce(new Error('API Error'))
+        .mockResolvedValueOnce({ data: { id: 'c3', name: 'Card 3' } });
 
       const client = createClient();
-      await expect(
-        client.batchAddCards('l1', [{ name: 'Card 1' }, { name: 'Card 2' }])
-      ).rejects.toThrow();
+      const { created, errors } = await client.batchAddCards('l1', [
+        { name: 'Card 1' },
+        { name: 'Card 2' },
+        { name: 'Card 3' },
+      ]);
+
+      expect(created).toHaveLength(2);
+      expect(errors).toHaveLength(1);
+      expect(errors[0].index).toBe(1);
+      expect(errors[0].name).toBe('Card 2');
+    });
+
+    it('should reject when exceeding card limit', async () => {
+      const client = createClient();
+      const tooMany = Array.from({ length: 51 }, (_, i) => ({ name: `Card ${i}` }));
+      await expect(client.batchAddCards('l1', tooMany)).rejects.toThrow('Cannot create more than 50');
     });
   });
 
