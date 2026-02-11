@@ -55,13 +55,17 @@ class TrelloServer {
     };
   }
 
+  private static readonly CARD_LIST_DESC_LIMIT = 200;
+  private static readonly CARD_LIST_TOTAL_CHAR_LIMIT = 50000;
+
   private setupTools() {
     // Get cards from a specific list
     this.server.registerTool(
       'get_cards_by_list_id',
       {
         title: 'Get Cards by List ID',
-        description: 'Fetch cards from a specific Trello list on a specific board',
+        description:
+          'Fetch cards from a specific Trello list. Returns a preview of each card (truncated descriptions). Use get_card for full card details.',
         inputSchema: {
           boardId: z
             .string()
@@ -73,8 +77,35 @@ class TrelloServer {
       async ({ boardId, listId }) => {
         try {
           const cards = await this.trelloClient.getCardsByList(boardId, listId);
+          const descLimit = TrelloServer.CARD_LIST_DESC_LIMIT;
+
+          // Truncate descriptions to keep response size manageable
+          const previews = cards.map(card => ({
+            ...card,
+            desc:
+              card.desc && card.desc.length > descLimit
+                ? card.desc.slice(0, descLimit) + '...'
+                : card.desc,
+          }));
+
+          let result = JSON.stringify(previews, null, 2);
+          let truncated = false;
+
+          // If total response is still too large, drop descriptions entirely
+          if (result.length > TrelloServer.CARD_LIST_TOTAL_CHAR_LIMIT) {
+            const minimal = cards.map(({ desc, ...rest }) => rest);
+            result = JSON.stringify(minimal, null, 2);
+            truncated = true;
+          }
+
+          if (truncated) {
+            result += '\n\n(Descriptions omitted due to response size. Use get_card with a specific cardId for full details.)';
+          } else if (cards.some(c => c.desc && c.desc.length > descLimit)) {
+            result += '\n\n(Some descriptions were truncated. Use get_card with a specific cardId for full details.)';
+          }
+
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
+            content: [{ type: 'text' as const, text: result }],
           };
         } catch (error) {
           return this.handleError(error);
