@@ -32,15 +32,16 @@
   },
   "devDependencies": {
     "@ai-sdk/openai": "^1.3.24",
-    "bun-types": "latest",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "bun-types": "latest",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.7.4",
     "terser": "^5.44.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   },
   "files": [
     "build/**/*"
@@ -64,6 +65,10 @@
     "versionbump:patch": "bun run versionbump --patch",
     "versionbump:minor": "bun run versionbump --minor",
     "versionbump:major": "bun run versionbump --major",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:smoke": "vitest run tests/smoke",
+    "test:watch": "vitest",
     "publish": "bun run build && npm publish"
   }
 }
