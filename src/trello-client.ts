@@ -1068,6 +1068,79 @@ export class TrelloClient {
     });
   }
 
+  /**
+   * Copy a card (can copy across boards). Uses idCardSource to clone a card.
+   */
+  async copyCard(params: {
+    sourceCardId: string;
+    listId: string;
+    name?: string;
+    description?: string;
+    keepFromSource?: string;
+    pos?: string;
+  }): Promise<TrelloCard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post('/cards', {
+        idCardSource: params.sourceCardId,
+        idList: params.listId,
+        name: params.name,
+        desc: params.description,
+        keepFromSource: params.keepFromSource || 'all',
+        pos: params.pos,
+      });
+      return response.data;
+    });
+  }
+
+  /**
+   * Copy a checklist from one card to another (can copy across boards).
+   */
+  async copyChecklist(params: {
+    sourceChecklistId: string;
+    cardId: string;
+    name?: string;
+    pos?: string;
+  }): Promise<TrelloChecklist> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post('/checklists', {
+        idCard: params.cardId,
+        idChecklistSource: params.sourceChecklistId,
+        name: params.name,
+        pos: params.pos,
+      });
+      return response.data;
+    });
+  }
+
+  /**
+   * Add multiple cards to a list. Trello has no native batch write endpoint,
+   * so this makes sequential POST /1/cards calls.
+   */
+  async batchAddCards(
+    listId: string,
+    cards: Array<{
+      name: string;
+      description?: string;
+      dueDate?: string;
+      start?: string;
+      labels?: string[];
+    }>
+  ): Promise<TrelloCard[]> {
+    const results: TrelloCard[] = [];
+    for (const card of cards) {
+      const result = await this.addCard(undefined, {
+        listId,
+        name: card.name,
+        description: card.description,
+        dueDate: card.dueDate,
+        start: card.start,
+        labels: card.labels,
+      });
+      results.push(result);
+    }
+    return results;
+  }
+
   // Card history method
   async getCardHistory(
     cardId: string,

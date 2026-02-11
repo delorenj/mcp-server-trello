@@ -1171,6 +1171,150 @@ class TrelloServer {
       }
     );
 
+    // Copy a card (supports cross-board copy)
+    this.server.registerTool(
+      'copy_card',
+      {
+        title: 'Copy Card',
+        description:
+          'Copy/duplicate a Trello card to any list (even on a different board). Copies all properties by default including checklists, attachments, comments, labels, etc.',
+        inputSchema: {
+          sourceCardId: z.string().describe('ID of the source card to copy'),
+          listId: z
+            .string()
+            .describe('ID of the destination list (can be on a different board)'),
+          name: z
+            .string()
+            .optional()
+            .describe('Override the name of the copied card (defaults to source card name)'),
+          description: z
+            .string()
+            .optional()
+            .describe('Override the description of the copied card'),
+          keepFromSource: z
+            .string()
+            .optional()
+            .describe(
+              'Comma-separated list of properties to copy: "all" (default), or any combination of: attachments, checklists, comments, customFields, due, start, labels, members, stickers'
+            ),
+          pos: z
+            .string()
+            .optional()
+            .describe('Position of the new card: "top", "bottom", or a positive float'),
+        },
+      },
+      async ({ sourceCardId, listId, name, description, keepFromSource, pos }) => {
+        try {
+          const card = await this.trelloClient.copyCard({
+            sourceCardId,
+            listId,
+            name,
+            description,
+            keepFromSource,
+            pos,
+          });
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Copy a checklist from one card to another
+    this.server.registerTool(
+      'copy_checklist',
+      {
+        title: 'Copy Checklist',
+        description:
+          'Copy a checklist (with all its items) from one card to another. Works across different boards.',
+        inputSchema: {
+          sourceChecklistId: z
+            .string()
+            .describe('ID of the source checklist to copy'),
+          cardId: z
+            .string()
+            .describe('ID of the destination card to copy the checklist to'),
+          name: z
+            .string()
+            .optional()
+            .describe('Override the name of the copied checklist (defaults to source checklist name)'),
+          pos: z
+            .string()
+            .optional()
+            .describe('Position of the new checklist: "top", "bottom", or a positive number'),
+        },
+      },
+      async ({ sourceChecklistId, cardId, name, pos }) => {
+        try {
+          const checklist = await this.trelloClient.copyChecklist({
+            sourceChecklistId,
+            cardId,
+            name,
+            pos,
+          });
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(checklist, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Add multiple cards to a list
+    this.server.registerTool(
+      'add_cards_to_list',
+      {
+        title: 'Add Cards to List',
+        description:
+          'Add multiple cards to a list in one operation. Cards are created sequentially (Trello API does not support batch writes). Rate limiting is handled automatically.',
+        inputSchema: {
+          listId: z.string().describe('ID of the list to add cards to'),
+          cards: z
+            .array(
+              z.object({
+                name: z.string().describe('Name of the card'),
+                description: z.string().optional().describe('Description of the card'),
+                dueDate: z
+                  .string()
+                  .optional()
+                  .describe('Due date for the card (ISO 8601 format)'),
+                start: z
+                  .string()
+                  .optional()
+                  .describe('Start date for the card (YYYY-MM-DD format)'),
+                labels: z
+                  .array(z.string())
+                  .optional()
+                  .describe('Array of label IDs to apply to the card'),
+              })
+            )
+            .describe('Array of cards to create'),
+        },
+      },
+      async ({ listId, cards }) => {
+        try {
+          const results = await this.trelloClient.batchAddCards(listId, cards);
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: JSON.stringify(
+                  { created: results.length, cards: results },
+                  null,
+                  2
+                ),
+              },
+            ],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Card history tool
     this.server.registerTool(
       'get_card_history',
