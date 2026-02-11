@@ -1291,7 +1291,7 @@ class TrelloServer {
                   .describe('Array of label IDs to apply to the card'),
               })
             )
-            .describe('Array of cards to create'),
+            .describe('Array of cards to create (max 50)'),
         },
       },
       async ({ listId, cards }) => {
@@ -1301,11 +1301,7 @@ class TrelloServer {
             content: [
               {
                 type: 'text' as const,
-                text: JSON.stringify(
-                  { created: results.length, cards: results },
-                  null,
-                  2
-                ),
+                text: JSON.stringify(results, null, 2),
               },
             ],
           };
