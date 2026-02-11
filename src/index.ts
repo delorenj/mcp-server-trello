@@ -55,13 +55,17 @@ class TrelloServer {
     };
   }
 
+  private static readonly CARD_LIST_DESC_LIMIT = 200;
+  private static readonly CARD_LIST_TOTAL_CHAR_LIMIT = 50000;
+
   private setupTools() {
     // Get cards from a specific list
     this.server.registerTool(
       'get_cards_by_list_id',
       {
         title: 'Get Cards by List ID',
-        description: 'Fetch cards from a specific Trello list on a specific board',
+        description:
+          'Fetch cards from a specific Trello list. Returns a preview of each card (truncated descriptions). Use get_card for full card details.',
         inputSchema: {
           boardId: z
             .string()
@@ -73,9 +77,42 @@ class TrelloServer {
       async ({ boardId, listId }) => {
         try {
           const cards = await this.trelloClient.getCardsByList(boardId, listId);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
-          };
+          const descLimit = TrelloServer.CARD_LIST_DESC_LIMIT;
+
+          // Truncate descriptions to keep response size manageable
+          let anyTruncated = false;
+          const previews = cards.map(card => {
+            if (card.desc && card.desc.length > descLimit) {
+              anyTruncated = true;
+              return { ...card, desc: card.desc.slice(0, descLimit) + '...' };
+            }
+            return card;
+          });
+
+          let result = JSON.stringify(previews, null, 2);
+          let descriptionsOmitted = false;
+
+          // If total response is still too large, drop descriptions entirely
+          if (result.length > TrelloServer.CARD_LIST_TOTAL_CHAR_LIMIT) {
+            const minimal = cards.map(({ desc, ...rest }) => rest);
+            result = JSON.stringify(minimal, null, 2);
+            descriptionsOmitted = true;
+          }
+
+          const notice = descriptionsOmitted
+            ? '(Descriptions omitted due to response size. Use get_card with a specific cardId for full details.)'
+            : anyTruncated
+              ? '(Some descriptions were truncated. Use get_card with a specific cardId for full details.)'
+              : null;
+
+          const content: Array<{ type: 'text'; text: string }> = [
+            { type: 'text' as const, text: result },
+          ];
+          if (notice) {
+            content.push({ type: 'text' as const, text: notice });
+          }
+
+          return { content };
         } catch (error) {
           return this.handleError(error);
         }
