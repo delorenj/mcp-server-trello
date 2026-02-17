@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.2] - 2026-02-17
+
+### Fixed
+- **Config Isolation**: Persisted board/workspace config is now scoped by working directory, preventing cross-project data leakage when multiple MCP server instances share `~/.trello-mcp/`
+- One-time migration automatically moves the legacy `config.json` to a directory-scoped file
+
 ## [1.7.0] - 2025-12-17
 
 ### Added
