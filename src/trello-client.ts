@@ -21,12 +21,15 @@ import { createTrelloRateLimiters } from './rate-limiter.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { createHash } from 'crypto';
 import { createReadStream } from 'fs';
 import { fileURLToPath } from 'url';
 
-// Path for storing active board/workspace configuration
+// Path for storing active board/workspace configuration (scoped by working directory)
 const CONFIG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.trello-mcp');
-const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
+const CWD_HASH = createHash('sha256').update(process.cwd()).digest('hex').slice(0, 16);
+const CONFIG_FILE = path.join(CONFIG_DIR, `config-${CWD_HASH}.json`);
+const LEGACY_CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
 type TrelloRequestReturn =
   | TrelloAction
@@ -82,6 +85,20 @@ export class TrelloClient {
   public async loadConfig(): Promise<void> {
     try {
       await fs.mkdir(CONFIG_DIR, { recursive: true });
+
+      // One-time migration: copy legacy config to scoped file, then delete legacy
+      try {
+        await fs.access(CONFIG_FILE);
+      } catch {
+        try {
+          const legacyData = await fs.readFile(LEGACY_CONFIG_FILE, 'utf8');
+          await fs.writeFile(CONFIG_FILE, legacyData);
+          await fs.unlink(LEGACY_CONFIG_FILE);
+        } catch {
+          // Neither file exists yet, that's okay
+        }
+      }
+
       const data = await fs.readFile(CONFIG_FILE, 'utf8');
       const savedConfig = JSON.parse(data);
 
@@ -109,6 +126,7 @@ export class TrelloClient {
       const configToSave = {
         boardId: this.activeConfig.boardId,
         workspaceId: this.activeConfig.workspaceId,
+        directory: process.cwd(),
       };
       await fs.writeFile(CONFIG_FILE, JSON.stringify(configToSave, null, 2));
     } catch (error) {
