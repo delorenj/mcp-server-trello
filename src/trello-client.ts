@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import FormData from 'form-data';
 import {
   TrelloConfig,
@@ -59,13 +60,23 @@ export class TrelloClient {
     if (this.defaultBoardId && !this.activeConfig.boardId) {
       this.activeConfig.boardId = this.defaultBoardId;
     }
-    this.axiosInstance = axios.create({
+    const axiosConfig: Record<string, unknown> = {
       baseURL: 'https://api.trello.com/1',
       params: {
         key: config.apiKey,
         token: config.token,
       },
-    });
+    };
+
+    const proxyUrl = process.env.https_proxy || process.env.HTTPS_PROXY;
+    if (proxyUrl) {
+      const agent = new HttpsProxyAgent(proxyUrl);
+      axiosConfig.httpAgent = agent;
+      axiosConfig.httpsAgent = agent;
+      axiosConfig.proxy = false;
+    }
+
+    this.axiosInstance = axios.create(axiosConfig);
 
     this.rateLimiter = createTrelloRateLimiters();
 
