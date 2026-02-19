@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, CreateAxiosDefaults } from 'axios';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import FormData from 'form-data';
 import {
@@ -60,7 +60,7 @@ export class TrelloClient {
     if (this.defaultBoardId && !this.activeConfig.boardId) {
       this.activeConfig.boardId = this.defaultBoardId;
     }
-    const axiosConfig: Record<string, unknown> = {
+    const axiosConfig: CreateAxiosDefaults = {
       baseURL: 'https://api.trello.com/1',
       params: {
         key: config.apiKey,
