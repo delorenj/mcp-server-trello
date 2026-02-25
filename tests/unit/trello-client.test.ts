@@ -473,6 +473,41 @@ describe('TrelloClient', () => {
     });
   });
 
+  describe('custom fields', () => {
+    it('should set list custom fields using idValue', async () => {
+      const item = { id: 'item1', idCustomField: 'field1', idValue: 'option1' };
+      mockAxiosInstance.put.mockResolvedValue({ data: item });
+
+      const client = createClient();
+      const result = await client.updateCardCustomField('card1', 'field1', {
+        type: 'list',
+        value: 'option1',
+      });
+
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith(
+        '/cards/card1/customField/field1/item',
+        { idValue: 'option1' }
+      );
+      expect(result).toEqual(item);
+    });
+
+    it('should clear custom fields with value and idValue empty strings', async () => {
+      const item = { id: 'item1', idCustomField: 'field1', value: null };
+      mockAxiosInstance.put.mockResolvedValue({ data: item });
+
+      const client = createClient();
+      const result = await client.updateCardCustomField('card1', 'field1', {
+        type: 'clear',
+      });
+
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith(
+        '/cards/card1/customField/field1/item',
+        { value: '', idValue: '' }
+      );
+      expect(result).toEqual(item);
+    });
+  });
+
   describe('copyCard', () => {
     it('should post with idCardSource and keepFromSource=all by default', async () => {
       const copiedCard = { id: 'c2', name: 'Copied Card' };
