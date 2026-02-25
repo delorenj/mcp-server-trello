@@ -145,11 +145,40 @@ export interface TrelloComment {
   };
 }
 
-export interface TrelloCustomField {
+export interface TrelloCustomFieldDefinition {
   id: string;
+  idModel: string;
+  modelType: string;
+  fieldGroup: string;
   name: string;
-  type: string;
-  value?: unknown;
+  type: 'text' | 'number' | 'checkbox' | 'date' | 'list';
+  pos: number;
+  display: {
+    cardFront: boolean;
+  };
+  options?: TrelloCustomFieldOption[];
+}
+
+export interface TrelloCustomFieldOption {
+  id: string;
+  idCustomField: string;
+  value: { text: string };
+  color: string;
+  pos: number;
+}
+
+export interface TrelloCustomFieldItem {
+  id: string;
+  idCustomField: string;
+  idModel: string;
+  modelType: string;
+  idValue?: string;
+  value?: {
+    text?: string;
+    number?: string;
+    checked?: string;
+    date?: string;
+  } | null;
 }
 
 export interface TrelloBadges {
@@ -212,7 +241,7 @@ export interface EnhancedTrelloCard {
   members: TrelloMember[];
   idMembers: string[];
   comments: TrelloComment[];
-  customFieldItems?: TrelloCustomField[];
+  customFieldItems?: TrelloCustomFieldItem[];
   badges: TrelloBadges;
   cover: TrelloCover;
 

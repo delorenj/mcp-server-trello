@@ -16,6 +16,9 @@ import {
   TrelloComment,
   TrelloMember,
   TrelloLabelDetails,
+  TrelloCustomFieldDefinition,
+  TrelloCustomFieldOption,
+  TrelloCustomFieldItem,
 } from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
@@ -40,7 +43,10 @@ type TrelloRequestReturn =
   | string
   | boolean
   | TrelloList
-  | TrelloWorkspace;
+  | TrelloWorkspace
+  | TrelloCustomFieldDefinition
+  | TrelloCustomFieldOption
+  | TrelloCustomFieldItem;
 
 export class TrelloClient {
   private axiosInstance: AxiosInstance;
@@ -1065,6 +1071,67 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       await this.axiosInstance.delete(`/labels/${labelId}`);
       return true;
+    });
+  }
+
+  // Custom field management methods
+  async getBoardCustomFields(boardId?: string): Promise<TrelloCustomFieldDefinition[]> {
+    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(
+        `/boards/${effectiveBoardId}/customFields`
+      );
+      return response.data;
+    });
+  }
+
+  async getCustomFieldOptions(customFieldId: string): Promise<TrelloCustomFieldOption[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(
+        `/customFields/${customFieldId}/options`
+      );
+      return response.data;
+    });
+  }
+
+  async updateCardCustomField(
+    cardId: string,
+    customFieldId: string,
+    params: {
+      type: 'text' | 'number' | 'checkbox' | 'date' | 'list' | 'clear';
+      value?: string;
+    }
+  ): Promise<TrelloCustomFieldItem> {
+    return this.handleRequest(async () => {
+      let body: Record<string, unknown>;
+
+      if (params.type === 'clear') {
+        body = { value: '', idValue: '' };
+      } else if (params.type === 'list') {
+        body = { idValue: params.value };
+      } else if (params.type === 'text') {
+        body = { value: { text: params.value } };
+      } else if (params.type === 'number') {
+        body = { value: { number: params.value } };
+      } else if (params.type === 'checkbox') {
+        body = { value: { checked: params.value } };
+      } else if (params.type === 'date') {
+        body = { value: { date: params.value } };
+      } else {
+        throw new McpError(ErrorCode.InvalidParams, `Unknown custom field type: ${params.type}`);
+      }
+
+      const response = await this.axiosInstance.put(
+        `/cards/${cardId}/customField/${customFieldId}/item`,
+        body
+      );
+      return response.data;
     });
   }
 

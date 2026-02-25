@@ -1171,6 +1171,104 @@ class TrelloServer {
       }
     );
 
+    // Custom field management tools
+    this.server.registerTool(
+      'get_board_custom_fields',
+      {
+        title: 'Get Board Custom Fields',
+        description:
+          'Get all custom field definitions on a board. Returns field IDs, names, and types. ' +
+          'For dropdown/list fields, also returns the available options with their IDs. ' +
+          'Requires Trello Standard plan or higher.',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+        },
+      },
+      async ({ boardId }) => {
+        try {
+          const fields = await this.trelloClient.getBoardCustomFields(boardId);
+
+          const fieldsWithOptions = await Promise.all(
+            fields.map(async field => {
+              if (field.type === 'list') {
+                try {
+                  const options = await this.trelloClient.getCustomFieldOptions(field.id);
+                  return { ...field, options };
+                } catch {
+                  return field;
+                }
+              }
+              return field;
+            })
+          );
+
+          return {
+            content: [
+              { type: 'text' as const, text: JSON.stringify(fieldsWithOptions, null, 2) },
+            ],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'update_card_custom_field',
+      {
+        title: 'Update Card Custom Field',
+        description:
+          'Set or clear a custom field value on a card. ' +
+          'Use get_board_custom_fields first to find field IDs and types. ' +
+          'Value format depends on type: text=any string, number=numeric string, ' +
+          'checkbox="true"/"false", date=ISO 8601 string, list=option ID from get_board_custom_fields. ' +
+          'To clear a field, set type to "clear" and omit value.',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card to update'),
+          customFieldId: z.string().describe('ID of the custom field definition'),
+          type: z
+            .enum(['text', 'number', 'checkbox', 'date', 'list', 'clear'])
+            .describe('The custom field type. Use "clear" to remove the value from the field.'),
+          value: z
+            .string()
+            .optional()
+            .describe(
+              'The value to set. For text: any string. For number: numeric string (e.g. "42.5"). ' +
+                'For checkbox: "true" or "false". For date: ISO 8601 (e.g. "2025-12-31T00:00:00.000Z"). ' +
+                'For list: the option ID. Not needed when type is "clear".'
+            ),
+        },
+      },
+      async ({ cardId, customFieldId, type, value }) => {
+        try {
+          if (type !== 'clear' && !value) {
+            return {
+              content: [
+                {
+                  type: 'text' as const,
+                  text: 'Error: value is required when type is not "clear"',
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          const result = await this.trelloClient.updateCardCustomField(cardId, customFieldId, {
+            type,
+            value,
+          });
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Card history tool
     this.server.registerTool(
       'get_card_history',
