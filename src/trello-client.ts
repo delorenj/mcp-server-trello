@@ -1124,6 +1124,7 @@ export class TrelloClient {
       } else if (params.type === 'date') {
         body = { value: { date: params.value } };
       } else {
+        // Defensive: unreachable with current type union, guards against future additions
         throw new McpError(ErrorCode.InvalidParams, `Unknown custom field type: ${params.type}`);
       }
 

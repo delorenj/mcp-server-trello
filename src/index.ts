@@ -1197,8 +1197,8 @@ class TrelloServer {
                 try {
                   const options = await this.trelloClient.getCustomFieldOptions(field.id);
                   return { ...field, options };
-                } catch {
-                  return field;
+                } catch (error) {
+                  return { ...field, optionsError: error instanceof Error ? error.message : 'Failed to fetch options' };
                 }
               }
               return field;
