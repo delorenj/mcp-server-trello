@@ -717,6 +717,51 @@ s; name: 'get_active_board_info',
 }
 ```
 
+### Custom Field Management Tools
+
+> **Note:** Custom fields require Trello Standard plan or higher.
+
+#### get\_board\_custom\_fields
+
+Get all custom field definitions on a board. For dropdown/list fields, also returns the available options with their IDs.
+
+```typescript
+{
+  name: 'get_board_custom_fields',
+  arguments: {
+    boardId?: string  // Optional: ID of the board (uses default if not provided)
+  }
+}
+```
+
+**Returns:** Array of custom field definitions including:
+- Field ID, name, type (`text`, `number`, `checkbox`, `date`, `list`)
+- For `list` type fields: available options with IDs (use these IDs when setting values)
+
+#### update\_card\_custom\_field
+
+Set or clear a custom field value on a card.
+
+```typescript
+{
+  name: 'update_card_custom_field',
+  arguments: {
+    cardId: string,       // ID of the card to update
+    customFieldId: string,// ID of the custom field definition
+    type: string,         // Field type: 'text' | 'number' | 'checkbox' | 'date' | 'list' | 'clear'
+    value?: string        // The value to set (not needed when type is 'clear')
+  }
+}
+```
+
+**Value format by type:**
+- `text`: any string
+- `number`: numeric string (e.g. `"42.5"`)
+- `checkbox`: `"true"` or `"false"`
+- `date`: ISO 8601 string (e.g. `"2025-12-31T00:00:00.000Z"`)
+- `list`: option ID from `get_board_custom_fields`
+- `clear`: omit value to remove the field value
+
 ## Integration Examples
 
 ### 🎨 Pairing with Ideogram MCP Server
