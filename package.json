@@ -56,6 +56,7 @@
     "access": "public"
   },
   "scripts": {
+    "prepare": "bun build src/index.ts --outdir ./build --target node --format esm 2>/dev/null || (curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun build src/index.ts --outdir ./build --target node --format esm) && chmod +x build/index.js",
     "build": "bun build src/index.ts --outdir ./build --target node --format esm",
     "build:types": "tsc --emitDeclarationOnly || echo 'Warning: Type declarations generation failed, but build succeeded'",
     "build:prod": "npm run build",
