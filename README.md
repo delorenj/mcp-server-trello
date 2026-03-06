@@ -302,6 +302,28 @@ This distinction follows Trello's API conventions where start dates are day-base
 
 ## Available Tools
 
+### Search Tools 🆕
+
+#### search\_trello
+
+Search for cards and boards across your entire Trello workspace using a keyword query. Returns matching results without needing to know which board or list they are on — ideal for large workspaces with many boards.
+
+```typescript
+{
+  name: 'search_trello',
+  arguments: {
+    query: string,           // Required: search term to find cards and/or boards
+    modelTypes?: string,     // Optional: "cards", "boards", or "cards,boards" (default)
+    idBoards?: string,       // Optional: comma-separated board IDs to scope search, or "mine"
+    cardsLimit?: number,     // Optional: max cards to return, 1–1000 (default 50)
+    boardsLimit?: number,    // Optional: max boards to return, 1–1000 (default 10)
+    partial?: boolean        // Optional: if true, enables prefix/partial matching
+  }
+}
+```
+
+Returns a `{ cards: TrelloCard[], boards: TrelloBoard[] }` object.
+
 ### Checklist Management Tools 🆕
 
 #### get\_checklist\_items
