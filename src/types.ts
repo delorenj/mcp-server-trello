@@ -233,6 +233,11 @@ export interface RateLimiter {
   waitForAvailableToken(): Promise<void>;
 }
 
+export interface TrelloSearchResult {
+  cards: TrelloCard[];
+  boards: TrelloBoard[];
+}
+
 // Enhanced checklist types for MCP tools
 export interface CheckList {
   id: string;
