@@ -74,6 +74,8 @@ class TrelloServer {
             .describe('Comma-separated list of fields to return (e.g., "name,idShort,labels,due,dueComplete"). Omit for all fields.'),
           nameFilter: z
             .string()
+            .trim()
+            .min(1, 'nameFilter must not be empty')
             .optional()
             .describe('Optional substring to filter cards by name (case-insensitive)'),
         },

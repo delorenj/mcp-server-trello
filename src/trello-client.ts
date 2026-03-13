@@ -270,8 +270,9 @@ export class TrelloClient {
       const params = fields ? { fields } : {};
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`, { params });
       let cards: TrelloCard[] = response.data;
-      if (nameFilter) {
-        const searchTerm = nameFilter.toLowerCase();
+      const trimmed = nameFilter?.trim();
+      if (trimmed) {
+        const searchTerm = trimmed.toLowerCase();
         cards = cards.filter((card) => card.name.toLowerCase().includes(searchTerm));
       }
       return cards;
