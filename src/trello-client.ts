@@ -261,11 +261,20 @@ export class TrelloClient {
     });
   }
 
-  async getCardsByList(listId: string, fields?: string): Promise<TrelloCard[]> {
+  async getCardsByList(
+    listId: string,
+    fields?: string,
+    nameFilter?: string
+  ): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const params = fields ? { fields } : {};
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`, { params });
-      return response.data;
+      let cards: TrelloCard[] = response.data;
+      if (nameFilter) {
+        const searchTerm = nameFilter.toLowerCase();
+        cards = cards.filter((card) => card.name.toLowerCase().includes(searchTerm));
+      }
+      return cards;
     });
   }
 
