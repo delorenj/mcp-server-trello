@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { TrelloClient } from './trello-client.js';
 import { TrelloHealthEndpoints, HealthEndpointSchemas } from './health/health-endpoints.js';
 
-class TrelloServer {
+export class TrelloServer {
   private server: McpServer;
   private trelloClient: TrelloClient;
   private healthEndpoints: TrelloHealthEndpoints;
@@ -1263,17 +1263,27 @@ class TrelloServer {
     });
   }
 
-  async run() {
-    const transport = new StdioServerTransport();
-    // Load configuration before starting the server
+  get mcpServer(): McpServer {
+    return this.server;
+  }
+
+  async initialize(): Promise<void> {
     await this.trelloClient.loadConfig().catch(() => {
       // Continue with default config if loading fails
     });
+  }
+
+  async run() {
+    const transport = new StdioServerTransport();
+    await this.initialize();
     await this.server.connect(transport);
   }
 }
 
-const server = new TrelloServer();
-server.run().catch(() => {
-  // Silently handle errors to avoid interfering with MCP protocol
-});
+export const trelloServer = new TrelloServer();
+
+if (process.env.MCP_TRANSPORT !== 'http') {
+  trelloServer.run().catch(() => {
+    // Silently handle errors to avoid interfering with MCP protocol
+  });
+}

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: mcp-server-trello
+    env: node
+    buildCommand: bun install && bun run build:http
+    startCommand: bun run start:http
+    envVars:
+      - key: TRELLO_API_KEY
+        sync: false
+      - key: TRELLO_TOKEN
+        sync: false
+      - key: TRELLO_BOARD_ID
+        sync: false
+      - key: TRELLO_WORKSPACE_ID
+        sync: false
+      - key: MCP_TRANSPORT
+        value: http
