@@ -77,6 +77,7 @@ export class TrelloServer {
             content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
           };
         } catch (error) {
+          console.log(error)
           return this.handleError(error);
         }
       }
