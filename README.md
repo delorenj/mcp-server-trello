@@ -381,6 +381,40 @@ Get a complete checklist with all items and completion percentage.
   - `items`: Array of `CheckListItem` objects
   - `percentComplete`: Completion percentage (0-100)
 
+#### update\_checklist\_item
+
+Update an existing checklist item.
+
+```typescript
+{
+  name: 'update_checklist_item',
+  arguments: {
+    cardId: string,                          // ID of the card containing the checklist item
+    checkItemId: string,                     // ID of the checklist item to update
+    name?: string,                           // Optional: new checklist item text
+    state?: 'complete' | 'incomplete',       // Optional: new checklist item state
+    pos?: number | 'top' | 'bottom',         // Optional: new checklist item position
+    due?: string | null,                     // Optional: ISO 8601 due date, or null to clear it
+    dueReminder?: number | null,             // Optional: reminder offset in minutes, or null to clear it
+    idMember?: string | null                 // Optional: member ID to assign, or null to clear it
+  }
+}
+```
+
+#### delete\_checklist\_item
+
+Delete an existing checklist item.
+
+```typescript
+{
+  name: 'delete_checklist_item',
+  arguments: {
+    cardId: string,       // ID of the card containing the checklist item
+    checkItemId: string   // ID of the checklist item to delete
+  }
+}
+```
+
 ### get\_card 🆕
 
 Get comprehensive details of a specific Trello card with human-level parity.
