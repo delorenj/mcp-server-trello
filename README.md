@@ -36,6 +36,7 @@ For a detailed list of changes, please refer to the [CHANGELOG.md](CHANGELOG.md)
   - **Error Handling**: Graceful error handling with informative messages
   - **Dynamic Board Selection**: Switch between boards and workspaces without restarting
   - **Markdown Formatting**: Export card data in human-readable markdown format
+  - **🆕 Field Presets**: Control response data with `minimal`, `standard`, or `full` presets to optimize token usage
 
 ## Installation
 
@@ -785,6 +786,59 @@ nbsp;   "env": {
 
 Now you can seamlessly create visual content and organize it in Trello, all within Claude\!
 
+## Field Presets (Token Optimization)
+
+Most read operations support a `fields` parameter that controls how much data is returned. This is especially useful when using smaller/faster models like Haiku that have limited context windows.
+
+### Available Presets
+
+| Preset | Description | Best For |
+|--------|-------------|----------|
+| `minimal` | Only essential fields (id, name) | Fast searches, card lookups |
+| `standard` | Common fields for typical operations | General usage (default) |
+| `full` | All available fields | Detailed analysis, exports |
+
+### Example Usage
+
+```typescript
+// Fast card search with minimal data
+{
+  name: 'search_cards',
+  arguments: {
+    query: "login bug",
+    fields: "minimal",
+    limit: 5
+  }
+}
+
+// Get lists with cards included
+{
+  name: 'get_lists',
+  arguments: {
+    fields: "minimal",
+    includeCards: "open",
+    cardFields: "minimal"
+  }
+}
+```
+
+### Supported Tools
+
+- `get_cards_by_list_id` - Also supports `includeMembers`, `includeLabels`
+- `get_lists` - Also supports `includeCards`, `cardFields`
+- `get_recent_activity`
+- `get_my_cards`
+- `list_boards`
+- `list_workspaces`
+- `list_boards_in_workspace`
+- `get_card` - Also supports `includeAttachments`, `includeChecklists`, `includeComments`
+- `get_board_members`
+- `get_board_labels`
+- `get_card_history`
+- `search_cards` (defaults to `minimal`)
+
+See [docs/FIELD_PRESETS.md](docs/FIELD_PRESETS.md) for detailed documentation.
+
 ## Rate Limiting
 
 The server implements a token bucket algorithm for rate limiting to comply with Trello's API limits:
@@ -835,6 +889,59 @@ bun install
 
 ```bash
 bun run build
+```
+
+### Running from Local Build
+
+To use your local development build with Claude Desktop or other MCP clients, update your configuration to point to the built file:
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "node",
+      "args": ["/path/to/mcp-server-trello/build/index.js"],
+      "env": {
+        "TRELLO_API_KEY": "your-api-key",
+        "TRELLO_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+Or using Bun directly (faster):
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "bun",
+      "args": ["run", "/path/to/mcp-server-trello/build/index.js"],
+      "env": {
+        "TRELLO_API_KEY": "your-api-key",
+        "TRELLO_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+For Claude Code CLI, add to your `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "node",
+      "args": ["/Users/you/projects/mcp-server-trello/build/index.js"],
+      "env": {
+        "TRELLO_API_KEY": "your-api-key",
+        "TRELLO_TOKEN": "your-token"
+      }
+    }
+  }
+}
 ```
 
 ## Running tests

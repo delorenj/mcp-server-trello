@@ -4,6 +4,15 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { TrelloClient } from './trello-client.js';
 import { TrelloHealthEndpoints, HealthEndpointSchemas } from './health/health-endpoints.js';
+import { FieldPreset } from './field-presets.js';
+
+// Zod schema for field presets - reusable across tools
+const fieldPresetSchema = z
+  .enum(['minimal', 'standard', 'full'])
+  .optional()
+  .describe(
+    'Field preset: "minimal" (id, name only - fastest), "standard" (common fields), "full" (all fields). Default varies by tool.'
+  );
 
 class TrelloServer {
   private server: McpServer;
@@ -61,18 +70,26 @@ class TrelloServer {
       'get_cards_by_list_id',
       {
         title: 'Get Cards by List ID',
-        description: 'Fetch cards from a specific Trello list on a specific board',
+        description:
+          'Fetch cards from a specific Trello list. Use fields="minimal" for fast searches with low token usage.',
         inputSchema: {
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
           listId: z.string().describe('ID of the Trello list'),
+          fields: fieldPresetSchema,
+          includeMembers: z.boolean().optional().describe('Include member data with cards'),
+          includeLabels: z.boolean().optional().describe('Include label data with cards'),
         },
       },
-      async ({ boardId, listId }) => {
+      async ({ boardId, listId, fields, includeMembers, includeLabels }) => {
         try {
-          const cards = await this.trelloClient.getCardsByList(boardId, listId);
+          const cards = await this.trelloClient.getCardsByList(boardId, listId, {
+            fields: fields as FieldPreset | undefined,
+            members: includeMembers,
+            labels: includeLabels,
+          });
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
           };
@@ -87,17 +104,28 @@ class TrelloServer {
       'get_lists',
       {
         title: 'Get Lists',
-        description: 'Retrieve all lists from the specified board',
+        description:
+          'Retrieve all lists from the specified board. Use fields="minimal" for fast lookups.',
         inputSchema: {
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
+          fields: fieldPresetSchema,
+          includeCards: z
+            .enum(['none', 'open', 'closed', 'all'])
+            .optional()
+            .describe('Include cards in each list (none, open, closed, all)'),
+          cardFields: fieldPresetSchema.describe('Field preset for included cards'),
         },
       },
-      async ({ boardId }) => {
+      async ({ boardId, fields, includeCards, cardFields }) => {
         try {
-          const lists = await this.trelloClient.getLists(boardId);
+          const lists = await this.trelloClient.getLists(boardId, {
+            fields: fields as FieldPreset | undefined,
+            cards: includeCards as 'none' | 'open' | 'closed' | 'all' | undefined,
+            cardFields: cardFields as FieldPreset | undefined,
+          });
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(lists, null, 2) }],
           };
@@ -123,11 +151,16 @@ class TrelloServer {
             .optional()
             .default(10)
             .describe('Number of activities to fetch (default: 10)'),
+          fields: fieldPresetSchema,
         },
       },
-      async ({ boardId, limit }) => {
+      async ({ boardId, limit, fields }) => {
         try {
-          const activity = await this.trelloClient.getRecentActivity(boardId, limit);
+          const activity = await this.trelloClient.getRecentActivity(
+            boardId,
+            limit,
+            fields as FieldPreset | undefined
+          );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(activity, null, 2) }],
           };
@@ -324,12 +357,17 @@ class TrelloServer {
       'get_my_cards',
       {
         title: 'Get My Cards',
-        description: 'Fetch all cards assigned to the current user',
-        inputSchema: {},
+        description:
+          'Fetch all cards assigned to the current user. Use fields="minimal" for fast lookups.',
+        inputSchema: {
+          fields: fieldPresetSchema,
+        },
       },
-      async () => {
+      async ({ fields }) => {
         try {
-          const cards = await this.trelloClient.getMyCards();
+          const cards = await this.trelloClient.getMyCards({
+            fields: fields as FieldPreset | undefined,
+          });
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
           };
@@ -481,12 +519,17 @@ class TrelloServer {
       'list_boards',
       {
         title: 'List Boards',
-        description: 'List all boards the user has access to',
-        inputSchema: {},
+        description:
+          'List all boards the user has access to. Use fields="minimal" for fast lookups.',
+        inputSchema: {
+          fields: fieldPresetSchema,
+        },
       },
-      async () => {
+      async ({ fields }) => {
         try {
-          const boards = await this.trelloClient.listBoards();
+          const boards = await this.trelloClient.listBoards({
+            fields: fields as FieldPreset | undefined,
+          });
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(boards, null, 2) }],
           };
@@ -528,12 +571,17 @@ class TrelloServer {
       'list_workspaces',
       {
         title: 'List Workspaces',
-        description: 'List all workspaces the user has access to',
-        inputSchema: {},
+        description:
+          'List all workspaces the user has access to. Use fields="minimal" for fast lookups.',
+        inputSchema: {
+          fields: fieldPresetSchema,
+        },
       },
-      async () => {
+      async ({ fields }) => {
         try {
-          const workspaces = await this.trelloClient.listWorkspaces();
+          const workspaces = await this.trelloClient.listWorkspaces({
+            fields: fields as FieldPreset | undefined,
+          });
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(workspaces, null, 2) }],
           };
@@ -619,14 +667,18 @@ class TrelloServer {
       'list_boards_in_workspace',
       {
         title: 'List Boards in Workspace',
-        description: 'List all boards in a specific workspace',
+        description:
+          'List all boards in a specific workspace. Use fields="minimal" for fast lookups.',
         inputSchema: {
           workspaceId: z.string().describe('ID of the workspace to list boards from'),
+          fields: fieldPresetSchema,
         },
       },
-      async ({ workspaceId }) => {
+      async ({ workspaceId, fields }) => {
         try {
-          const boards = await this.trelloClient.listBoardsInWorkspace(workspaceId);
+          const boards = await this.trelloClient.listBoardsInWorkspace(workspaceId, {
+            fields: fields as FieldPreset | undefined,
+          });
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(boards, null, 2) }],
           };
@@ -681,7 +733,8 @@ class TrelloServer {
       'get_card',
       {
         title: 'Get Card',
-        description: 'Get detailed information about a specific Trello card',
+        description:
+          'Get detailed information about a specific Trello card. Use fields="minimal" for basic info, "standard" for common fields, or "full" for everything.',
         inputSchema: {
           cardId: z.string().describe('ID of the card to fetch'),
           includeMarkdown: z
@@ -689,11 +742,36 @@ class TrelloServer {
             .optional()
             .default(false)
             .describe('Whether to return card description in markdown format (default: false)'),
+          fields: fieldPresetSchema,
+          includeAttachments: z
+            .boolean()
+            .optional()
+            .describe('Include attachments (default: true for full preset)'),
+          includeChecklists: z
+            .boolean()
+            .optional()
+            .describe('Include checklists (default: true for full preset)'),
+          includeComments: z
+            .boolean()
+            .optional()
+            .describe('Include comments (default: true for full preset)'),
         },
       },
-      async ({ cardId, includeMarkdown }) => {
+      async ({
+        cardId,
+        includeMarkdown,
+        fields,
+        includeAttachments,
+        includeChecklists,
+        includeComments,
+      }) => {
         try {
-          const card = await this.trelloClient.getCard(cardId, includeMarkdown);
+          const card = await this.trelloClient.getCard(cardId, includeMarkdown, {
+            fields: fields as FieldPreset | undefined,
+            attachments: includeAttachments,
+            checklists: includeChecklists ? 'all' : undefined,
+            actions: includeComments === false ? false : 'commentCard',
+          });
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
@@ -1007,17 +1085,22 @@ class TrelloServer {
       'get_board_members',
       {
         title: 'Get Board Members',
-        description: 'Get all members of a specific board',
+        description:
+          'Get all members of a specific board. Use fields="minimal" for fast lookups (id, username only).',
         inputSchema: {
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
+          fields: fieldPresetSchema,
         },
       },
-      async ({ boardId }) => {
+      async ({ boardId, fields }) => {
         try {
-          const members = await this.trelloClient.getBoardMembers(boardId);
+          const members = await this.trelloClient.getBoardMembers(
+            boardId,
+            fields as FieldPreset | undefined
+          );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(members, null, 2) }],
           };
@@ -1076,17 +1159,22 @@ class TrelloServer {
       'get_board_labels',
       {
         title: 'Get Board Labels',
-        description: 'Get all labels of a specific board',
+        description:
+          'Get all labels of a specific board. Use fields="minimal" for fast lookups.',
         inputSchema: {
           boardId: z
             .string()
             .optional()
             .describe('ID of the Trello board (uses default if not provided)'),
+          fields: fieldPresetSchema,
         },
       },
-      async ({ boardId }) => {
+      async ({ boardId, fields }) => {
         try {
-          const labels = await this.trelloClient.getBoardLabels(boardId);
+          const labels = await this.trelloClient.getBoardLabels(
+            boardId,
+            fields as FieldPreset | undefined
+          );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(labels, null, 2) }],
           };
@@ -1189,13 +1277,52 @@ class TrelloServer {
             .number()
             .optional()
             .describe('Optional: Number of actions to fetch (default: all)'),
+          fields: fieldPresetSchema,
         },
       },
-      async ({ cardId, filter, limit }) => {
+      async ({ cardId, filter, limit, fields }) => {
         try {
-          const history = await this.trelloClient.getCardHistory(cardId, filter, limit);
+          const history = await this.trelloClient.getCardHistory(
+            cardId,
+            filter,
+            limit,
+            fields as FieldPreset | undefined
+          );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(history, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Search cards - optimized for fast card lookups
+    this.server.registerTool(
+      'search_cards',
+      {
+        title: 'Search Cards',
+        description:
+          'Search for cards by name or content. Optimized for fast lookups with minimal data. Uses "minimal" fields by default.',
+        inputSchema: {
+          query: z.string().describe('Search query (card name or content)'),
+          boardId: z
+            .string()
+            .optional()
+            .describe('Limit search to a specific board (uses active board if not provided)'),
+          limit: z.number().optional().default(10).describe('Maximum number of results (default: 10)'),
+          fields: fieldPresetSchema,
+        },
+      },
+      async ({ query, boardId, limit, fields }) => {
+        try {
+          const cards = await this.trelloClient.searchCards(query, {
+            boardId,
+            limit,
+            fields: fields as FieldPreset | undefined,
+          });
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);

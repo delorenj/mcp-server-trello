@@ -23,6 +23,21 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createReadStream } from 'fs';
 import { fileURLToPath } from 'url';
+import {
+  FieldPreset,
+  CardQueryOptions,
+  BoardQueryOptions,
+  ListQueryOptions,
+  WorkspaceQueryOptions,
+  CARD_FIELDS,
+  BOARD_FIELDS,
+  LIST_FIELDS,
+  MEMBER_FIELDS,
+  LABEL_FIELDS,
+  ACTION_FIELDS,
+  WORKSPACE_FIELDS,
+  resolveFields,
+} from './field-presets.js';
 
 // Path for storing active board/workspace configuration
 const CONFIG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.trello-mcp');
@@ -182,9 +197,12 @@ export class TrelloClient {
   /**
    * List all boards the user has access to
    */
-  async listBoards(): Promise<TrelloBoard[]> {
+  async listBoards(options?: BoardQueryOptions): Promise<TrelloBoard[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get('/members/me/boards');
+      const fields = resolveFields(options?.fields, 'standard', BOARD_FIELDS);
+      const response = await this.axiosInstance.get('/members/me/boards', {
+        params: { fields },
+      });
       return response.data;
     });
   }
@@ -192,9 +210,12 @@ export class TrelloClient {
   /**
    * Get a specific board by ID
    */
-  async getBoardById(boardId: string): Promise<TrelloBoard> {
+  async getBoardById(boardId: string, options?: BoardQueryOptions): Promise<TrelloBoard> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${boardId}`);
+      const fields = resolveFields(options?.fields, 'standard', BOARD_FIELDS);
+      const response = await this.axiosInstance.get(`/boards/${boardId}`, {
+        params: { fields },
+      });
       return response.data;
     });
   }
@@ -202,9 +223,12 @@ export class TrelloClient {
   /**
    * List all workspaces the user has access to
    */
-  async listWorkspaces(): Promise<TrelloWorkspace[]> {
+  async listWorkspaces(options?: WorkspaceQueryOptions): Promise<TrelloWorkspace[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get('/members/me/organizations');
+      const fields = resolveFields(options?.fields, 'standard', WORKSPACE_FIELDS);
+      const response = await this.axiosInstance.get('/members/me/organizations', {
+        params: { fields },
+      });
       return response.data;
     });
   }
@@ -212,9 +236,12 @@ export class TrelloClient {
   /**
    * Get a specific workspace by ID
    */
-  async getWorkspaceById(workspaceId: string): Promise<TrelloWorkspace> {
+  async getWorkspaceById(workspaceId: string, options?: WorkspaceQueryOptions): Promise<TrelloWorkspace> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/organizations/${workspaceId}`);
+      const fields = resolveFields(options?.fields, 'standard', WORKSPACE_FIELDS);
+      const response = await this.axiosInstance.get(`/organizations/${workspaceId}`, {
+        params: { fields },
+      });
       return response.data;
     });
   }
@@ -222,9 +249,12 @@ export class TrelloClient {
   /**
    * List boards in a specific workspace
    */
-  async listBoardsInWorkspace(workspaceId: string): Promise<TrelloBoard[]> {
+  async listBoardsInWorkspace(workspaceId: string, options?: BoardQueryOptions): Promise<TrelloBoard[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/organizations/${workspaceId}/boards`);
+      const fields = resolveFields(options?.fields, 'standard', BOARD_FIELDS);
+      const response = await this.axiosInstance.get(`/organizations/${workspaceId}/boards`, {
+        params: { fields },
+      });
       return response.data;
     });
   }
@@ -251,14 +281,31 @@ export class TrelloClient {
     });
   }
 
-  async getCardsByList(boardId: string | undefined, listId: string): Promise<TrelloCard[]> {
+  async getCardsByList(
+    boardId: string | undefined,
+    listId: string,
+    options?: CardQueryOptions
+  ): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/lists/${listId}/cards`);
+      const fields = resolveFields(options?.fields, 'standard', CARD_FIELDS);
+      const params: Record<string, unknown> = { fields };
+
+      // Add optional nested resources
+      if (options?.members) {
+        params.members = true;
+        params.member_fields = resolveFields(options.memberFields, 'minimal', MEMBER_FIELDS);
+      }
+      if (options?.labels) {
+        params.labels = true;
+        params.label_fields = resolveFields(options.labelFields, 'minimal', LABEL_FIELDS);
+      }
+
+      const response = await this.axiosInstance.get(`/lists/${listId}/cards`, { params });
       return response.data;
     });
   }
 
-  async getLists(boardId?: string): Promise<TrelloList[]> {
+  async getLists(boardId?: string, options?: ListQueryOptions): Promise<TrelloList[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
     if (!effectiveBoardId) {
       throw new McpError(
@@ -267,12 +314,25 @@ export class TrelloClient {
       );
     }
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/lists`);
+      const fields = resolveFields(options?.fields, 'standard', LIST_FIELDS);
+      const params: Record<string, unknown> = { fields };
+
+      // Optionally include cards with the lists
+      if (options?.cards) {
+        params.cards = options.cards;
+        params.card_fields = resolveFields(options.cardFields, 'minimal', CARD_FIELDS);
+      }
+
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/lists`, { params });
       return response.data;
     });
   }
 
-  async getRecentActivity(boardId?: string, limit: number = 10): Promise<TrelloAction[]> {
+  async getRecentActivity(
+    boardId?: string,
+    limit: number = 10,
+    fields?: FieldPreset | string
+  ): Promise<TrelloAction[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
     if (!effectiveBoardId) {
       throw new McpError(
@@ -281,8 +341,9 @@ export class TrelloClient {
       );
     }
     return this.handleRequest(async () => {
+      const actionFields = resolveFields(fields, 'standard', ACTION_FIELDS);
       const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/actions`, {
-        params: { limit },
+        params: { limit, fields: actionFields },
       });
       return response.data;
     });
@@ -383,9 +444,12 @@ export class TrelloClient {
     });
   }
 
-  async getMyCards(): Promise<TrelloCard[]> {
+  async getMyCards(options?: CardQueryOptions): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get('/members/me/cards');
+      const fields = resolveFields(options?.fields, 'standard', CARD_FIELDS);
+      const response = await this.axiosInstance.get('/members/me/cards', {
+        params: { fields },
+      });
       return response.data;
     });
   }
@@ -517,27 +581,51 @@ export class TrelloClient {
 
   async getCard(
     cardId: string,
-    includeMarkdown: boolean = false
+    includeMarkdown: boolean = false,
+    options?: CardQueryOptions
   ): Promise<EnhancedTrelloCard | string> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/cards/${cardId}`, {
-        params: {
-          attachments: true,
-          checklists: 'all',
-          checkItemStates: true,
-          members: true,
-          membersVoted: true,
-          labels: true,
-          actions: 'commentCard',
-          actions_limit: 100,
-          fields: 'all',
-          customFieldItems: true,
-          list: true,
-          board: true,
-          stickers: true,
-          pluginData: true,
-        },
-      });
+      // For full card details, we need more than just field filtering
+      // Default to 'full' preset when getting card details
+      const fields = resolveFields(options?.fields, 'full', CARD_FIELDS);
+
+      const params: Record<string, unknown> = {
+        fields,
+      };
+
+      // Control what nested data to include based on options
+      // Default to including everything if not specified (backward compatible)
+      params.attachments = options?.attachments ?? true;
+      params.checklists = options?.checklists ?? 'all';
+      params.checkItemStates = true;
+      params.members = options?.members ?? true;
+      params.membersVoted = true;
+      params.labels = options?.labels ?? true;
+      params.list = true;
+      params.board = true;
+
+      // Actions (comments)
+      if (options?.actions !== false) {
+        params.actions = options?.actions ?? 'commentCard';
+        params.actions_limit = options?.actionsLimit ?? 100;
+      }
+
+      // Field filtering for nested resources
+      if (options?.memberFields) {
+        params.member_fields = resolveFields(options.memberFields, 'standard', MEMBER_FIELDS);
+      }
+      if (options?.labelFields) {
+        params.label_fields = resolveFields(options.labelFields, 'standard', LABEL_FIELDS);
+      }
+
+      // Only include these for full preset or when explicitly requested
+      if (fields === 'all') {
+        params.customFieldItems = true;
+        params.stickers = true;
+        params.pluginData = true;
+      }
+
+      const response = await this.axiosInstance.get(`/cards/${cardId}`, { params });
 
       const cardData: EnhancedTrelloCard = response.data;
 
@@ -974,7 +1062,7 @@ export class TrelloClient {
   }
 
   // Member management methods
-  async getBoardMembers(boardId?: string): Promise<TrelloMember[]> {
+  async getBoardMembers(boardId?: string, fields?: FieldPreset | string): Promise<TrelloMember[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
     if (!effectiveBoardId) {
       throw new McpError(
@@ -983,7 +1071,10 @@ export class TrelloClient {
       );
     }
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/members`);
+      const memberFields = resolveFields(fields, 'standard', MEMBER_FIELDS);
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/members`, {
+        params: { fields: memberFields },
+      });
       return response.data;
     });
   }
@@ -1011,7 +1102,7 @@ export class TrelloClient {
   }
 
   // Label management methods
-  async getBoardLabels(boardId?: string): Promise<TrelloLabelDetails[]> {
+  async getBoardLabels(boardId?: string, fields?: FieldPreset | string): Promise<TrelloLabelDetails[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
     if (!effectiveBoardId) {
       throw new McpError(
@@ -1020,7 +1111,10 @@ export class TrelloClient {
       );
     }
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/labels`);
+      const labelFields = resolveFields(fields, 'standard', LABEL_FIELDS);
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/labels`, {
+        params: { fields: labelFields },
+      });
       return response.data;
     });
   }
@@ -1072,15 +1166,51 @@ export class TrelloClient {
   async getCardHistory(
     cardId: string,
     filter?: string,
-    limit?: number
+    limit?: number,
+    fields?: FieldPreset | string
   ): Promise<TrelloAction[]> {
     return this.handleRequest(async () => {
-      const params: { filter?: string; limit?: number } = {};
+      const actionFields = resolveFields(fields, 'standard', ACTION_FIELDS);
+      const params: { filter?: string; limit?: number; fields?: string } = { fields: actionFields };
       if (filter) params.filter = filter;
       if (limit) params.limit = limit;
 
       const response = await this.axiosInstance.get(`/cards/${cardId}/actions`, { params });
       return response.data;
+    });
+  }
+
+  /**
+   * Search for cards across all boards or a specific board
+   * This is a lightweight search method optimized for finding cards quickly
+   */
+  async searchCards(
+    query: string,
+    options?: {
+      boardId?: string;
+      limit?: number;
+      fields?: FieldPreset | string;
+      partial?: boolean;
+    }
+  ): Promise<TrelloCard[]> {
+    return this.handleRequest(async () => {
+      const fields = resolveFields(options?.fields, 'minimal', CARD_FIELDS);
+      const params: Record<string, unknown> = {
+        query,
+        modelTypes: 'cards',
+        cards_limit: options?.limit ?? 10,
+        card_fields: fields,
+        partial: options?.partial ?? true,
+      };
+
+      if (options?.boardId) {
+        params.idBoards = options.boardId;
+      } else if (this.activeConfig.boardId) {
+        params.idBoards = this.activeConfig.boardId;
+      }
+
+      const response = await this.axiosInstance.get('/search', { params });
+      return response.data.cards || [];
     });
   }
 }
