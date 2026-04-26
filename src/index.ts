@@ -981,20 +981,70 @@ class TrelloServer {
       'update_checklist_item',
       {
         title: 'Update Checklist Item',
-        description: 'Update a checklist item state (mark as complete or incomplete)',
+        description: 'Update a checklist item name, state, position, due date, reminder, or assigned member',
         inputSchema: {
           cardId: z.string().describe('ID of the card containing the checklist item'),
           checkItemId: z.string().describe('ID of the checklist item to update'),
           state: z
             .enum(['complete', 'incomplete'])
+            .optional()
             .describe('New state for the checklist item'),
+          name: z.string().optional().describe('New text for the checklist item'),
+          pos: z
+            .union([z.number(), z.enum(['top', 'bottom'])])
+            .optional()
+            .describe('New position for the checklist item'),
+          due: z
+            .string()
+            .nullable()
+            .optional()
+            .describe('New due date for the checklist item in ISO 8601 format, or null to clear it'),
+          dueReminder: z
+            .number()
+            .nullable()
+            .optional()
+            .describe('Reminder offset in minutes before due date, or null to clear it'),
+          idMember: z
+            .string()
+            .nullable()
+            .optional()
+            .describe('Member ID to assign to the checklist item, or null to clear it'),
         },
       },
-      async ({ cardId, checkItemId, state }) => {
+      async ({ cardId, checkItemId, name, state, pos, due, dueReminder, idMember }) => {
         try {
-          const item = await this.trelloClient.updateChecklistItem(cardId, checkItemId, state);
+          const item = await this.trelloClient.updateChecklistItem(cardId, checkItemId, {
+            name,
+            state,
+            pos,
+            due,
+            dueReminder,
+            idMember,
+          });
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(item, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'delete_checklist_item',
+      {
+        title: 'Delete Checklist Item',
+        description: 'Delete a checklist item from a card',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card containing the checklist item'),
+          checkItemId: z.string().describe('ID of the checklist item to delete'),
+        },
+      },
+      async ({ cardId, checkItemId }) => {
+        try {
+          const deleted = await this.trelloClient.deleteChecklistItem(cardId, checkItemId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ deleted }, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);

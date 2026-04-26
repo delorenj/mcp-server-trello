@@ -11,6 +11,7 @@ import {
   EnhancedTrelloCard,
   TrelloChecklist,
   TrelloCheckItem,
+  TrelloCheckItemUpdate,
   CheckList,
   CheckListItem,
   TrelloComment,
@@ -762,21 +763,40 @@ export class TrelloClient {
   }
 
   /**
-   * Update a checklist item state (complete/incomplete)
+   * Update a checklist item using Trello's supported mutable fields.
    */
   async updateChecklistItem(
     cardId: string,
     checkItemId: string,
-    state: 'complete' | 'incomplete'
+    updates: TrelloCheckItemUpdate
   ): Promise<TrelloCheckItem> {
+    const payload = Object.fromEntries(
+      Object.entries(updates).filter(([, value]) => value !== undefined)
+    ) as TrelloCheckItemUpdate;
+
+    if (Object.keys(payload).length === 0) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'At least one checklist item field must be provided'
+      );
+    }
+
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put<TrelloCheckItem>(
         `/cards/${cardId}/checkItem/${checkItemId}`,
-        {
-          state,
-        }
+        payload
       );
       return response.data;
+    });
+  }
+
+  /**
+   * Delete a checklist item from a card.
+   */
+  async deleteChecklistItem(cardId: string, checkItemId: string): Promise<boolean> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.delete(`/cards/${cardId}/checkItem/${checkItemId}`);
+      return response.status >= 200 && response.status < 300;
     });
   }
 
