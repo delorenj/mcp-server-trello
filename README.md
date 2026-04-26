@@ -205,7 +205,12 @@ TRELLO_BOARD_ID=your-board-id
 
 # Optional: Initial workspace ID (can be changed later using set_active_workspace)
 TRELLO_WORKSPACE_ID=your-workspace-id
+
+# Optional: HTTPS proxy URL (for corporate proxies or restricted networks)
+https_proxy=http://your-proxy:8080
 ```
+
+> **Proxy Support:** If you're behind a corporate proxy or in an environment that routes traffic through a proxy, set the `https_proxy` or `HTTPS_PROXY` environment variable. The server will automatically route all Trello API requests through the specified proxy.
 
 You can get these values from:
 

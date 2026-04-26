@@ -26,6 +26,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.3",
     "axios": "^1.13.2",
+    "https-proxy-agent": "^7.0.6",
     "form-data": "^4.0.5",
     "mcp-evals": "^1.0.18",
     "zod": "^3.25.76"
