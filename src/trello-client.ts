@@ -284,7 +284,7 @@ export class TrelloClient {
     });
   }
 
-  async getRecentActivity(boardId?: string, limit: number = 10): Promise<TrelloAction[]> {
+  async getRecentActivity(boardId?: string, limit: number = 10, since?: string, before?: string): Promise<TrelloAction[]> {
     const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
     if (!effectiveBoardId) {
       throw new McpError(
@@ -293,8 +293,11 @@ export class TrelloClient {
       );
     }
     return this.handleRequest(async () => {
+      const params: Record<string, string | number> = { limit };
+      if (since) params.since = since;
+      if (before) params.before = before;
       const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/actions`, {
-        params: { limit },
+        params,
       });
       return response.data;
     });

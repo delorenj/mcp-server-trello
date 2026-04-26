@@ -123,11 +123,19 @@ class TrelloServer {
             .optional()
             .default(10)
             .describe('Number of activities to fetch (default: 10)'),
+          since: z
+            .string()
+            .optional()
+            .describe('Only return actions after this date (ISO 8601) or action ID'),
+          before: z
+            .string()
+            .optional()
+            .describe('Only return actions before this date (ISO 8601) or action ID'),
         },
       },
-      async ({ boardId, limit }) => {
+      async ({ boardId, limit, since, before }) => {
         try {
-          const activity = await this.trelloClient.getRecentActivity(boardId, limit);
+          const activity = await this.trelloClient.getRecentActivity(boardId, limit, since, before);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(activity, null, 2) }],
           };
