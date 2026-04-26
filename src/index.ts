@@ -319,6 +319,45 @@ class TrelloServer {
       }
     );
 
+    // Update list position
+    this.server.registerTool(
+      'update_list_position',
+      {
+        title: 'Update List Position',
+        description:
+          'Update the position of a list on the board. Trello uses fractional indexing: each list has a float position, and to place a list between two others, use the average of their positions (e.g., between pos 1024 and 2048, use 1536). Use "top"/"bottom" shortcuts to move to the edges.',
+        inputSchema: {
+          listId: z.string().describe('ID of the list to reposition'),
+          position: z
+            .string()
+            .refine(
+              (val) => {
+                if (val === 'top' || val === 'bottom') return true;
+                const num = Number(val);
+                return num > 0 && isFinite(num);
+              },
+              {
+                message: "Position must be 'top', 'bottom', or a positive finite numeric string.",
+              }
+            )
+            .describe(
+              'New position: "top" (move to leftmost), "bottom" (move to rightmost), or a numeric string (e.g. "1536"). To place between two lists, use the average of their pos values.'
+            ),
+        },
+      },
+      async ({ listId, position }) => {
+        try {
+          const parsedPosition = position === 'top' || position === 'bottom' ? position : Number(position);
+          const list = await this.trelloClient.updateListPosition(listId, parsedPosition);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Get cards assigned to current user
     this.server.registerTool(
       'get_my_cards',
