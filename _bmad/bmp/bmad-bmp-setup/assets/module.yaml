@@ -1,0 +1,38 @@
+code: bmp
+name: "BMad Autopilot"
+description: "Run BMAD workflows unattended. Otto plans, delegates, and answers HITL questions per a policy file you author."
+module_version: 0.1.0
+default_selected: false
+module_greeting: >
+  BMad Autopilot is installed. Otto's at your service.
+
+  Run a workflow on autopilot:
+    /bmad-bmp-autopilot target=DS
+
+  Resume a paused run:
+    /bmad-bmp-autopilot resume <run_id>
+
+  Edit your policy: {bmp_default_policy}
+  Edit your budget: {bmp_default_budget}
+
+  First run? Start with `--dry-run` so Otto only plans.
+
+bmp_output_folder:
+  prompt: "Where should Otto save his autopilot run artifacts?"
+  default: "{project-root}/_bmad-output/autopilot"
+  result: "{project-root}/{value}"
+
+bmp_logs_folder:
+  prompt: "Where should Otto save his run logs?"
+  default: "{project-root}/_bmad-output/autopilot/logs"
+  result: "{project-root}/{value}"
+
+bmp_default_policy:
+  prompt: "Path to your default policy yaml (rules Otto consults when answering HITL questions)?"
+  default: "{project-root}/_bmad/bmp/policy.yaml"
+  example: "Leave default to use the cautious template; override with your tuned policy path"
+
+bmp_default_budget:
+  prompt: "Path to your default budget yaml (stop conditions Otto evaluates each turn)?"
+  default: "{project-root}/_bmad/bmp/budget.yaml"
+  example: "Leave default to use the cautious template; override with your tuned budget path"

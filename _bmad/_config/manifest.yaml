@@ -1,0 +1,29 @@
+installation:
+  version: 6.6.0
+  installDate: 2026-05-01T00:42:02.372Z
+  lastUpdated: 2026-05-01T00:50:14.386Z
+modules:
+  - name: core
+    version: 6.6.0
+    installDate: 2026-05-01T00:42:02.341Z
+    lastUpdated: 2026-05-01T00:50:14.342Z
+    source: built-in
+    npmPackage: null
+    repoUrl: null
+  - name: bmm
+    version: 6.6.0
+    installDate: 2026-05-01T00:42:02.358Z
+    lastUpdated: 2026-05-01T00:50:14.343Z
+    source: built-in
+    npmPackage: null
+    repoUrl: null
+  - name: bmp
+    version: main
+    installDate: 2026-05-01T00:50:14.262Z
+    lastUpdated: 2026-05-01T00:50:14.386Z
+    source: custom
+    npmPackage: null
+    repoUrl: https://github.com/delorenj/bmad-module-autopilot
+    channel: next
+ides:
+  - antigravity

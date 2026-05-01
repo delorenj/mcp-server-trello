@@ -1,0 +1,4 @@
+module,skill,display-name,menu-code,description,action,args,phase,after,before,required,output-location,outputs
+BMad Autopilot,bmad-bmp-autopilot,Run on Autopilot,RA,"Hand a target BMAD workflow to Otto. He plans, delegates, and answers HITL questions per your policy file. Pauses only on low confidence or always-pause categories.",,target=<code> [policy=<path>] [budget=<path|k=v>] [-H] [--dry-run],anytime,,,false,bmp_logs_folder,run log
+BMad Autopilot,bmad-bmp-autopilot,Resume Paused Run,RR,"Resume a paused autopilot run. Otto reloads the ledger, presents the pause card, and continues from the same chunk once you answer.",resume,run_id=<id>,anytime,,,false,bmp_logs_folder,run log
+BMad Autopilot,bmad-bmp-agent-otto,Talk to Otto,TO,"Open a session with Otto, the Autopilot Orchestrator. Useful for tweaking policy/budget or asking why he made a particular call.",,,anytime,,,false,,agent session

@@ -1,0 +1,106 @@
+# Autopilot policy file
+# Otto consults this when a worker emits an <elicit> block. The first matching
+# rule wins. Edit liberally — this template is the cautious default; tighten or
+# loosen to taste.
+#
+# Match precedence: id (exact) > pattern (regex) > category > default.
+#
+# Required: version, confidence_floor, on_low_confidence, rules.
+# Optional: always_pause, default.
+
+version: 1
+profile: default
+
+# Per-question rules. Otto matches incoming elicitations against these.
+# Each rule needs: id, one of (pattern | category), answer, optional confidence + rationale.
+#
+# answer.strategy options:
+#   pick                — return the literal value
+#   derive_from_context — extract from project files (sources required)
+#   prefer_prior_art    — search sources for established pattern; reuse if found
+#   include_if_referenced — yes if artifact appears in target's required outputs
+#   defer               — always pause, regardless of confidence
+rules:
+
+  - id: project-naming
+    pattern: '(?i)\b(name|title|slug)\b.*\b(project|module|epic|story|feature|file)\b'
+    answer:
+      strategy: derive_from_context
+      sources:
+        - '{project-root}/CLAUDE.md'
+        - '{project-root}/README.md'
+        - '{project-root}/_bmad-output/planning_artifacts'
+      preference: kebab-case
+      max_length: 40
+    confidence: 0.8
+    rationale: 'Names are low-stakes if derived from existing project terminology.'
+
+  - id: yes-no-default-include
+    pattern: '(?i)\b(include|add|generate)\b.+\bsection\b\?'
+    answer:
+      strategy: include_if_referenced
+      fallback: true
+    confidence: 0.75
+    rationale: "Yes-by-default for sections; the workflow asked because it's optional, not because it's risky."
+
+  - id: tech-stack-decisions
+    category: architecture
+    answer:
+      strategy: prefer_prior_art
+      sources:
+        - '{project-root}/CLAUDE.md'
+        - '{project-root}/project-context.md'
+        - '{project-root}/_bmad-output/planning_artifacts/architecture.md'
+        - '{project-root}/pyproject.toml'
+        - '{project-root}/package.json'
+      fallback: defer
+    confidence: 0.85
+    rationale: 'Architectural choices are durable. Reuse what the project already does; pause if unclear.'
+
+  - id: subjective-judgment
+    category: judgment
+    answer:
+      strategy: defer
+    rationale: "Taste decisions belong to the human. Otto doesn't guess at vibes."
+
+  - id: scope-of-change
+    pattern: '(?i)should (this|the) (change|refactor|fix) (also|additionally|further) '
+    answer:
+      strategy: pick
+      value: 'no'
+    confidence: 0.9
+    rationale: "When in doubt, narrow scope. Bigger changes are easy to add back; hard to roll back."
+
+  - id: error-handling-paths
+    pattern: '(?i)\b(error handling|fallback|retry|graceful degradation)\b'
+    answer:
+      strategy: pick
+      value: 'follow project conventions; do not add new abstractions'
+    confidence: 0.7
+    rationale: "Match what the codebase already does; new abstractions are CLAUDE.md violations by default."
+
+# Confidence floor — Otto pauses if his computed confidence is below this.
+# Range: 0.0 (never pause for confidence) — 1.0 (always pause).
+# Recommended starting point: 0.7. Lower as you build trust in your policy.
+confidence_floor: 0.7
+
+# What to do when confidence dips below the floor.
+#   pause  — wait for human (default; safe)
+#   park   — return the rule's fallback, log as parked, continue. Surface in report.
+#   abort  — stop the run entirely
+on_low_confidence: pause
+
+# Categories Otto MUST pause on, regardless of confidence or rule match.
+# These override everything. Use sparingly — every entry here is a guaranteed pause.
+always_pause:
+  - destructive            # file deletion, branch force-push, drop table, etc.
+  - external_api_keys      # provisioning, rotating, exposing secrets
+  - external_writes        # outbound API calls that mutate (Slack, GitHub PRs, payments)
+  - cost_above_threshold   # spawning workers/runs Otto estimates will exceed remaining budget by >50%
+  - schema_migration       # database schema changes
+  - public_release         # publishing, deploying, tagging, posting
+
+# Default rule applied when no other rule or category matches.
+default:
+  strategy: defer
+  rationale: 'Unknown question shape. When unsure, ask.'
