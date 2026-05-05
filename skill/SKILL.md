@@ -9,12 +9,12 @@ description: 'Trello MCP Server integration skill. Provides tools and context fo
 
 ## Activation & Setup
 
-When this skill is invoked or added to a project, first check if the MCP server has been built and configured:
+When this skill is invoked or added to a project, first check if the MCP server has been installed.
 
-1. **Check for Installation:** Check if the `{skill-root}/../build` directory exists and if `{skill-root}/../.env` exists.
-2. **First-time Setup:** If either is missing, this is the first time the skill is being used. 
+1. **First-time Setup:** If the server is not installed, this is the first time the skill is being used. 
    - Execute the bundled installation script: `bash {skill-root}/scripts/install.sh`
-   - Prompt the user to update the `.env` file with their `TRELLO_API_KEY` and `TRELLO_TOKEN` if they haven't already.
+   - This will use `bunx` and Smithery to install the MCP server from the registry.
+   - Note: The user will need to configure their `TRELLO_API_KEY` and `TRELLO_TOKEN` in their MCP settings (usually handled by Smithery or their client).
 
 ## Using the Trello MCP Tools
 

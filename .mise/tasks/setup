@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# mise description="Initial project setup"
+set -euo pipefail
+
+mise trust
+python3 .mise/scripts/setup-plane.py
+echo "Project ready."
