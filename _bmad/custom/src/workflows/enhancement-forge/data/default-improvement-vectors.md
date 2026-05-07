@@ -71,6 +71,4 @@ Opinionated north star for enhancement-forge. Each vector defines a category of 
 - cooldown_runs: 2
 - description: Internal code quality, modularity, type safety, test coverage. The proposal must show *why* the maintainability win unlocks future change, not just abstract "cleanup".
 - examples:
-  - "Extract Trello transport from business logic so request retries are centralized"
   - "Property-based tests for the cache invalidation rules"
-EOF
