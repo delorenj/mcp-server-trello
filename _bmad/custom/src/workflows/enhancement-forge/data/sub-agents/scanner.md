@@ -27,7 +27,7 @@ Return JSON only. No prose.
 ```json
 {
   "tools_exposed": [{"name": "...", "file": "...", "line": 0, "doc_present": true}],
-  "todo_density_by_module": {"src/trello-client.ts": 7, "src/server.ts": 2},
+  "todo_density_by_module": {"src/trello-client.ts": 7, "src/index.ts": 2},
   "observability_gaps": [{"module": "...", "missing": ["structured_logging", "metrics"]}],
   "undocumented_tools": [{"name": "...", "documented_in": null}],
   "recent_churn": [{"file": "...", "changes": 12, "authors": 2}]

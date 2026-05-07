@@ -32,7 +32,7 @@ Return JSON only.
   "confidence": 0.82,
   "dedupDistance": 0.71,
   "reasoning": "GH scanner surfaced 4 issues themed around verbose multi-call patterns (issues 118, 124, 130, 142). Repo scanner found 7 TODOs in src/trello-client.ts about default board context. UX/Ergonomics weight is 1.0; cooldown is 1 run and last entry was 4 runs ago.",
-  "evidenceCitations": ["src/trello-client.ts:142", "issue#118", "issue#124", "src/server.ts:67"],
+  "evidenceCitations": ["src/trello-client.ts:142", "issue#118", "issue#124", "src/index.ts:67"],
   "consideredAlternatives": [
     {"vector": "Observability", "rejectedBecause": "ledger entry 03 was Observability; cooldown_runs=2 still active"},
     {"vector": "Feature Parity", "rejectedBecause": "discovery showed only 1 endpoint gap; signal density too low"}

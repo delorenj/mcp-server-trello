@@ -106,4 +106,4 @@ Then load, read completely, and execute `./steps-v/step-01-validate.md`.
 
 **IF mode == cron:**
 
-Set `cron_mode: true` in run-journal frontmatter. Load, read completely, and execute `./steps-c/step-01-init.md`. Each checkpoint reads `cron_mode` and applies threshold-gated auto-approve.
+Set `cronMode: true` in run-journal frontmatter. Load, read completely, and execute `./steps-c/step-01-init.md`. Each checkpoint reads `cronMode` and applies threshold-gated auto-approve.

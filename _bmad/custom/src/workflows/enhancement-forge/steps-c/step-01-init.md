@@ -23,7 +23,7 @@ Initialize a forge run by detecting any prior in-progress run, verifying the env
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
 ### Universal Rules:
-- 🛑 NEVER generate content without user input (except when `cron_mode: true` and thresholds documented)
+- 🛑 NEVER generate content without user input (except when `cronMode: true` and thresholds documented)
 - 📖 CRITICAL: Read the complete step file before taking any action
 - 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
 - 📋 YOU ARE A FACILITATOR, not a content generator
@@ -39,7 +39,7 @@ Initialize a forge run by detecting any prior in-progress run, verifying the env
 - 🚫 FORBIDDEN to begin discovery scanning here (that's step-02)
 - 🚫 FORBIDDEN to write any proposal artifact in this step
 - 💬 If `improvement-vectors.md` is missing, OFFER to bootstrap; do not silently create
-- 🔒 If `cron_mode: true`, auto-bootstrap missing vectors using `defaultVectorsFile` plus repo scan; record decision in run journal
+- 🔒 If `cronMode: true`, auto-bootstrap missing vectors using `defaultVectorsFile` plus repo scan; record decision in run journal
 
 ## EXECUTION PROTOCOLS:
 - 🎯 Detect prior in-progress run BEFORE creating a new one
@@ -78,7 +78,7 @@ Check, in order, halting with remediation guidance on first failure:
 
 - If `{improvementVectorsFile}` exists: load it, validate it has at least one named vector. Skip to step 4.
 - If missing:
-  - Interactive mode: explain that vectors define the opinionated north star, offer to seed from `{defaultVectorsFile}` plus a quick repo signal scan (README, architecture.md, package.json scripts, src/ top-level structure). User confirms before write.
+  - Interactive mode: explain that vectors define the opinionated north star, offer to seed from `{defaultVectorsFile}` plus a quick repo signal scan (README, docs/** including docs/mcp-documentation.md, package.json scripts, src/ top-level structure). User confirms before write.
   - Cron mode: auto-seed using `{defaultVectorsFile}` + quick scan. Record `bootstrapped_by: cron` in the vectors file frontmatter.
 - Write `{improvementVectorsFile}` and inform user (or log).
 
@@ -112,7 +112,7 @@ Select an Option:
 #### EXECUTION RULES:
 - ALWAYS halt and wait for user input
 - ONLY proceed to next step when user selects 'C'
-- In `cron_mode: true`: auto-select 'C'
+- In `cronMode: true`: auto-select 'C'
 
 #### Menu Handling Logic:
 - IF C: load and read entire `{nextStepFile}`, then execute it

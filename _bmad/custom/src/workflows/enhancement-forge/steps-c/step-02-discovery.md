@@ -61,12 +61,12 @@ Load `{scannerAgentFile}`. Use its system prompt for both subprocess invocations
 Launch two Scanner Agent subprocesses concurrently:
 
 **Subprocess A: Repo Scanner**
-- Inputs: project root, glob patterns for source/docs (`src/**`, `docs/**`, `README.md`, `architecture.md`, `package.json`)
+- Inputs: project root, glob patterns for source/docs (`src/**`, `docs/**`, `docs/mcp-documentation.md`, `README.md`, `package.json`)
 - Tasks:
-  - Inventory exposed MCP tools (parse `src/server.ts` or equivalent)
+  - Inventory exposed MCP tools (parse `src/index.ts`)
   - Identify TODO/FIXME comments and their density per module
   - Detect missing observability (no structured logging, no metrics) per module
-  - Detect undocumented tools (in code but not in `docs/api.md` or README)
+  - Detect undocumented tools (in code but not in `docs/mcp-documentation.md` or README)
   - Note recent significant churn (`git log --since=30.days --name-only` aggregated)
 - Output: `repo_findings` JSON section per `discovery-report-schema` (see step rules below)
 

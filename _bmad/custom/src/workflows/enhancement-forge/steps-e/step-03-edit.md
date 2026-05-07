@@ -55,7 +55,7 @@ Two modes:
 | Proposal section | All 8 sections still present and non-empty; AC observable verbs unchanged or improved |
 | Proposal frontmatter | YAML parses; required fields preserved |
 | Ledger entry field | Field is in the editable allowlist; type matches schema; `decisionAt` and `shippedAt` are valid ISO 8601 if set |
-| Vectors file | YAML parses; vector still has required fields (weight, cooldown_runs, description); referenced labels still valid |
+| Vectors file | Frontmatter YAML parses; vector bullets still include required fields (weight, cooldown_runs, description); referenced labels still valid |
 | Run journal notes | Markdown well-formed; existing frontmatter and step summaries untouched |
 
 If validation fails: surface the error, do NOT write, return to step 2 for correction.

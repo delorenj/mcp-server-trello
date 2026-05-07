@@ -4,7 +4,7 @@ runId: ''
 generatedAt: ''
 vector: ''
 complexity: ''         # XS | S | M | L | XL
-surfaceArea: []        # e.g. ['src/trello-client.ts', 'src/server.ts', 'docs/architecture.md']
+surfaceArea: []        # e.g. ['src/trello-client.ts', 'src/index.ts', 'docs/mcp-documentation.md']
 abstractionScore: 0.0
 confidence: 0.0
 qualityGates:

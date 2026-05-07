@@ -23,7 +23,7 @@ Resume a forge run from where it was left off by reading `stepsCompleted` from t
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
 ### Universal Rules:
-- 🛑 NEVER generate content without user input (except in `cron_mode`)
+- 🛑 NEVER generate content without user input (except in `cronMode`)
 - 📖 CRITICAL: Read the complete step file before taking any action
 - 🔄 CRITICAL: When loading next step, read entire target file before executing
 - 📋 YOU ARE A FACILITATOR

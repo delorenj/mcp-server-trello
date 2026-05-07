@@ -97,9 +97,9 @@ gh issue create --repo <owner>/<repo> --title "<title>" --body-file <(echo "<bod
 
 Capture the returned URL and issue number. If the call fails, do NOT silently retry; surface the error and halt.
 
-### 6. Apply Initial Tracking Labels
+### 6. Verify Initial Tracking Label in Created Issue
 
-Append `forge:status:proposed` label after creation (the ledger schema's two-axis tracking labels are added later by automation as decisions are made).
+Ensure `forge:status:proposed` is present in the labels used during issue creation (provided by PM output). Do not append it a second time post-create.
 
 ### 7. Persist and Append
 

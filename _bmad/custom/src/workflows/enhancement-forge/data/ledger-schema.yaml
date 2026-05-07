@@ -24,18 +24,18 @@ entry_schema:
   labelsApplied: list[string]   # subset of label-conventions.md taxonomy
 
   # Two-axis success tracking (filled by Validate mode or external automation)
-  decisionToImplement: bool     # accepted into a sprint / picked up
-  decisionAt: string            # ISO 8601 (null until decided)
-  implementationSuccess: bool   # actually shipped (PR merged, deployed)
-  shippedAt: string             # ISO 8601 (null until shipped)
-  shippedPr: string             # PR URL (null until shipped)
+  decisionToImplement: bool|null     # accepted into a sprint / picked up
+  decisionAt: string|null            # ISO 8601 (null until decided)
+  implementationSuccess: bool|null   # actually shipped (PR merged, deployed)
+  shippedAt: string|null             # ISO 8601 (null until shipped)
+  shippedPr: string|null             # PR URL (null until shipped)
 
   # Outcome dimensions for correlation analysis
   outcomeNotes: string          # freeform reason text if rejected or stalled
   agentInvolvement: list[string]  # ['Scanner', 'VectorSelector', 'IdeaSelector', 'ProposalWriter', 'PM']
 
   # Self-correction support
-  correctsId: string            # null unless this entry corrects a prior one
+  correctsId: string|null       # null unless this entry corrects a prior one
 
 example_entry:
   id: '01J7NQXX9R5TJC0PMC4F8H1234'
@@ -44,12 +44,12 @@ example_entry:
   generatedAt: '2026-05-07T14:32:11Z'
   vector: 'UX/Ergonomics'
   complexity: 'M'
-  surfaceArea: ['src/trello-client.ts', 'src/server.ts']
+  surfaceArea: ['src/trello-client.ts', 'src/index.ts']
   abstractionScore: 0.82
   confidence: 0.78
   issueUrl: 'https://github.com/delorenj/mcp-server-trello/issues/142'
   issueNumber: 142
-  labelsApplied: ['enhancement', 'forge:auto', 'vector:ux-ergonomics', 'complexity:m']
+  labelsApplied: ['enhancement', 'forge:auto', 'vector:ux-ergonomics', 'complexity:m', 'abstraction:high', 'forge:status:proposed']
   decisionToImplement: null
   decisionAt: null
   implementationSuccess: null

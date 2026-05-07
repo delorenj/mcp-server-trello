@@ -50,9 +50,9 @@ Resolution priority:
 2. Else list all runs in `{runsFolder}` sorted by `lastUpdated` desc, paginated:
    ```
    Recent runs:
-   [1] 20260507-1432-init   complete    issue#142
-   [2] 20260506-2104-init   complete    issue#138
-   [3] 20260505-1100-init   queued_for_review  -
+    [1] {YYYYMMDD-HHMM}-init (e.g., 20260507-1432-init)   complete    issue#142
+    [2] {YYYYMMDD-HHMM}-init (e.g., 20260506-2104-init)   complete    issue#138
+    [3] {YYYYMMDD-HHMM}-init (e.g., 20260505-1100-init)   queued_for_review  -
    ...
    Pick a run by number, or paste a path:
    ```
