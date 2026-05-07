@@ -39,10 +39,41 @@ For a detailed list of changes, please refer to the [CHANGELOG.md](CHANGELOG.md)
 
 ## Installation
 
-This repository is designed as a **BMAD Skill Package**. 
-Install it as you would any normal BMAD skill by adding it to your `.agent/skills/` directory or installing it via your AI agent's skill management workflow.
+This repository is distributed as a **BMAD-compatible skill package** for the
+Trello MCP server. Install the `skill/` directory through your agent's skill
+management workflow, or place it in the agent's skills directory.
 
-When the skill is initialized by your agent, it will automatically run the bundled install script to set up the MCP server and build dependencies.
+When an agent activates the skill, it follows `skill/SKILL.md`. On first use,
+the agent runs the bundled installer:
+
+```bash
+bash skill/scripts/install.sh
+```
+
+The installer builds the MCP server from `skill/assets/source/` when Bun is
+available. If Bun is unavailable, it falls back to the published Smithery
+install path for `@delorenj/mcp-server-trello` and creates the same local
+`build/index.js` command path used by the skill activation check.
+
+## Skill package structure
+
+The skill is the agent-facing entry point for this repository.
+
+- `skill/SKILL.md`: Activation, routing, and agent workflow rules.
+- `skill/scripts/install.sh`: First-run installer for the bundled server.
+- `skill/references/trello-mcp/`: Focused references for setup, tools,
+  workflows, and gotchas.
+- `skill/assets/source/`: Bundled MCP server source used for local builds.
+
+For AI agents, start with `skill/SKILL.md` rather than this README. The README
+is the human-facing overview; the skill references are the operational surface
+for tool selection and Trello workflow rules.
+
+Maintainers can refresh the bundled source before packaging with:
+
+```bash
+mise run package
+```
 
 ## Configuration
 

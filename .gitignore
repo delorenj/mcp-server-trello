@@ -21,6 +21,9 @@ dist/
 .env.local
 .env.*.local
 
+# Local Codex state and credentials
+.codex/
+
 # Operating System
 .DS_Store
 Thumbs.db
@@ -64,4 +67,5 @@ mcp-publisher
 # MCP Registry tokens (secrets)
 .mcpregistry_github_token
 .mcpregistry_registry_token
+.claude-flow/data/
 .claude-flow/metrics/**/*
