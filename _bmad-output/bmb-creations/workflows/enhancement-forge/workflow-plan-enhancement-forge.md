@@ -10,7 +10,7 @@ validationStatus: PASS
 status: COMPLETE
 workflow_name: enhancement-forge
 target_repo: mcp-server-trello
-target_path: /home/delorenj/code/mcp-server-trello/_bmad/custom/src/workflows/enhancement-forge/
+target_path: _bmad/custom/src/workflows/enhancement-forge/
 ---
 
 # Workflow Creation Plan
