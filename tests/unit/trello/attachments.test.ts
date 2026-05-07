@@ -124,6 +124,28 @@ describe('attachments', () => {
       expect(form.getBuffer().toString()).toMatch(/attachment-\d+/);
     });
 
+    it('appends an inferred extension to the generated filename when mime type is known', async () => {
+      const axiosInstance = createAxiosMock();
+      const dataUrl = `data:application/pdf;base64,${Buffer.from('pdf').toString('base64')}`;
+
+      await attachData(axiosInstance, { cardId: 'c1', data: dataUrl });
+
+      const form = (axiosInstance.post as ReturnType<typeof vi.fn>).mock.calls[0][1];
+      expect(form.getBuffer().toString()).toMatch(/attachment-\d+\.pdf/);
+    });
+
+    it('omits the extension when mime type has no entry in MIME_TYPES', async () => {
+      const axiosInstance = createAxiosMock();
+
+      await attachData(axiosInstance, {
+        cardId: 'c1',
+        data: Buffer.from('blob').toString('base64'),
+      });
+
+      const form = (axiosInstance.post as ReturnType<typeof vi.fn>).mock.calls[0][1];
+      expect(form.getBuffer().toString()).toMatch(/attachment-\d+(?!\.)/);
+    });
+
     it('rejects a malformed data URL without uploading', async () => {
       const axiosInstance = createAxiosMock();
 
@@ -232,6 +254,15 @@ describe('attachments', () => {
       await expect(
         attachFile(axiosInstance, { cardId: 'c1', fileUrl: `file://${missing}` })
       ).rejects.toThrow(/File not found/);
+      expect(axiosInstance.post).not.toHaveBeenCalled();
+    });
+
+    it('throws InvalidRequest on a malformed remote URL', async () => {
+      const axiosInstance = createAxiosMock();
+
+      await expect(
+        attachFile(axiosInstance, { cardId: 'c1', fileUrl: 'not-a-url' })
+      ).rejects.toThrow(/Invalid URL/);
       expect(axiosInstance.post).not.toHaveBeenCalled();
     });
   });

@@ -73,6 +73,11 @@ function mimeFromFilename(filename: string | undefined): string | undefined {
   return MIME_TYPES[ext];
 }
 
+function extensionFromMime(mimeType: string): string {
+  const match = Object.entries(MIME_TYPES).find(([, mime]) => mime === mimeType);
+  return match?.[0] ?? '';
+}
+
 export interface AttachDataParams {
   cardId: string;
   data: string;
@@ -100,7 +105,8 @@ export async function attachData(
 
   effectiveMimeType = effectiveMimeType || mimeFromFilename(name) || DEFAULT_MIME_TYPE;
 
-  const fileName = name || `attachment-${Date.now()}`;
+  const extension = extensionFromMime(effectiveMimeType);
+  const fileName = name || `attachment-${Date.now()}${extension}`;
   const form = new FormData();
   form.append('file', buffer, { filename: fileName, contentType: effectiveMimeType });
   form.append('name', fileName);
@@ -152,7 +158,12 @@ async function uploadLocalFile(
   axiosInstance: AxiosInstance,
   { cardId, fileUrl, name, mimeType }: AttachFileParams
 ): Promise<TrelloAttachment> {
-  const localPath = fileURLToPath(fileUrl);
+  let localPath: string;
+  try {
+    localPath = fileURLToPath(fileUrl);
+  } catch {
+    throw new McpError(ErrorCode.InvalidRequest, `Invalid file URL: ${fileUrl}`);
+  }
   const effectiveMimeType =
     mimeType || mimeFromFilename(localPath) || DEFAULT_MIME_TYPE;
 
@@ -181,7 +192,12 @@ async function attachRemoteUrl(
   axiosInstance: AxiosInstance,
   { cardId, fileUrl, name, mimeType }: AttachFileParams
 ): Promise<TrelloAttachment> {
-  const remoteUrlPath = new URL(fileUrl).pathname;
+  let remoteUrlPath: string;
+  try {
+    remoteUrlPath = new URL(fileUrl).pathname;
+  } catch {
+    throw new McpError(ErrorCode.InvalidRequest, `Invalid URL: ${fileUrl}`);
+  }
   const effectiveMimeType =
     mimeType || mimeFromFilename(remoteUrlPath) || DEFAULT_MIME_TYPE;
 
