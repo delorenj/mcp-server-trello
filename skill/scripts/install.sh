@@ -30,7 +30,7 @@ elif command -v npx >/dev/null 2>&1; then
   mkdir -p "$INSTALL_DIR/build"
   cat >"$BUILD_FILE" <<'EOF'
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
+const { spawn } = require('node:child_process');
 
 const child = spawn('npx', ['-y', '@delorenj/mcp-server-trello', ...process.argv.slice(2)], {
   stdio: 'inherit',
