@@ -513,7 +513,7 @@ class TrelloServer {
             .string()
             .optional()
             .describe(
-              'MIME type of the data (e.g. "text/markdown", "application/pdf", "image/png"). Required for correct rendering in Trello; defaults to "application/octet-stream" if omitted and not derivable from a data URL.'
+              'MIME type of the data (e.g. "text/markdown", "application/pdf", "image/png"). Recommended for correct rendering in Trello. If omitted, inferred from a data URL prefix or the filename extension; falls back to "application/octet-stream".'
             ),
         },
       },

@@ -438,13 +438,13 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       // Convert base64 or data URL to buffer
       let buffer: Buffer;
-      let effectiveMimeType = mimeType || 'application/octet-stream';
+      let effectiveMimeType = mimeType;
 
       if (data.startsWith('data:')) {
         // Extract mime type and base64 data from data URL
         const matches = data.match(/^data:([^;]+);base64,(.+)$/);
         if (matches) {
-          effectiveMimeType = matches[1];
+          effectiveMimeType = effectiveMimeType || matches[1];
           buffer = Buffer.from(matches[2], 'base64');
         } else {
           throw new McpError(ErrorCode.InvalidRequest, 'Invalid data URL format');
@@ -453,6 +453,13 @@ export class TrelloClient {
         // Assume it's raw base64
         buffer = Buffer.from(data, 'base64');
       }
+
+      // Fall back to filename extension lookup, then octet-stream
+      if (!effectiveMimeType && name) {
+        const ext = path.extname(name).toLowerCase();
+        effectiveMimeType = MIME_TYPES[ext];
+      }
+      effectiveMimeType = effectiveMimeType || 'application/octet-stream';
 
       // Create form data for multipart upload
       const form = new FormData();
