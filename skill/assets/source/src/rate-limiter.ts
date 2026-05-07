@@ -39,7 +39,7 @@ export class TokenBucketRateLimiter implements RateLimiter {
           resolve();
         } else {
           // Calculate time until next token is available
-          const tokensNeeded = 1 - this.tokens;
+          const msToWait = tokensNeeded / this.refillRate;
           const msToWait = (tokensNeeded / this.refillRate) * 1000;
           setTimeout(check, Math.min(msToWait, 100)); // Check at most every 100ms
         }
