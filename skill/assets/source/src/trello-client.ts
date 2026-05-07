@@ -1243,7 +1243,6 @@ export class TrelloClient {
       const downloadUrl = `https://api.trello.com/1/cards/${cardId}/attachments/${attachmentId}/download/${encodeURIComponent(attachment.fileName)}`;
       await this.rateLimiter.waitForAvailableToken();
       await this.rateLimiter.waitForAvailableToken();
-      const response = await axios.get(downloadUrl, {
         headers: {
           Authorization: 'OAuth oauth_consumer_key="' + this.config.apiKey + '", oauth_token="' + this.config.token + '"',
         },
