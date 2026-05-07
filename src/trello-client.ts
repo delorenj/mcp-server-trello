@@ -428,21 +428,21 @@ export class TrelloClient {
     return this.attachFileToCard(boardId, cardId, imageUrl, name || 'Image Attachment', undefined);
   }
 
-  async attachImageDataToCard(
+  async attachDataToCard(
     boardId: string | undefined,
     cardId: string,
-    imageData: string,
+    data: string,
     name?: string,
     mimeType?: string
   ): Promise<TrelloAttachment> {
     return this.handleRequest(async () => {
       // Convert base64 or data URL to buffer
       let buffer: Buffer;
-      let effectiveMimeType = mimeType || 'image/png';
+      let effectiveMimeType = mimeType || 'application/octet-stream';
 
-      if (imageData.startsWith('data:')) {
+      if (data.startsWith('data:')) {
         // Extract mime type and base64 data from data URL
-        const matches = imageData.match(/^data:([^;]+);base64,(.+)$/);
+        const matches = data.match(/^data:([^;]+);base64,(.+)$/);
         if (matches) {
           effectiveMimeType = matches[1];
           buffer = Buffer.from(matches[2], 'base64');
@@ -451,12 +451,12 @@ export class TrelloClient {
         }
       } else {
         // Assume it's raw base64
-        buffer = Buffer.from(imageData, 'base64');
+        buffer = Buffer.from(data, 'base64');
       }
 
       // Create form data for multipart upload
       const form = new FormData();
-      const fileName = name || `screenshot-${Date.now()}.png`;
+      const fileName = name || `attachment-${Date.now()}`;
 
       form.append('file', buffer, {
         filename: fileName,
@@ -475,6 +475,20 @@ export class TrelloClient {
 
       return response.data;
     });
+  }
+
+  async attachImageDataToCard(
+    boardId: string | undefined,
+    cardId: string,
+    imageData: string,
+    name?: string,
+    mimeType?: string
+  ): Promise<TrelloAttachment> {
+    // Image-flavored convenience: defaults assume PNG when caller omits mimeType/name.
+    // For non-image content, prefer attachDataToCard.
+    const effectiveMimeType = mimeType || 'image/png';
+    const effectiveName = name || `screenshot-${Date.now()}.png`;
+    return this.attachDataToCard(boardId, cardId, imageData, effectiveName, effectiveMimeType);
   }
 
   async attachFileToCard(
