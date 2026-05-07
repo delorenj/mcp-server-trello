@@ -611,6 +611,130 @@ describe('TrelloClient', () => {
     });
   });
 
+  describe('attachDataToCard', () => {
+    const attachment = { id: 'a1', name: 'notes.md' };
+
+    it('should upload raw base64 with explicit mime type and name', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: attachment });
+      const client = createClient();
+
+      const result = await client.attachDataToCard(
+        undefined,
+        'c1',
+        Buffer.from('hello').toString('base64'),
+        'notes.md',
+        'text/markdown'
+      );
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        '/cards/c1/attachments',
+        expect.anything(),
+        expect.objectContaining({ headers: expect.any(Object) })
+      );
+      const form = mockAxiosInstance.post.mock.calls[0][1];
+      expect(form.getBuffer().toString()).toContain('text/markdown');
+      expect(form.getBuffer().toString()).toContain('notes.md');
+      expect(result).toEqual(attachment);
+    });
+
+    it('should extract mime type and data from a data URL', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: attachment });
+      const client = createClient();
+
+      const dataUrl = `data:application/pdf;base64,${Buffer.from('pdf-bytes').toString('base64')}`;
+      await client.attachDataToCard(undefined, 'c1', dataUrl, 'report.pdf');
+
+      const form = mockAxiosInstance.post.mock.calls[0][1];
+      expect(form.getBuffer().toString()).toContain('application/pdf');
+      expect(form.getBuffer().toString()).toContain('report.pdf');
+    });
+
+    it('should infer mime type from filename extension when not provided', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: attachment });
+      const client = createClient();
+
+      await client.attachDataToCard(
+        undefined,
+        'c1',
+        Buffer.from('# hi').toString('base64'),
+        'notes.md'
+      );
+
+      const form = mockAxiosInstance.post.mock.calls[0][1];
+      expect(form.getBuffer().toString()).toContain('text/markdown');
+    });
+
+    it('should default to application/octet-stream when no mime hints exist', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: attachment });
+      const client = createClient();
+
+      await client.attachDataToCard(
+        undefined,
+        'c1',
+        Buffer.from('blob').toString('base64')
+      );
+
+      const form = mockAxiosInstance.post.mock.calls[0][1];
+      expect(form.getBuffer().toString()).toContain('application/octet-stream');
+    });
+
+    it('should let an explicit mimeType override one parsed from a data URL', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: attachment });
+      const client = createClient();
+
+      const dataUrl = `data:application/octet-stream;base64,${Buffer.from('x').toString('base64')}`;
+      await client.attachDataToCard(undefined, 'c1', dataUrl, 'a.pdf', 'application/pdf');
+
+      const form = mockAxiosInstance.post.mock.calls[0][1];
+      expect(form.getBuffer().toString()).toContain('application/pdf');
+      expect(form.getBuffer().toString()).not.toContain('application/octet-stream');
+    });
+
+    it('should reject a malformed data URL without uploading', async () => {
+      const client = createClient();
+      await expect(
+        client.attachDataToCard(undefined, 'c1', 'data:not-valid', 'x.bin')
+      ).rejects.toThrow();
+      expect(mockAxiosInstance.post).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('attachImageDataToCard', () => {
+    const attachment = { id: 'a2', name: 'screenshot.png' };
+
+    it('should default to image/png and a screenshot filename when omitted', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: attachment });
+      const client = createClient();
+
+      await client.attachImageDataToCard(
+        undefined,
+        'c1',
+        Buffer.from('png-bytes').toString('base64')
+      );
+
+      const form = mockAxiosInstance.post.mock.calls[0][1];
+      expect(form.getBuffer().toString()).toContain('image/png');
+      expect(form.getBuffer().toString()).toMatch(/screenshot-\d+\.png/);
+    });
+
+    it('should respect a caller-supplied mime type and name', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: attachment });
+      const client = createClient();
+
+      await client.attachImageDataToCard(
+        undefined,
+        'c1',
+        Buffer.from('jpg-bytes').toString('base64'),
+        'photo.jpg',
+        'image/jpeg'
+      );
+
+      const form = mockAxiosInstance.post.mock.calls[0][1];
+      expect(form.getBuffer().toString()).toContain('image/jpeg');
+      expect(form.getBuffer().toString()).toContain('photo.jpg');
+    });
+  });
+
   describe('Config persistence', () => {
     it('activeBoardId should return configured board', () => {
       const client = createClient({ boardId: 'b1' });
