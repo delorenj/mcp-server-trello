@@ -1,0 +1,60 @@
+# Enhancement Forge Ledger Schema
+# Source of truth for proposal tracking. Mirrored to GH labels for visibility.
+# One entry per proposal. Append-only (no mutation; corrections are new entries with `correctsId`).
+
+ledger_version: 1
+
+entry_schema:
+  # Identity
+  id: string                    # ULID; matches proposalId in proposal artifact
+  proposalPath: string          # absolute or repo-relative path to proposal artifact
+  runId: string                 # ULID of the originating run
+  generatedAt: string           # ISO 8601
+
+  # Classification
+  vector: string                # named vector from improvement-vectors.md
+  complexity: string            # one of: XS, S, M, L, XL (effort-based)
+  surfaceArea: list[string]     # files/modules touched (proposal claim, not actual)
+  abstractionScore: float       # 0..1 from Idea Selector
+  confidence: float             # 0..1 from Idea Selector
+
+  # GitHub linkage
+  issueUrl: string              # https://github.com/.../issues/N
+  issueNumber: integer
+  labelsApplied: list[string]   # subset of label-conventions.md taxonomy
+
+  # Two-axis success tracking (filled by Validate mode or external automation)
+  decisionToImplement: bool|null     # accepted into a sprint / picked up
+  decisionAt: string|null            # ISO 8601 (null until decided)
+  implementationSuccess: bool|null   # actually shipped (PR merged, deployed)
+  shippedAt: string|null             # ISO 8601 (null until shipped)
+  shippedPr: string|null             # PR URL (null until shipped)
+
+  # Outcome dimensions for correlation analysis
+  outcomeNotes: string          # freeform reason text if rejected or stalled
+  agentInvolvement: list[string]  # ['Scanner', 'VectorSelector', 'IdeaSelector', 'ProposalWriter', 'PM']
+
+  # Self-correction support
+  correctsId: string|null       # null unless this entry corrects a prior one
+
+example_entry:
+  id: '01J7NQXX9R5TJC0PMC4F8H1234'
+  proposalPath: '_bmad-output/enhancement-forge/proposals/20260507-1432-checklist-higher-order.md'
+  runId: '01J7NQXVK0X9C8AS4FZ12345'
+  generatedAt: '2026-05-07T14:32:11Z'
+  vector: 'UX/Ergonomics'
+  complexity: 'M'
+  surfaceArea: ['src/trello-client.ts', 'src/index.ts']
+  abstractionScore: 0.82
+  confidence: 0.78
+  issueUrl: 'https://github.com/delorenj/mcp-server-trello/issues/142'
+  issueNumber: 142
+  labelsApplied: ['enhancement', 'forge:auto', 'vector:ux-ergonomics', 'complexity:m', 'abstraction:high', 'forge:status:proposed']
+  decisionToImplement: null
+  decisionAt: null
+  implementationSuccess: null
+  shippedAt: null
+  shippedPr: null
+  outcomeNotes: ''
+  agentInvolvement: ['Scanner', 'VectorSelector', 'IdeaSelector', 'ProposalWriter', 'PM']
+  correctsId: null
