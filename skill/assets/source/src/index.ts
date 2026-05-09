@@ -30,7 +30,7 @@ class TrelloServer {
 
     this.server = new McpServer({
       name: 'trello-server',
-      version: '1.0.0',
+      version: '1.7.1',
     });
 
     this.setupTools();

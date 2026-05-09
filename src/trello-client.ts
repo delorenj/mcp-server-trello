@@ -1241,9 +1241,7 @@ export class TrelloClient {
 
       // Download using OAuth header (required for attachment downloads)
       const downloadUrl = `https://api.trello.com/1/cards/${cardId}/attachments/${attachmentId}/download/${encodeURIComponent(attachment.fileName)}`;
-      await this.rateLimiter.waitForAvailableToken();
-      await this.rateLimiter.waitForAvailableToken();
-      const response = await axios.get(downloadUrl, {
+      const response = await this.axiosInstance.get(downloadUrl, {
         headers: {
           Authorization: 'OAuth oauth_consumer_key="' + this.config.apiKey + '", oauth_token="' + this.config.token + '"',
         },
