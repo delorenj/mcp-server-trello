@@ -10,8 +10,8 @@
 # ─────────────────────────────────────────────────────────────────
 
 [core]
-user_name = "Delorenj"
+user_name = "Dev"
 communication_language = "English"
 
 [modules.bmm]
-user_skill_level = "intermediate"
+user_skill_level = "expert"
