@@ -58,8 +58,8 @@ Load and resolve config from `{project-root}/_bmad/config.toml` and module overr
 
 - `project_name`, `output_folder`, `user_name`, `communication_language`, `document_output_language`
 - Project-specific paths:
-  - `improvement_output_folder` = `{project-root}/_improvement-output`
-  - `improvement_vectors_file` = `{project-root}/improvement-vectors.md`
+  - `improvement_output_folder` = `{project-root}/_bmad-output/enhancement-forge`
+  - `improvement_vectors_file` = `{project-root}/_bmad-output/enhancement-forge/improvement-vectors.md`
   - `improvement_ledger_file` = `{improvement_output_folder}/ledger.yaml`
   - `improvement_proposals_folder` = `{improvement_output_folder}/proposals`
   - `improvement_runs_folder` = `{improvement_output_folder}/runs`

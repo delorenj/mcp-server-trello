@@ -3,10 +3,10 @@ name: 'step-05-idea-select'
 description: 'Pick exactly one idea from Party Mode output, run Adv Elicit critique, justify abstraction-up; CHECKPOINT 2'
 
 nextStepFile: './step-06-proposal-draft.md'
-runJournalFile: '{project-root}/_improvement-output/runs/{runSlug}/run.md'
-ideationOutputFile: '{project-root}/_improvement-output/runs/{runSlug}/ideation.md'
+runJournalFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/run.md'
+ideationOutputFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/ideation.md'
 ideaSelectorAgentFile: '../data/sub-agents/idea-selector.md'
-advancedElicitationTask: '{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '{project-root}/.agents/skills/bmad-advanced-elicitation/SKILL.md'
 antiPatternsFile: '../data/anti-patterns.md'
 partyModeStepFile: './step-04-party-mode.md'
 abstractionScoreThreshold: 0.65

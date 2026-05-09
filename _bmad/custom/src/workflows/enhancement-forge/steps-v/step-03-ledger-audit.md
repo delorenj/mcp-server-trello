@@ -4,8 +4,8 @@ description: 'Health and dedup-risk audit of the ledger across all entries'
 
 nextStepFile: './step-04-report.md'
 ledgerSchemaFile: '../data/ledger-schema.yaml'
-ledgerFile: '{project-root}/_improvement-output/ledger.yaml'
-proposalsFolder: '{project-root}/_improvement-output/proposals'
+ledgerFile: '{project-root}/_bmad-output/enhancement-forge/ledger.yaml'
+proposalsFolder: '{project-root}/_bmad-output/enhancement-forge/proposals'
 ---
 
 # Validate Step 3: Ledger Audit

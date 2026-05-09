@@ -3,7 +3,7 @@ name: 'step-04-report'
 description: 'Render a validation report to disk and print summary; for workflow-target validation, also runs the workflow-definition audit inline'
 
 # No nextStepFile - terminal in validate mode
-reportsFolder: '{project-root}/_improvement-output/validation-reports'
+reportsFolder: '{project-root}/_bmad-output/enhancement-forge/validation-reports'
 workflowFile: '../workflow.md'
 ledgerSchemaFile: '../data/ledger-schema.yaml'
 proposalTemplate: '../templates/proposal-template.md'

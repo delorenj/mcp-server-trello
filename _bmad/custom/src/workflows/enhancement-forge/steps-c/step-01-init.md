@@ -6,8 +6,8 @@ nextStepFile: './step-02-discovery.md'
 continueFile: './step-01b-continue.md'
 runJournalTemplate: '../templates/run-journal-template.md'
 defaultVectorsFile: '../data/default-improvement-vectors.md'
-improvementVectorsFile: '{project-root}/improvement-vectors.md'
-improvementOutputFolder: '{project-root}/_improvement-output'
+improvementVectorsFile: '{project-root}/_bmad-output/enhancement-forge/improvement-vectors.md'
+improvementOutputFolder: '{project-root}/_bmad-output/enhancement-forge'
 runsFolder: '{improvementOutputFolder}/runs'
 ledgerFile: '{improvementOutputFolder}/ledger.yaml'
 ledgerSchemaFile: '../data/ledger-schema.yaml'
@@ -116,7 +116,7 @@ Select an Option:
 
 #### Menu Handling Logic:
 - IF C: load and read entire `{nextStepFile}`, then execute it
-- IF A: Execute `{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml`, then redisplay menu
+- IF A: Execute `{project-root}/.agents/skills/bmad-advanced-elicitation/SKILL.md`, then redisplay menu
 - IF X: Set run-journal frontmatter `status: 'aborted'`, write final note, halt
 - IF Any other: help user, then redisplay menu
 

@@ -3,10 +3,10 @@ name: 'step-03-vector-select'
 description: 'Choose exactly one improvement vector for this run, with reasoning + dedup against ledger; CHECKPOINT 1'
 
 nextStepFile: './step-04-party-mode.md'
-runJournalFile: '{project-root}/_improvement-output/runs/{runSlug}/run.md'
-discoveryReportFile: '{project-root}/_improvement-output/runs/{runSlug}/discovery.json'
-improvementVectorsFile: '{project-root}/improvement-vectors.md'
-ledgerFile: '{project-root}/_improvement-output/ledger.yaml'
+runJournalFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/run.md'
+discoveryReportFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/discovery.json'
+improvementVectorsFile: '{project-root}/_bmad-output/enhancement-forge/improvement-vectors.md'
+ledgerFile: '{project-root}/_bmad-output/enhancement-forge/ledger.yaml'
 vectorSelectorAgentFile: '../data/sub-agents/vector-selector.md'
 confidenceThreshold: 0.7
 dedupDistanceThreshold: 0.5

@@ -39,7 +39,7 @@ entry_schema:
 
 example_entry:
   id: '01J7NQXX9R5TJC0PMC4F8H1234'
-  proposalPath: '_improvement-output/proposals/20260507-1432-checklist-higher-order.md'
+  proposalPath: '_bmad-output/enhancement-forge/proposals/20260507-1432-checklist-higher-order.md'
   runId: '01J7NQXVK0X9C8AS4FZ12345'
   generatedAt: '2026-05-07T14:32:11Z'
   vector: 'UX/Ergonomics'

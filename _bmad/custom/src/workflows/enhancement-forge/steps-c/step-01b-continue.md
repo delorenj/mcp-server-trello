@@ -3,7 +3,7 @@ name: 'step-01b-continue'
 description: 'Resume a forge run from prior in-progress state by reading stepsCompleted and routing to the correct next step'
 
 workflowFile: '../workflow.md'
-runsFolder: '{project-root}/_improvement-output/runs'
+runsFolder: '{project-root}/_bmad-output/enhancement-forge/runs'
 nextStepOptions:
   step-02: './step-02-discovery.md'
   step-03: './step-03-vector-select.md'

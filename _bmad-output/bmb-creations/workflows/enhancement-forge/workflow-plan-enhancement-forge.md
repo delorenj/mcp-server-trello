@@ -32,7 +32,7 @@ The workflow has a learning loop. It tracks the outcome of every proposal it gen
 - **Secondary deliverables:**
   - A proposal markdown artifact in the repo (the long-form thinking that backs the issue)
   - An entry in a tracked ledger (repo-local source of truth + GH labels for visibility)
-  - On first run with no `improvement-vectors.md`: a seeded vectors file based on quick repo analysis
+  - On first run with no `_bmad-output/enhancement-forge/improvement-vectors.md`: a seeded vectors file based on quick repo analysis
 - **Cumulative output (across runs):** A growing dataset that reveals which kinds of proposals actually ship, used to bias future selection
 
 **Key Insights:**
@@ -44,12 +44,12 @@ The workflow has a learning loop. It tracks the outcome of every proposal it gen
    - Idea Selector (convergence: picks one well-defined idea from Party Mode)
    - Proposal Writer (long-form proposal artifact)
    - PM (drafts and creates the GH issue)
-3. **Optional `improvement-vectors.md` as opinionated north star.** Defines named vectors (Feature Parity, UX/Ergonomics, Observability, Performance, Documentation, Security, Maintainability, etc.) that bias selection. If absent on first run, the workflow offers to bootstrap one from a quick repo analysis.
+3. **Optional `_bmad-output/enhancement-forge/improvement-vectors.md` as opinionated north star.** Defines named vectors (Feature Parity, UX/Ergonomics, Observability, Performance, Documentation, Security, Maintainability, etc.) that bias selection. If absent on first run, the workflow offers to bootstrap one from a quick repo analysis.
 4. **Self-tracking ledger with two-axis success metric.**
    - `decision_to_implement: bool` (did the issue get accepted into a sprint / picked up?)
    - `implementation_success: bool` (did it actually ship?)
    - Both true = highest honor. Rich metadata (vector, category, complexity, surface area, agents involved, generation timestamp) attached for later correlation analysis.
-5. **Tracking persistence: dual-write pattern.** Repo file (e.g. `_improvement-output/ledger.yaml`) is the source of truth, version controlled. GH labels mirror state for native visibility on issues.
+5. **Tracking persistence: dual-write pattern.** Repo file (e.g. `_bmad-output/enhancement-forge/ledger.yaml`) is the source of truth, version controlled. GH labels mirror state for native visibility on issues.
 6. **Triggering is decoupled from logic.** Manual slash command and nightly cron invoke the same workflow. The workflow itself does not care how it was started.
 7. **Anti-pattern guardrail:** Proposals encouraging "expose new MCP endpoint that wraps Trello endpoint X 1:1" are explicitly de-prioritized in favor of higher-abstraction proposals that map to user intent.
 8. **Recursive improvement-of-the-improver.** Because the ledger captures correlations, the workflow can eventually feed its own track record back into selection heuristics, creating a learning loop instead of a static pipeline.
@@ -60,7 +60,7 @@ The workflow has a learning loop. It tracks the outcome of every proposal it gen
 **Target Path:** `/home/delorenj/code/mcp-server-trello/_bmad/custom/src/workflows/enhancement-forge/`
 
 **4 Key Decisions:**
-1. **Document Output:** `true` — produces proposal markdown, ledger entry, optional `improvement-vectors.md`, and renders to GH issue body
+1. **Document Output:** `true` — produces proposal markdown, ledger entry, optional `_bmad-output/enhancement-forge/improvement-vectors.md`, and renders to GH issue body
 2. **Module Affiliation:** `standalone` (custom) — project-aware to mcp-server-trello, lives in repo's custom location
 3. **Session Type:** `continuable` — repo+GH scan and Party Mode can chew tokens, supports nightly cron and interrupted manual runs
 4. **Lifecycle Support:** `tri-modal` — workflow itself will evolve as the ledger reveals patterns; Edit and Validate flows worth the upfront cost
@@ -87,7 +87,7 @@ The workflow has a learning loop. It tracks the outcome of every proposal it gen
 
 **Inputs Required:**
 - Required: git repo, `gh` CLI authenticated (or GH MCP), BMAD installed with Party Mode workflow available
-- Optional: `improvement-vectors.md` (auto-bootstrapped on first run from quick repo analysis), `_improvement-output/ledger.yaml` (created if missing)
+- Optional: `_bmad-output/enhancement-forge/improvement-vectors.md` (auto-bootstrapped on first run from quick repo analysis), `_bmad-output/enhancement-forge/ledger.yaml` (created if missing)
 - Prerequisites: prior issues fetched for dedup, repo readable, write access for ledger and proposal artifacts
 
 **Output Specifications:**
@@ -97,7 +97,7 @@ The workflow has a learning loop. It tracks the outcome of every proposal it gen
 - Secondary artifacts:
   - GH issue body (rendered from proposal, tracking metadata moved to labels)
   - Ledger entry (semi-structured YAML, one row per proposal)
-  - Bootstrapped `improvement-vectors.md` (free-form, only on first run when missing)
+  - Bootstrapped `_bmad-output/enhancement-forge/improvement-vectors.md` (free-form, only on first run when missing)
 - Frequency: one proposal per run; ledger and vectors file accumulate across runs
 
 **Success Criteria:**
@@ -121,7 +121,7 @@ The workflow has a learning loop. It tracks the outcome of every proposal it gen
 **Phase 1: Bootstrap & Continuation Check**
 - Welcome and scope reminder (ideation, not implementation)
 - Detect prior in-progress run via `stepsCompleted`; offer resume
-- Check for `improvement-vectors.md`; offer to seed if missing
+- Check for `_bmad-output/enhancement-forge/improvement-vectors.md`; offer to seed if missing
 - Verify `gh` CLI auth, repo state, ledger file existence
 
 **Phase 2: Repo + GH Discovery**
@@ -156,8 +156,8 @@ The workflow has a learning loop. It tracks the outcome of every proposal it gen
 - Returns issue URL
 
 **Phase 8: Ledger Update + Completion**
-- Append entry to `_improvement-output/ledger.yaml`
-- Persist proposal artifact in `_improvement-output/proposals/`
+- Append entry to `_bmad-output/enhancement-forge/ledger.yaml`
+- Persist proposal artifact in `_bmad-output/enhancement-forge/proposals/`
 - Print summary and next-run hints
 
 ## Tools Configuration
@@ -176,7 +176,7 @@ The workflow has a learning loop. It tracks the outcome of every proposal it gen
 **Memory:**
 - Type: continuable + sidecar-file
 - Tracking: `stepsCompleted`, `lastStep` in run frontmatter
-- Sidecar: `_improvement-output/ledger.yaml` is the cross-run memory enabling the learning loop
+- Sidecar: `_bmad-output/enhancement-forge/ledger.yaml` is the cross-run memory enabling the learning loop
 
 **External Integrations:**
 - `gh` CLI (primary) for issue creation, label management, prior-issue fetch. Fallback: GitHub MCP if available
@@ -237,10 +237,10 @@ enhancement-forge/
 
 | Artifact | Path |
 |---|---|
-| Run journal (stateful) | `_improvement-output/runs/{ts}-{slug}/run.md` |
-| Proposal artifact | `_improvement-output/proposals/{ts}-{slug}.md` |
-| Ledger | `_improvement-output/ledger.yaml` |
-| Vectors file | `improvement-vectors.md` (repo root) |
+| Run journal (stateful) | `_bmad-output/enhancement-forge/runs/{ts}-{slug}/run.md` |
+| Proposal artifact | `_bmad-output/enhancement-forge/proposals/{ts}-{slug}.md` |
+| Ledger | `_bmad-output/enhancement-forge/ledger.yaml` |
+| Vectors file | `_bmad-output/enhancement-forge/improvement-vectors.md` (repo root) |
 
 ### Step Outline (steps-c/)
 
@@ -301,7 +301,7 @@ Each is a single-purpose Agent invocation with a tight system prompt drawn from 
 ### Special Features
 
 - **Cron mode behavior:** read `confidence` and `dedup_distance` at each checkpoint; both above threshold → auto-approve and log to morning-review queue, otherwise halt and queue
-- **Bootstrap branch (step-01):** missing `improvement-vectors.md` triggers seed-from-scan, user reviews seeded vectors before continuing
+- **Bootstrap branch (step-01):** missing `_bmad-output/enhancement-forge/improvement-vectors.md` triggers seed-from-scan, user reviews seeded vectors before continuing
 - **Tri-modal mode router:** `workflow.md` reads invocation hint (`-v`, `-e`, default) to dispatch to `steps-c/`, `steps-e/`, or `steps-v/`
 
 ## Foundation Build Complete

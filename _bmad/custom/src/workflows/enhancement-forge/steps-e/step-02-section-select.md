@@ -3,9 +3,9 @@ name: 'step-02-section-select'
 description: 'User picks which artifact and section to edit; the workflow loads the targeted file and surfaces edit affordances'
 
 nextStepFile: './step-03-edit.md'
-proposalsFolder: '{project-root}/_improvement-output/proposals'
-ledgerFile: '{project-root}/_improvement-output/ledger.yaml'
-vectorsFile: '{project-root}/improvement-vectors.md'
+proposalsFolder: '{project-root}/_bmad-output/enhancement-forge/proposals'
+ledgerFile: '{project-root}/_bmad-output/enhancement-forge/ledger.yaml'
+vectorsFile: '{project-root}/_bmad-output/enhancement-forge/improvement-vectors.md'
 ---
 
 # Edit Step 2: Section Select

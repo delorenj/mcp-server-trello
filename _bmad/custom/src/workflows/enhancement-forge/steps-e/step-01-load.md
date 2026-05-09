@@ -3,9 +3,9 @@ name: 'step-01-load'
 description: 'Load a target run for editing: identify by slug or path, validate state, present what is editable'
 
 nextStepFile: './step-02-section-select.md'
-runsFolder: '{project-root}/_improvement-output/runs'
-proposalsFolder: '{project-root}/_improvement-output/proposals'
-ledgerFile: '{project-root}/_improvement-output/ledger.yaml'
+runsFolder: '{project-root}/_bmad-output/enhancement-forge/runs'
+proposalsFolder: '{project-root}/_bmad-output/enhancement-forge/proposals'
+ledgerFile: '{project-root}/_bmad-output/enhancement-forge/ledger.yaml'
 ---
 
 # Edit Step 1: Load Target Run

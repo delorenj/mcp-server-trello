@@ -5,8 +5,8 @@ description: 'Select what to validate: a specific run, the ledger as a whole, or
 nextStepFileRun: './step-02-quality-gates.md'
 nextStepFileLedger: './step-03-ledger-audit.md'
 nextStepFileWorkflow: './step-04-report.md'
-runsFolder: '{project-root}/_improvement-output/runs'
-ledgerFile: '{project-root}/_improvement-output/ledger.yaml'
+runsFolder: '{project-root}/_bmad-output/enhancement-forge/runs'
+ledgerFile: '{project-root}/_bmad-output/enhancement-forge/ledger.yaml'
 workflowFile: '../workflow.md'
 ---
 

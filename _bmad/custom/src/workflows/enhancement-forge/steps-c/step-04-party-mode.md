@@ -3,12 +3,12 @@ name: 'step-04-party-mode'
 description: 'Invoke BMAD Party Mode as a sub-workflow with a seeded prompt biased toward abstraction-up ideation'
 
 nextStepFile: './step-05-idea-select.md'
-runJournalFile: '{project-root}/_improvement-output/runs/{runSlug}/run.md'
-discoveryReportFile: '{project-root}/_improvement-output/runs/{runSlug}/discovery.json'
-partyModeWorkflow: '{project-root}/_bmad/core/workflows/party-mode/workflow.md'
+runJournalFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/run.md'
+discoveryReportFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/discovery.json'
+partyModeWorkflow: '{project-root}/.agents/skills/bmad-party-mode/SKILL.md'
 partyModeSeedFile: '../data/party-mode-seed.md'
 antiPatternsFile: '../data/anti-patterns.md'
-ideationOutputFile: '{project-root}/_improvement-output/runs/{runSlug}/ideation.md'
+ideationOutputFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/ideation.md'
 ---
 
 # Step 4: Party Mode Ideation

@@ -3,10 +3,10 @@ name: 'step-02-discovery'
 description: 'Scan repo and GitHub state in parallel; emit a structured discovery report consumed by vector selection'
 
 nextStepFile: './step-03-vector-select.md'
-runJournalFile: '{project-root}/_improvement-output/runs/{runSlug}/run.md'
-discoveryReportFile: '{project-root}/_improvement-output/runs/{runSlug}/discovery.json'
+runJournalFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/run.md'
+discoveryReportFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/discovery.json'
 scannerAgentFile: '../data/sub-agents/scanner.md'
-ledgerFile: '{project-root}/_improvement-output/ledger.yaml'
+ledgerFile: '{project-root}/_bmad-output/enhancement-forge/ledger.yaml'
 ---
 
 # Step 2: Discovery (Parallel Repo + GH Scan)

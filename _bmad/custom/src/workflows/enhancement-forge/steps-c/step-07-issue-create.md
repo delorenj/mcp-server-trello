@@ -3,8 +3,8 @@ name: 'step-07-issue-create'
 description: 'Render proposal into GH issue body, dry-run preview, apply labels, create issue, return URL'
 
 nextStepFile: './step-08-ledger-final.md'
-runJournalFile: '{project-root}/_improvement-output/runs/{runSlug}/run.md'
-proposalFile: '{project-root}/_improvement-output/proposals/{runSlug}-{ideaSlug}.md'
+runJournalFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/run.md'
+proposalFile: '{project-root}/_bmad-output/enhancement-forge/proposals/{runSlug}-{ideaSlug}.md'
 pmAgentFile: '../data/sub-agents/pm.md'
 labelConventionsFile: '../data/label-conventions.md'
 ---

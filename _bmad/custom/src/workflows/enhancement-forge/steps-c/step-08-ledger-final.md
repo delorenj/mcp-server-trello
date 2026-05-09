@@ -3,9 +3,9 @@ name: 'step-08-ledger-final'
 description: 'Append the run as a new ledger entry, finalize run journal, print summary'
 
 # No nextStepFile - this is the final step
-runJournalFile: '{project-root}/_improvement-output/runs/{runSlug}/run.md'
-proposalFile: '{project-root}/_improvement-output/proposals/{runSlug}-{ideaSlug}.md'
-ledgerFile: '{project-root}/_improvement-output/ledger.yaml'
+runJournalFile: '{project-root}/_bmad-output/enhancement-forge/runs/{runSlug}/run.md'
+proposalFile: '{project-root}/_bmad-output/enhancement-forge/proposals/{runSlug}-{ideaSlug}.md'
+ledgerFile: '{project-root}/_bmad-output/enhancement-forge/ledger.yaml'
 ledgerSchemaFile: '../data/ledger-schema.yaml'
 ---
 
