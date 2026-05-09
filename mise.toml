@@ -21,3 +21,14 @@ task = "link-agentfiles"
 [tasks.link-agentfiles]
 description = "Symlink all agent files to AGENTS.md"
 run = "{{config_root}}/.mise/scripts/link-agentfiles.sh"
+
+[tasks.package]
+description = "Refresh skill assets for packaging"
+run = "{{config_root}}/scripts/build-skill-assets.sh"
+
+[tasks.ci]
+description = "Run tests and refresh the skill source bundle"
+run = [
+  "npm run test",
+  "{{config_root}}/scripts/build-skill-assets.sh",
+]
