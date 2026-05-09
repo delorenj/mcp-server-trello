@@ -37,6 +37,9 @@ logs/
 
 
 # Claude Flow generated files
+.codex/
+.claude-flow/
+.claude/sessions/
 .claude/settings.local.json
 .mcp.json
 claude-flow.config.json

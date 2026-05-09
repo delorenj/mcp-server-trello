@@ -1,0 +1,43 @@
+# Autopilot budget defaults
+# Stop conditions Otto evaluates after every worker return and every elicitation.
+# First condition that fires wins. Override per-run via `budget=` arg.
+#
+# Set any field to `null` to disable that condition.
+
+version: 1
+
+# Wall-clock limit. Otto stops the run when this is exceeded.
+# Format: human-readable duration (e.g., "30m", "2h", "1h30m").
+max_duration: '2h'
+
+# Maximum number of HITL questions Otto answers (excluding pauses).
+# Sanity-check against runaway loops in workflows that elicit constantly.
+max_questions_answered: 30
+
+# Maximum number of pauses (low-confidence escalations + always_pause hits).
+# When this many pauses pile up, the policy is too cautious for the target — stop and re-tune.
+max_pauses: 5
+
+# Maximum number of worker delegations across the whole run.
+# Includes parallel batches (each subagent in a parallel batch counts as one).
+max_workers_spawned: 20
+
+# If a worker reports an error, abort immediately. Set false to log and continue.
+stop_on_worker_error: true
+
+# If all required outputs from the target workflow exist and are non-empty, stop.
+# This is how a "successful" run terminates cleanly.
+stop_on_target_complete: true
+
+# Cost ceiling in USD. Otto sums self-reported worker token usage (see workflow.md
+# "Cost tracking" section) against the rate table below. Imperfect — set
+# generously, treat as a circuit breaker, not an accountant.
+max_cost_usd: null
+
+# Flat per-million-token rates Otto uses for cost estimation.
+# Update if you're consistently using different models.
+cost_rates_per_mtoken:
+  'claude-opus-4-7':    { input: 15.00, output: 75.00 }
+  'claude-sonnet-4-6':  { input:  3.00, output: 15.00 }
+  'claude-haiku-4-5':   { input:  0.80, output:  4.00 }
+  'unknown':            { input:  3.00, output: 15.00 }   # fallback
