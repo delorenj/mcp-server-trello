@@ -1,6 +1,5 @@
 import axios, { AxiosInstance, CreateAxiosDefaults } from 'axios';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import FormData from 'form-data';
 import {
   TrelloConfig,
   TrelloCard,
@@ -23,8 +22,7 @@ import { createTrelloRateLimiters } from './rate-limiter.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { createReadStream } from 'fs';
-import { fileURLToPath } from 'url';
+import * as attachments from './trello/attachments.js';
 
 // Path for storing active board/workspace configuration
 const CONFIG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.trello-mcp');
@@ -424,8 +422,21 @@ export class TrelloClient {
     imageUrl: string,
     name?: string
   ): Promise<TrelloAttachment> {
-    // Simply delegate to attachFileToCard - it will auto-detect MIME type for images
-    return this.attachFileToCard(boardId, cardId, imageUrl, name || 'Image Attachment', undefined);
+    return this.handleRequest(() =>
+      attachments.attachImage(this.axiosInstance, { cardId, imageUrl, name })
+    );
+  }
+
+  async attachDataToCard(
+    boardId: string | undefined,
+    cardId: string,
+    data: string,
+    name?: string,
+    mimeType?: string
+  ): Promise<TrelloAttachment> {
+    return this.handleRequest(() =>
+      attachments.attachData(this.axiosInstance, { cardId, data, name, mimeType })
+    );
   }
 
   async attachImageDataToCard(
@@ -435,46 +446,9 @@ export class TrelloClient {
     name?: string,
     mimeType?: string
   ): Promise<TrelloAttachment> {
-    return this.handleRequest(async () => {
-      // Convert base64 or data URL to buffer
-      let buffer: Buffer;
-      let effectiveMimeType = mimeType || 'image/png';
-
-      if (imageData.startsWith('data:')) {
-        // Extract mime type and base64 data from data URL
-        const matches = imageData.match(/^data:([^;]+);base64,(.+)$/);
-        if (matches) {
-          effectiveMimeType = matches[1];
-          buffer = Buffer.from(matches[2], 'base64');
-        } else {
-          throw new McpError(ErrorCode.InvalidRequest, 'Invalid data URL format');
-        }
-      } else {
-        // Assume it's raw base64
-        buffer = Buffer.from(imageData, 'base64');
-      }
-
-      // Create form data for multipart upload
-      const form = new FormData();
-      const fileName = name || `screenshot-${Date.now()}.png`;
-
-      form.append('file', buffer, {
-        filename: fileName,
-        contentType: effectiveMimeType,
-      });
-
-      form.append('name', fileName);
-      form.append('mimeType', effectiveMimeType);
-
-      // Upload file directly to Trello
-      const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, form, {
-        headers: {
-          ...form.getHeaders(),
-        },
-      });
-
-      return response.data;
-    });
+    return this.handleRequest(() =>
+      attachments.attachImageData(this.axiosInstance, { cardId, imageData, name, mimeType })
+    );
   }
 
   async attachFileToCard(
@@ -484,63 +458,9 @@ export class TrelloClient {
     name?: string,
     mimeType?: string
   ): Promise<TrelloAttachment> {
-    return this.handleRequest(async () => {
-      // Check if fileUrl is a local file path (starts with file://)
-      if (fileUrl.startsWith('file://')) {
-        // Handle local file upload
-        const localPath = fileURLToPath(fileUrl);
-        let effectiveMimeType = mimeType;
-        if (!effectiveMimeType) {
-          const ext = path.extname(localPath).toLowerCase();
-          effectiveMimeType = MIME_TYPES[ext] || 'application/octet-stream';
-        }
-
-        // Check if file exists
-        try {
-          await fs.access(localPath);
-        } catch (error) {
-          throw new McpError(ErrorCode.InvalidRequest, `File not found: ${localPath}`);
-        }
-
-        // Create form data for multipart upload
-        const form = new FormData();
-        const fileStream = createReadStream(localPath);
-        const fileName = name || path.basename(localPath);
-
-        form.append('file', fileStream, {
-          filename: fileName,
-          contentType: effectiveMimeType,
-        });
-
-        // Add name and mimeType to form
-        form.append('name', fileName);
-        form.append('mimeType', effectiveMimeType);
-
-        // Upload file directly to Trello using the configured axios instance
-        const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, form, {
-          headers: {
-            ...form.getHeaders(),
-          },
-        });
-
-        return response.data;
-      } else {
-        // Handle URL attachment
-        const remoteUrlPath = new URL(fileUrl).pathname;
-        let effectiveMimeType = mimeType;
-        if (!effectiveMimeType) {
-          const ext = path.extname(remoteUrlPath).toLowerCase();
-          effectiveMimeType = MIME_TYPES[ext] || 'application/octet-stream';
-        }
-
-        const response = await this.axiosInstance.post(`/cards/${cardId}/attachments`, {
-          url: fileUrl,
-          name: name || 'File Attachment',
-          mimeType: effectiveMimeType,
-        });
-        return response.data;
-      }
-    });
+    return this.handleRequest(() =>
+      attachments.attachFile(this.axiosInstance, { cardId, fileUrl, name, mimeType })
+    );
   }
 
   async getCard(
@@ -1259,61 +1179,3 @@ export class TrelloClient {
     });
   }
 }
-
-const MIME_TYPES: Readonly<{ [key: string]: string }> = Object.freeze({
-  // Images
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.gif': 'image/gif',
-  '.bmp': 'image/bmp',
-  '.svg': 'image/svg+xml',
-  '.webp': 'image/webp',
-  '.ico': 'image/x-icon',
-
-  // Documents
-  '.pdf': 'application/pdf',
-  '.doc': 'application/msword',
-  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  '.xls': 'application/vnd.ms-excel',
-  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  '.ppt': 'application/vnd.ms-powerpoint',
-  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-
-  // Text
-  '.txt': 'text/plain',
-  '.md': 'text/markdown',
-  '.csv': 'text/csv',
-  '.log': 'text/plain',
-
-  // Code
-  '.html': 'text/html',
-  '.htm': 'text/html',
-  '.css': 'text/css',
-  '.js': 'application/javascript',
-  '.mjs': 'application/javascript',
-  '.ts': 'application/typescript',
-  '.tsx': 'application/typescript',
-  '.jsx': 'application/javascript',
-  '.json': 'application/json',
-  '.xml': 'application/xml',
-  '.yaml': 'text/yaml',
-  '.yml': 'text/yaml',
-
-  // Archives
-  '.zip': 'application/zip',
-  '.tar': 'application/x-tar',
-  '.gz': 'application/gzip',
-  '.rar': 'application/vnd.rar',
-  '.7z': 'application/x-7z-compressed',
-
-  // Media
-  '.mp3': 'audio/mpeg',
-  '.wav': 'audio/wav',
-  '.mp4': 'video/mp4',
-  '.avi': 'video/x-msvideo',
-  '.mov': 'video/quicktime',
-  '.wmv': 'video/x-ms-wmv',
-  '.flv': 'video/x-flv',
-  '.webm': 'video/webm',
-});

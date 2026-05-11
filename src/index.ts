@@ -483,12 +483,65 @@ class TrelloServer {
       }
     );
 
-    // Attach image data to card (for base64/data URL uploads)
+    // Attach arbitrary binary data to a card (base64 or data URL)
+    this.server.registerTool(
+      'attach_data_to_card',
+      {
+        title: 'Attach Data to Card',
+        description:
+          'Attach binary data (image, markdown, PDF, text, etc.) to a card from base64-encoded data or a data URL. Use this for any non-image content. For image/screenshot uploads with PNG defaults, see attach_image_data_to_card.',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe(
+              'ID of the Trello board where the card exists (uses default if not provided)'
+            ),
+          cardId: z.string().describe('ID of the card to attach the data to'),
+          data: z
+            .string()
+            .describe(
+              'Base64-encoded data or a data URL (e.g. data:text/markdown;base64,...). Any content type, not just images.'
+            ),
+          name: z
+            .string()
+            .optional()
+            .describe(
+              'Filename for the attachment, including extension (e.g. "notes.md", "report.pdf"). Defaults to "attachment-<timestamp>".'
+            ),
+          mimeType: z
+            .string()
+            .optional()
+            .describe(
+              'MIME type of the data (e.g. "text/markdown", "application/pdf", "image/png"). Recommended for correct rendering in Trello. If omitted, inferred from a data URL prefix or the filename extension; falls back to "application/octet-stream".'
+            ),
+        },
+      },
+      async ({ boardId, cardId, data, name, mimeType }) => {
+        try {
+          const attachment = await this.trelloClient.attachDataToCard(
+            boardId,
+            cardId,
+            data,
+            name,
+            mimeType
+          );
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Attach image data to card (image-flavored convenience over attach_data_to_card)
     this.server.registerTool(
       'attach_image_data_to_card',
       {
         title: 'Attach Image Data to Card',
-        description: 'Attach an image to a card from base64 data or data URL (for screenshot uploads)',
+        description:
+          'Attach an image to a card from base64 data or a data URL. Image-flavored convenience over attach_data_to_card: defaults assume PNG when mimeType/name are omitted, suitable for screenshot pasting. For non-image content, use attach_data_to_card.',
         inputSchema: {
           boardId: z
             .string()
