@@ -336,6 +336,7 @@ export class TrelloClient {
       start?: string;
       dueComplete?: boolean;
       labels?: string[];
+      pos?: string | number;
     }
   ): Promise<TrelloCard> {
     return this.handleRequest(async () => {
@@ -346,6 +347,7 @@ export class TrelloClient {
         start: params.start,
         dueComplete: params.dueComplete,
         idLabels: params.labels,
+        pos: params.pos,
       });
       return response.data;
     });
@@ -360,12 +362,13 @@ export class TrelloClient {
     });
   }
 
-  async moveCard(boardId: string | undefined, cardId: string, listId: string): Promise<TrelloCard> {
+  async moveCard(boardId: string | undefined, cardId: string, listId: string, pos?: string | number): Promise<TrelloCard> {
     const effectiveBoardId = boardId || this.defaultBoardId;
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.put(`/cards/${cardId}`, {
         idList: listId,
         ...(effectiveBoardId && { idBoard: effectiveBoardId }),
+        ...(pos !== undefined && { pos }),
       });
       return response.data;
     });
