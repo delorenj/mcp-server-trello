@@ -4,6 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { TrelloClient } from './trello-client.js';
 import { TrelloHealthEndpoints, HealthEndpointSchemas } from './health/health-endpoints.js';
+import { formatCardListResponse } from './card-list-preview.js';
 
 class TrelloServer {
   private server: McpServer;
@@ -68,7 +69,8 @@ class TrelloServer {
       'get_cards_by_list_id',
       {
         title: 'Get Cards by List ID',
-        description: 'Fetch cards from a specific Trello list on a specific board',
+        description:
+          'Fetch cards from a specific Trello list on a specific board. Descriptions are previewed by default to keep responses compact; set fields without "desc" to omit descriptions, or increase descMaxLength/omitDescThresholdBytes and use get_card for full details.',
         inputSchema: {
           boardId: z
             .string()
@@ -85,14 +87,28 @@ class TrelloServer {
             .min(1, 'nameFilter must not be empty')
             .optional()
             .describe('Optional substring to filter cards by name (case-insensitive)'),
+          descMaxLength: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe(
+              'Maximum description preview length per card. Defaults to 200. Increase for fuller descriptions.'
+            ),
+          omitDescThresholdBytes: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe(
+              'Approximate response size threshold before descriptions are omitted. Defaults to 50000 bytes.'
+            ),
         },
       },
-      async ({ listId, fields, nameFilter }) => {
+      async ({ listId, fields, nameFilter, descMaxLength, omitDescThresholdBytes }) => {
         try {
           const cards = await this.trelloClient.getCardsByList(listId, fields, nameFilter);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
-          };
+          return formatCardListResponse(cards, { descMaxLength, omitDescThresholdBytes });
         } catch (error) {
           return this.handleError(error);
         }
