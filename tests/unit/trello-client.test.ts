@@ -42,12 +42,17 @@ vi.mock('fs/promises', () => ({
   access: vi.fn(async () => {}),
 }));
 
-function createClient(overrides?: { boardId?: string; defaultBoardId?: string }) {
+function createClient(overrides?: {
+  boardId?: string;
+  defaultBoardId?: string;
+  allowedWorkspaceIds?: string[];
+}) {
   return new TrelloClient({
     apiKey: 'test-key',
     token: 'test-token',
     boardId: overrides?.boardId,
     defaultBoardId: overrides?.defaultBoardId,
+    allowedWorkspaceIds: overrides?.allowedWorkspaceIds,
   });
 }
 
@@ -65,6 +70,22 @@ describe('TrelloClient', () => {
           params: { key: 'test-key', token: 'test-token' },
         })
       );
+    });
+
+    it('should not enable workspace restrictions when allowed workspaces are unset or empty', () => {
+      expect(createClient().hasWorkspaceRestriction).toBe(false);
+      expect(createClient({ allowedWorkspaceIds: [] }).hasWorkspaceRestriction).toBe(false);
+    });
+  });
+
+  describe('workspace restriction', () => {
+    it('should reject access to a non-allowed workspace before making a request', async () => {
+      const client = createClient({ allowedWorkspaceIds: ['allowed-workspace'] });
+
+      await expect(client.listBoardsInWorkspace('blocked-workspace')).rejects.toThrow(
+        "Access to workspace 'blocked-workspace' is not allowed"
+      );
+      expect(mockAxiosInstance.get).not.toHaveBeenCalled();
     });
   });
 
