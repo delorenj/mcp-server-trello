@@ -72,11 +72,17 @@ class TrelloServer {
             .string()
             .optional()
             .describe('Comma-separated list of fields to return (e.g., "name,idShort,labels,due,dueComplete"). Omit for all fields.'),
+          nameFilter: z
+            .string()
+            .trim()
+            .min(1, 'nameFilter must not be empty')
+            .optional()
+            .describe('Optional substring to filter cards by name (case-insensitive)'),
         },
       },
-      async ({ listId, fields }) => {
+      async ({ listId, fields, nameFilter }) => {
         try {
-          const cards = await this.trelloClient.getCardsByList(listId, fields);
+          const cards = await this.trelloClient.getCardsByList(listId, fields, nameFilter);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
           };
