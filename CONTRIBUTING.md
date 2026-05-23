@@ -1,49 +1,101 @@
-# Contributing to MCP Trello Server
+# Contributing to MCP Server Trello
 
-We love your input! We want to make contributing to MCP Trello Server as easy and transparent as possible, whether it's:
+Thanks for considering a contribution. This server is open to:
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
-- Becoming a maintainer
+- Bug reports and reproductions
+- Feature proposals (open an issue first for anything non-trivial)
+- Documentation improvements
+- Pull requests that fix bugs or add small, well-scoped features
 
-## We Develop with Github
-We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
+## Before you start work
 
-## We Use [Github Flow](https://guides.github.com/introduction/flow/index.html)
-Pull requests are the best way to propose changes to the codebase. We actively welcome your pull requests:
+For anything beyond a typo fix or a small bug repair, **open an issue first**
+and confirm the direction is welcome. Large PRs that arrive without prior
+discussion are likely to be closed without merge, regardless of code quality —
+this isn't about gatekeeping, it's about respecting your time.
 
-1. Fork the repo and create your branch from `main`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. Issue that pull request!
+In particular:
 
-## Any contributions you make will be under the MIT Software License
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
+- New runtime dependencies require strong justification. The dependency
+  surface is intentionally small.
+- New tools should map cleanly to an existing Trello API endpoint and
+  serve a real user workflow.
+- Speculative architectural rewrites (caching layers, message buses,
+  pluggable backends) are out of scope.
 
-## Report bugs using Github's [issue tracker](https://github.com/modelcontextprotocol/server-trello/issues)
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/modelcontextprotocol/server-trello/issues/new); it's that easy!
+## Local development
 
-## Write bug reports with detail, background, and sample code
+This project uses [Bun](https://bun.sh) as the runtime and
+[Vitest](https://vitest.dev) for tests. Bun 1.0 or newer is required.
 
-**Great Bug Reports** tend to have:
+```bash
+# Install dependencies
+bun install
 
-- A quick summary and/or background
-- Steps to reproduce
-  - Be specific!
-  - Give sample code if you can.
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
+# Run the server in watch mode
+bun run dev
 
-## Use a Consistent Coding Style
+# Build the production bundle
+bun run build
 
-* Use TypeScript for all new code
-* 2 spaces for indentation rather than tabs
-* You can try running `npm run lint` for style unification
+# Run the full test suite
+bun run test
+
+# Run only unit tests
+bun run test:unit
+
+# Format and lint
+bun run format
+bun run lint
+```
+
+## Submitting a pull request
+
+1. **Fork** the repository and create a topic branch from `main`.
+2. **Make your change.** Keep the scope tight — one PR, one concern.
+3. **Add tests** for new behavior in `tests/unit/`. The vitest setup picks them
+   up automatically.
+4. **Update documentation** when you change a public tool's signature or add
+   a new one. The README's tools section is the source of truth users read.
+5. **Run the checks locally** before pushing:
+   ```bash
+   bun run lint
+   bun run format:check
+   bun run test
+   bun run build
+   ```
+6. **Open the PR** against `main` with a clear title, a description that
+   explains _why_ as much as _what_, and a checklist of what you tested.
+
+## Pull request review
+
+PRs go through automated checks (build, tests, CodeQL) and at least one human
+review. Expect feedback that asks for narrower scope, smaller diffs, or extra
+tests — none of that is personal; small reviewable PRs ship faster.
+
+## Reporting bugs
+
+Open an issue at
+[delorenj/mcp-server-trello/issues](https://github.com/delorenj/mcp-server-trello/issues)
+using the bug report template. Great bug reports include:
+
+- A short summary of the unexpected behavior
+- Exact reproduction steps (with a minimal config when possible)
+- What you expected vs. what happened
+- Your Bun and Node.js versions, and the MCP client you were using
+- Relevant logs (redacted of any tokens)
+
+## Security disclosures
+
+Do **not** open public issues for security vulnerabilities. See
+[`SECURITY.md`](SECURITY.md) for the private disclosure process.
+
+## Code of conduct
+
+Participation is governed by the
+[Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
-By contributing, you agree that your contributions will be licensed under its MIT License.
+
+By contributing, you agree that your contributions will be licensed under the
+project's [MIT License](LICENSE).

@@ -23,6 +23,11 @@
     "url": "https://github.com/delorenj/mcp-server-trello/issues"
   },
   "homepage": "https://github.com/delorenj/mcp-server-trello#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/delorenj/mcp-server-trello.git"
+  },
+  "funding": "https://github.com/sponsors/delorenj",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.3",
     "axios": "^1.13.2",
@@ -70,6 +75,9 @@
     "test:unit": "vitest run tests/unit",
     "test:smoke": "vitest run tests/smoke",
     "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write 'src/**/*.{ts,tsx,js,json}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,js,json}'",
     "publish": "bun run build && npm publish"
   }
 }
