@@ -254,6 +254,29 @@ describe('TrelloClient', () => {
     });
   });
 
+  describe('updateList', () => {
+    it('should update list metadata without position fields', async () => {
+      const list = { id: 'l1', name: 'Updated List' };
+      mockAxiosInstance.put.mockResolvedValue({ data: list });
+
+      const client = createClient();
+      const result = await client.updateList('l1', {
+        name: 'Updated List',
+        closed: false,
+        subscribed: true,
+        idBoard: 'b2',
+      });
+
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith('/lists/l1', {
+        name: 'Updated List',
+        closed: false,
+        subscribed: true,
+        idBoard: 'b2',
+      });
+      expect(result).toEqual(list);
+    });
+  });
+
   describe('getMyCards', () => {
     it('should fetch current user cards', async () => {
       mockAxiosInstance.get.mockResolvedValue({ data: [] });

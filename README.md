@@ -453,6 +453,23 @@ Send a list to the archive.
 }
 ```
 
+### update\_list
+
+Update a list's name, archive state, subscription state, or board. Use `update_list_position` to reorder lists within a board.
+
+```typescript
+{
+  name: 'update_list',
+  arguments: {
+    listId: string,          // ID of the list to update
+    name?: string,           // Optional: New name for the list
+    closed?: boolean,        // Optional: Whether to close (archive) the list
+    subscribed?: boolean,    // Optional: Whether to subscribe to the list
+    idBoard?: string         // Optional: ID of a board to move the list to
+  }
+}
+```
+
 ### update\_list\_position
 
 Update the position of a list on the board. Trello uses fractional indexing: each list has a float position, and to place a list between two others, use the average of their positions (e.g., between pos 1024 and 2048, use 1536). Use `"top"`/`"bottom"` shortcuts to move to the edges.
