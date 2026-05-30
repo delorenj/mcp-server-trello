@@ -28,7 +28,6 @@
     "axios": "^1.13.2",
     "https-proxy-agent": "^7.0.6",
     "form-data": "^4.0.5",
-    "mcp-evals": "^1.0.18",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -39,6 +38,7 @@
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "^5.5.4",
+    "mcp-evals": "^1.0.18",
     "prettier": "^3.7.4",
     "terser": "^5.44.1",
     "typescript": "^5.9.3",
