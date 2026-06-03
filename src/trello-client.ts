@@ -214,7 +214,7 @@ export class TrelloClient {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 429 && retryCount < TrelloClient.MAX_RETRY_ATTEMPTS) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
           return this.handleRequest(requestFn, retryCount + 1);
         }
         if (error.response?.status === 429) {
@@ -528,7 +528,9 @@ export class TrelloClient {
     imageUrl: string,
     name?: string
   ): Promise<TrelloAttachment> {
-    validateExternalUrl(imageUrl);
+    if (!imageUrl.startsWith('file://')) {
+      validateExternalUrl(imageUrl);
+    }
     return this.handleRequest(() =>
       attachments.attachImage(this.axiosInstance, { cardId, imageUrl, name })
     );
