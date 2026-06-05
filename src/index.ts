@@ -290,7 +290,8 @@ class TrelloServer {
       'move_card',
       {
         title: 'Move Card',
-        description: 'Move a card to a different list, potentially on a different board',
+        description:
+          'Move a card to a different list or reorder it within a list, potentially on a different board',
         inputSchema: {
           boardId: z
             .string()

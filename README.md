@@ -524,16 +524,17 @@ Fetch all cards assigned to the current user.
 
 ### move\_card
 
-Move a card to a different list.
+Move a card to a different list, or reorder it within a list.
 
 ```typescript
 {
-  name: 'move_card',
-  arguments: {
-    boardId?: string,  // Optional: ID of the target board (uses default if not provided)
-s;   cardId: string,    // ID of the card to move
-    listId: string     // ID of the target list
-  }
+ name: 'move_card',
+ arguments: {
+   boardId?: string, // Optional: ID of the target board (uses default if not provided)
+   cardId: string, // ID of the card to move
+   listId: string, // ID of the target list
+   pos?: string | number // Optional: "top", "bottom", or a positive number for ordering within the list
+ }
 }
 ```
 
