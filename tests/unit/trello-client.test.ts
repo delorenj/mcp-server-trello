@@ -155,6 +155,7 @@ describe('TrelloClient', () => {
         name: 'New Card',
         description: 'A description',
         dueDate: '2024-12-31T00:00:00Z',
+        dueReminder: 0,
         start: '2024-12-01',
         labels: ['label1'],
       });
@@ -164,6 +165,7 @@ describe('TrelloClient', () => {
         name: 'New Card',
         desc: 'A description',
         due: '2024-12-31T00:00:00Z',
+        dueReminder: 0,
         start: '2024-12-01',
         idLabels: ['label1'],
       });
@@ -181,6 +183,7 @@ describe('TrelloClient', () => {
         name: 'Card',
         desc: undefined,
         due: undefined,
+        dueReminder: undefined,
         start: undefined,
         idLabels: undefined,
       });
@@ -195,6 +198,7 @@ describe('TrelloClient', () => {
       await client.updateCard(undefined, {
         cardId: 'c1',
         name: 'Updated',
+        dueReminder: null,
         dueComplete: true,
       });
 
@@ -202,8 +206,29 @@ describe('TrelloClient', () => {
         name: 'Updated',
         desc: undefined,
         due: undefined,
+        dueReminder: null,
         start: undefined,
         dueComplete: true,
+        idLabels: undefined,
+      });
+    });
+
+    it('should pass numeric due reminder value', async () => {
+      mockAxiosInstance.put.mockResolvedValue({ data: { id: 'c1' } });
+
+      const client = createClient();
+      await client.updateCard(undefined, {
+        cardId: 'c1',
+        dueReminder: 60,
+      });
+
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith('/cards/c1', {
+        name: undefined,
+        desc: undefined,
+        due: undefined,
+        dueReminder: 60,
+        start: undefined,
+        dueComplete: undefined,
         idLabels: undefined,
       });
     });
