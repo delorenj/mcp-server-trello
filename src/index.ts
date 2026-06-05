@@ -193,6 +193,12 @@ class TrelloServer {
           name: z.string().describe('Name of the card'),
           description: z.string().optional().describe('Description of the card'),
           dueDate: z.string().optional().describe('Due date for the card (ISO 8601 format)'),
+          dueReminder: z
+            .number()
+            .int()
+            .nullable()
+            .optional()
+            .describe('Due date reminder in minutes before due date (0 for due time reminder)'),
           start: z
             .string()
             .optional()
@@ -230,6 +236,12 @@ class TrelloServer {
           name: z.string().optional().describe('New name for the card'),
           description: z.string().optional().describe('New description for the card'),
           dueDate: z.string().optional().describe('New due date for the card (ISO 8601 format)'),
+          dueReminder: z
+            .number()
+            .int()
+            .nullable()
+            .optional()
+            .describe('New due date reminder in minutes before due date (0 for due time reminder)'),
           start: z
             .string()
             .optional()

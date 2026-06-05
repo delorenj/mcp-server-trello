@@ -112,6 +112,7 @@ class TrelloMCPClient {
     name: string;
     description?: string;
     dueDate?: string;
+    dueReminder?: number | null;
     start?: string;
     labels?: string[];
     boardId?: string;
@@ -132,6 +133,7 @@ class TrelloMCPClient {
     name?: string;
     description?: string;
     dueDate?: string;
+    dueReminder?: number | null;
     start?: string;
     dueComplete?: boolean;
     labels?: string[];

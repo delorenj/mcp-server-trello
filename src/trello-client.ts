@@ -397,6 +397,7 @@ export class TrelloClient {
       name: string;
       description?: string;
       dueDate?: string;
+      dueReminder?: number;
       start?: string;
       labels?: string[];
     }
@@ -407,6 +408,7 @@ export class TrelloClient {
         name: params.name,
         desc: params.description,
         due: params.dueDate,
+        dueReminder: params.dueReminder,
         start: params.start,
         idLabels: params.labels,
       });
@@ -421,6 +423,7 @@ export class TrelloClient {
       name?: string;
       description?: string;
       dueDate?: string;
+      dueReminder?: number;
       start?: string;
       dueComplete?: boolean;
       labels?: string[];
@@ -432,6 +435,7 @@ export class TrelloClient {
         name: params.name,
         desc: params.description,
         due: params.dueDate,
+        dueReminder: params.dueReminder,
         start: params.start,
         dueComplete: params.dueComplete,
         idLabels: params.labels,
