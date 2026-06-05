@@ -241,6 +241,18 @@ describe('TrelloClient', () => {
         idBoard: 'b2',
       });
     });
+
+    it('should include pos when provided for list ordering', async () => {
+      mockAxiosInstance.put.mockResolvedValue({ data: { id: 'c1' } });
+
+      const client = createClient();
+      await client.moveCard(undefined, 'c1', 'l2', 'top');
+
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith('/cards/c1', {
+        idList: 'l2',
+        pos: 'top',
+      });
+    });
   });
 
   describe('addList', () => {

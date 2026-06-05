@@ -255,7 +255,8 @@ class TrelloServer {
       'move_card',
       {
         title: 'Move Card',
-        description: 'Move a card to a different list, potentially on a different board',
+        description:
+          'Move a card to a different list or reorder it within a list, potentially on a different board',
         inputSchema: {
           boardId: z
             .string()
@@ -265,11 +266,17 @@ class TrelloServer {
             ),
           cardId: z.string().describe('ID of the card to move'),
           listId: z.string().describe('ID of the target list'),
+          pos: z
+            .union([z.string(), z.number()])
+            .optional()
+            .describe(
+              'Position of the card in the target list. Accepts "top", "bottom", or a positive number'
+            ),
         },
       },
-      async ({ boardId, cardId, listId }) => {
+      async ({ boardId, cardId, listId, pos }) => {
         try {
-          const card = await this.trelloClient.moveCard(boardId, cardId, listId);
+          const card = await this.trelloClient.moveCard(boardId, cardId, listId, pos);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
