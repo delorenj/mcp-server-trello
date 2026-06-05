@@ -210,7 +210,26 @@ describe('TrelloClient', () => {
         start: undefined,
         dueComplete: true,
         idLabels: undefined,
-        pos: undefined,
+      });
+    });
+
+    it('should pass numeric due reminder value', async () => {
+      mockAxiosInstance.put.mockResolvedValue({ data: { id: 'c1' } });
+
+      const client = createClient();
+      await client.updateCard(undefined, {
+        cardId: 'c1',
+        dueReminder: 60,
+      });
+
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith('/cards/c1', {
+        name: undefined,
+        desc: undefined,
+        due: undefined,
+        dueReminder: 60,
+        start: undefined,
+        dueComplete: undefined,
+        idLabels: undefined,
       });
     });
   });

@@ -198,7 +198,9 @@ class TrelloServer {
             .int()
             .nullable()
             .optional()
-            .describe('Due date reminder in minutes before due date (0 for due time reminder)'),
+            .describe(
+              'Due date reminder in minutes before due date (e.g., null to remove reminder, 0 at due time, 1440 one day before)'
+            ),
           start: z
             .string()
             .optional()
@@ -241,7 +243,9 @@ class TrelloServer {
             .int()
             .nullable()
             .optional()
-            .describe('New due date reminder in minutes before due date (0 for due time reminder)'),
+            .describe(
+              'New due date reminder in minutes before due date (e.g., null to remove reminder, 0 at due time, 1440 one day before)'
+            ),
           start: z
             .string()
             .optional()
