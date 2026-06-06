@@ -15,7 +15,7 @@ A Model Context Protocol (MCP) server that provides tools for interacting with T
 ### ✨ New in This Release:
 
   - 🚀 **Performance Boost**: Enjoy a faster, more responsive server.
-  -  BUN **Bun-Powered**: The project now runs on the lightning-fast Bun runtime.
+  - **Bun-Powered**: The project now runs on the lightning-fast Bun runtime.
   - 📖 **Comprehensive Examples**: A new `examples` directory with detailed implementations in JavaScript, Python, and TypeScript.
 
 **Plus:** Modern MCP SDK architecture, enhanced type safety, and comprehensive documentation!
@@ -106,7 +106,7 @@ You can get these values from:
 
   - API Key: [https://trello.com/app-key](https://trello.com/app-key)
   - Token: Generate using your API key
-  - Board ID (optional, deprecated): Found in the board URL (e.g., [suspicious link removed])
+  - Board ID (optional, deprecated): Found in the board URL (e.g., `https://trello.com/b/abc123/example-board`)
   - Workspace ID: Found in workspace settings or using `list_workspaces` tool
 
 ### Board and Workspace Management
