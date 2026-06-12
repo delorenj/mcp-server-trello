@@ -19,6 +19,10 @@
   ],
   "author": "Jarad DeLorenzo",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/delorenj/mcp-server-trello.git"
+  },
   "bugs": {
     "url": "https://github.com/delorenj/mcp-server-trello/issues"
   },
