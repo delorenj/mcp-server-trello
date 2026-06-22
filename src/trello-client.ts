@@ -1319,34 +1319,30 @@ export class TrelloClient {
   }
 
   /**
-   * Download an attachment from a card with authentication
-   * Returns base64-encoded data along with metadata
+   * Download an attachment from a card with authentication.
+   * Returns base64-encoded data along with metadata.
    */
   async downloadAttachment(
     cardId: string,
     attachmentId: string
   ): Promise<{ data: string; mimeType: string; fileName: string }> {
     return this.handleRequest(async () => {
-      // First get attachment metadata to get the filename
       const metaResponse = await this.axiosInstance.get(
         `/cards/${cardId}/attachments/${attachmentId}`
       );
       const attachment = metaResponse.data;
 
-      // Download using OAuth header (required for attachment downloads)
+      // Trello attachment downloads require OAuth header auth, not the key/token query params
       const downloadUrl = `https://api.trello.com/1/cards/${cardId}/attachments/${attachmentId}/download/${encodeURIComponent(attachment.fileName)}`;
       const response = await this.axiosInstance.get(downloadUrl, {
         headers: {
-          Authorization: 'OAuth oauth_consumer_key="' + this.config.apiKey + '", oauth_token="' + this.config.token + '"',
+          Authorization: `OAuth oauth_consumer_key="${this.config.apiKey}", oauth_token="${this.config.token}"`,
         },
         responseType: 'arraybuffer',
       });
 
-      // Convert to base64
-      const base64Data = Buffer.from(response.data).toString('base64');
-
       return {
-        data: base64Data,
+        data: Buffer.from(response.data).toString('base64'),
         mimeType: attachment.mimeType || 'application/octet-stream',
         fileName: attachment.fileName || 'attachment',
       };

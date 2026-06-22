@@ -1719,7 +1719,6 @@ class TrelloServer {
         try {
           const result = await this.trelloClient.downloadAttachment(cardId, attachmentId);
 
-          // For images, return as image content type for direct viewing
           if (result.mimeType.startsWith('image/')) {
             return {
               content: [
@@ -1736,16 +1735,15 @@ class TrelloServer {
             };
           }
 
-          // For non-images, return base64 data as text
           return {
             content: [
               {
                 type: 'text' as const,
-                text: JSON.stringify({
-                  fileName: result.fileName,
-                  mimeType: result.mimeType,
-                  data: result.data,
-                }, null, 2),
+                text: JSON.stringify(
+                  { fileName: result.fileName, mimeType: result.mimeType, data: result.data },
+                  null,
+                  2
+                ),
               },
             ],
           };
