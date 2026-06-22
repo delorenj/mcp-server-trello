@@ -570,6 +570,25 @@ nbsp; arguments: {
 }
 ```
 
+### download\_attachment
+
+Download an attachment from a card by ID. Attachment IDs are available in the `attachments` array returned by `get_card`.
+
+```typescript
+{
+  name: 'download_attachment',
+  arguments: {
+    cardId: string,       // ID of the card containing the attachment
+    attachmentId: string  // ID of the attachment to download
+  }
+}
+```
+
+**Returns:** For image attachments (`image/*`), returns the image as inline viewable data. For all other file types, returns a JSON object with:
+- `fileName`: Original filename
+- `mimeType`: MIME type of the file
+- `data`: Base64-encoded file contents
+
 ### Comment Management Tools
 
 #### add\_comment
