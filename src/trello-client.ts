@@ -1166,7 +1166,9 @@ export class TrelloClient {
       const labels: TrelloLabelDetails[] = response.data;
       const q = query.toLowerCase();
       return labels.filter(
-        (l) => l.name.toLowerCase().includes(q) || l.color.toLowerCase().includes(q)
+        (l) =>
+          (l.name || '').toLowerCase().includes(q) ||
+          (l.color || '').toLowerCase().includes(q)
       );
     });
   }
