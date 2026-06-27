@@ -519,6 +519,24 @@ export class TrelloClient {
     });
   }
 
+  async watchCard(cardId: string, subscribed: boolean): Promise<TrelloCard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put(`/cards/${cardId}`, {
+        subscribed,
+      });
+      return response.data;
+    });
+  }
+
+  async watchList(listId: string, subscribed: boolean): Promise<TrelloList> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put(`/lists/${listId}`, {
+        subscribed,
+      });
+      return response.data;
+    });
+  }
+
   async getMyCards(): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/cards');
