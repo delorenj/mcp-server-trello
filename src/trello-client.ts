@@ -26,6 +26,7 @@ import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as attachments from './trello/attachments.js';
+import * as checklists from './trello/checklists.js';
 import { validateExternalUrl } from './url-validator.js';
 
 // Path for storing active board/workspace configuration
@@ -576,6 +577,22 @@ export class TrelloClient {
     }
     return this.handleRequest(() =>
       attachments.attachFile(this.axiosInstance, { cardId, fileUrl, name, mimeType })
+    );
+  }
+
+  async getCardAttachments(
+    cardId: string
+  ): Promise<TrelloAttachment[]> {
+    return this.handleRequest(() =>
+      attachments.getCardAttachments(this.axiosInstance, cardId)
+    );
+  }
+
+  async getCardChecklists(
+    cardId: string
+  ): Promise<CheckList[]> {
+    return this.handleRequest(() =>
+      checklists.getCardChecklists(this.axiosInstance, cardId)
     );
   }
 
