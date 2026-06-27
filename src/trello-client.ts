@@ -529,12 +529,7 @@ export class TrelloClient {
   }
 
   async watchList(listId: string, subscribed: boolean): Promise<TrelloList> {
-    return this.handleRequest(async () => {
-      const response = await this.axiosInstance.put(`/lists/${listId}`, {
-        subscribed,
-      });
-      return response.data;
-    });
+    return this.updateList(listId, { subscribed });
   }
 
   async getMyCards(): Promise<TrelloCard[]> {
