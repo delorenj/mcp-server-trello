@@ -26,7 +26,6 @@ import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as attachments from './trello/attachments.js';
-import * as checklists from './trello/checklists.js';
 import { validateExternalUrl } from './url-validator.js';
 
 // Path for storing active board/workspace configuration
@@ -530,7 +529,12 @@ export class TrelloClient {
   }
 
   async watchList(listId: string, subscribed: boolean): Promise<TrelloList> {
-    return this.updateList(listId, { subscribed });
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put(`/lists/${listId}`, {
+        subscribed,
+      });
+      return response.data;
+    });
   }
 
   async getMyCards(): Promise<TrelloCard[]> {
@@ -590,22 +594,6 @@ export class TrelloClient {
     }
     return this.handleRequest(() =>
       attachments.attachFile(this.axiosInstance, { cardId, fileUrl, name, mimeType })
-    );
-  }
-
-  async getCardAttachments(
-    cardId: string
-  ): Promise<TrelloAttachment[]> {
-    return this.handleRequest(() =>
-      attachments.getCardAttachments(this.axiosInstance, cardId)
-    );
-  }
-
-  async getCardChecklists(
-    cardId: string
-  ): Promise<CheckList[]> {
-    return this.handleRequest(() =>
-      checklists.getCardChecklists(this.axiosInstance, cardId)
     );
   }
 
@@ -1183,33 +1171,6 @@ export class TrelloClient {
     });
   }
 
-  async searchLabels(boardId: string | undefined, query: string): Promise<TrelloLabelDetails[]> {
-    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
-    if (!effectiveBoardId) {
-      throw new McpError(
-        ErrorCode.InvalidParams,
-        'boardId is required when no default board is configured'
-      );
-    }
-    return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/labels`);
-      const labels: TrelloLabelDetails[] = response.data;
-      const q = query.toLowerCase();
-      return labels.filter(
-        (l) =>
-          (l.name || '').toLowerCase().includes(q) ||
-          (l.color || '').toLowerCase().includes(q)
-      );
-    });
-  }
-
-  async removeLabelFromCard(cardId: string, labelId: string): Promise<boolean> {
-    return this.handleRequest(async () => {
-      await this.axiosInstance.delete(`/cards/${cardId}/idLabels/${labelId}`);
-      return true;
-    });
-  }
-
   /**
    * Copy a card (can copy across boards). Uses idCardSource to clone a card.
    */
@@ -1376,35 +1337,36 @@ export class TrelloClient {
   }
 
   /**
-   * Download an attachment from a card with authentication.
-   * Returns base64-encoded data along with metadata.
+   * Download an attachment from a card with authentication
+   * Returns base64-encoded data along with metadata
    */
   async downloadAttachment(
     cardId: string,
     attachmentId: string
   ): Promise<{ data: string; mimeType: string; fileName: string }> {
     return this.handleRequest(async () => {
-      const encodedCardId = encodeURIComponent(cardId);
-      const encodedAttachmentId = encodeURIComponent(attachmentId);
+      // First get attachment metadata to get the filename
       const metaResponse = await this.axiosInstance.get(
-        `/cards/${encodedCardId}/attachments/${encodedAttachmentId}`
+        `/cards/${cardId}/attachments/${attachmentId}`
       );
-      const attachment = metaResponse.data as Partial<TrelloAttachment> | null | undefined;
-      const fileName = attachment?.fileName || 'attachment';
+      const attachment = metaResponse.data;
 
-      // Trello attachment downloads require OAuth header auth, not the key/token query params
-      const downloadUrl = `https://api.trello.com/1/cards/${encodedCardId}/attachments/${encodedAttachmentId}/download/${encodeURIComponent(fileName)}`;
+      // Download using OAuth header (required for attachment downloads)
+      const downloadUrl = `https://api.trello.com/1/cards/${cardId}/attachments/${attachmentId}/download/${encodeURIComponent(attachment.fileName)}`;
       const response = await this.axiosInstance.get(downloadUrl, {
         headers: {
-          Authorization: `OAuth oauth_consumer_key="${this.config.apiKey}", oauth_token="${this.config.token}"`,
+          Authorization: 'OAuth oauth_consumer_key="' + this.config.apiKey + '", oauth_token="' + this.config.token + '"',
         },
         responseType: 'arraybuffer',
       });
 
+      // Convert to base64
+      const base64Data = Buffer.from(response.data).toString('base64');
+
       return {
-        data: Buffer.from(response.data).toString('base64'),
-        mimeType: attachment?.mimeType || 'application/octet-stream',
-        fileName,
+        data: base64Data,
+        mimeType: attachment.mimeType || 'application/octet-stream',
+        fileName: attachment.fileName || 'attachment',
       };
     });
   }
