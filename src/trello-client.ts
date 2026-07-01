@@ -1327,13 +1327,16 @@ export class TrelloClient {
     attachmentId: string
   ): Promise<{ data: string; mimeType: string; fileName: string }> {
     return this.handleRequest(async () => {
+      const encodedCardId = encodeURIComponent(cardId);
+      const encodedAttachmentId = encodeURIComponent(attachmentId);
       const metaResponse = await this.axiosInstance.get(
-        `/cards/${cardId}/attachments/${attachmentId}`
+        `/cards/${encodedCardId}/attachments/${encodedAttachmentId}`
       );
-      const attachment = metaResponse.data;
+      const attachment = metaResponse.data as Partial<TrelloAttachment> | null | undefined;
+      const fileName = attachment?.fileName || 'attachment';
 
       // Trello attachment downloads require OAuth header auth, not the key/token query params
-      const downloadUrl = `https://api.trello.com/1/cards/${cardId}/attachments/${attachmentId}/download/${encodeURIComponent(attachment.fileName)}`;
+      const downloadUrl = `https://api.trello.com/1/cards/${encodedCardId}/attachments/${encodedAttachmentId}/download/${encodeURIComponent(fileName)}`;
       const response = await this.axiosInstance.get(downloadUrl, {
         headers: {
           Authorization: `OAuth oauth_consumer_key="${this.config.apiKey}", oauth_token="${this.config.token}"`,
@@ -1343,8 +1346,8 @@ export class TrelloClient {
 
       return {
         data: Buffer.from(response.data).toString('base64'),
-        mimeType: attachment.mimeType || 'application/octet-stream',
-        fileName: attachment.fileName || 'attachment',
+        mimeType: attachment?.mimeType || 'application/octet-stream',
+        fileName,
       };
     });
   }
