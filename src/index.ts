@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { TrelloClient } from './trello-client.js';
 import { TrelloHealthEndpoints, HealthEndpointSchemas } from './health/health-endpoints.js';
 import { formatCardListResponse } from './card-list-preview.js';
+import { startStreamableHttpServer } from './streamable-http.js';
 
 class TrelloServer {
   private server: McpServer;
@@ -43,12 +44,6 @@ class TrelloServer {
 
     this.setupTools();
     this.setupHealthEndpoints();
-
-    // Error handling
-    process.on('SIGINT', async () => {
-      await this.server.close();
-      process.exit(0);
-    });
   }
 
   private handleError(error: unknown) {
@@ -1815,13 +1810,41 @@ class TrelloServer {
     });
   }
 
+  private useHttpTransport(): boolean {
+    const mode = process.env.MCP_TRANSPORT?.toLowerCase();
+    if (mode === 'http' || mode === 'streamable-http') return true;
+    if (mode === 'stdio') return false;
+    // Default to HTTP when a listen port is explicitly configured (e.g. Railway)
+    return Boolean(process.env.PORT);
+  }
+
   async run() {
-    const transport = new StdioServerTransport();
-    // Load configuration before starting the server
     await this.trelloClient.loadConfig().catch(() => {
       // Continue with default config if loading fails
     });
+
+    if (this.useHttpTransport()) {
+      const port = parseInt(process.env.PORT ?? process.env.MCP_PORT ?? '3000', 10);
+      const allowedHosts = process.env.MCP_ALLOWED_HOSTS
+        ?.split(',')
+        .map(h => h.trim())
+        .filter(Boolean);
+
+      await startStreamableHttpServer(this.server, {
+        port,
+        host: process.env.MCP_HOST ?? '0.0.0.0',
+        allowedHosts,
+      });
+      return;
+    }
+
+    const transport = new StdioServerTransport();
     await this.server.connect(transport);
+
+    process.on('SIGINT', async () => {
+      await this.server.close();
+      process.exit(0);
+    });
   }
 }
 

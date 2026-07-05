@@ -26,6 +26,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.3",
     "axios": "^1.13.2",
+    "express": "^5.0.1",
     "https-proxy-agent": "^7.0.6",
     "form-data": "^4.0.5",
     "zod": "^3.25.76"
@@ -62,6 +63,7 @@
     "build:types": "tsc --emitDeclarationOnly || echo 'Warning: Type declarations generation failed, but build succeeded'",
     "build:prod": "npm run build",
     "dev": "bun --watch src/index.ts",
+    "dev:http": "MCP_TRANSPORT=http PORT=3000 bun --watch src/index.ts",
     "versionbump": "bun ./scripts/versionbump.js",
     "versionbump:patch": "bun run versionbump --patch",
     "versionbump:minor": "bun run versionbump --minor",

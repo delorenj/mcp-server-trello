@@ -2,8 +2,13 @@ services:
   mcp-server-trello:
     container_name: mcp-server-trello
     build: .
+    ports:
+      - '3000:3000'
     environment:
+      MCP_TRANSPORT: http
+      PORT: 3000
       TRELLO_API_KEY: ${TRELLO_API_KEY}
       TRELLO_TOKEN: ${TRELLO_TOKEN}
+      MCP_API_KEY: ${MCP_API_KEY:-}
     restart: 'no'
 
