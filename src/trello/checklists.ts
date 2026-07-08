@@ -1,5 +1,5 @@
 import { AxiosInstance } from 'axios';
-import { TrelloCheckItem, TrelloChecklist, CheckList, CheckListItem } from '../types.js';
+import { TrelloCheckItem, TrelloChecklist, CheckList } from '../types.js';
 
 /**
  * Get all checklists from a card with their items

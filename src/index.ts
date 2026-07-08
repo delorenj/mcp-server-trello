@@ -1873,5 +1873,3 @@ const server = new TrelloServer();
 server.run().catch(() => {
   // Silently handle errors to avoid interfering with MCP protocol
 });
-
-
