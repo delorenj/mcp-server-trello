@@ -684,6 +684,50 @@ class TrelloServer {
       }
     );
 
+    // ─── Get Card Attachments ──
+    this.server.registerTool(
+      'get_card_attachments',
+      {
+        title: 'Get Card Attachments',
+        description: 'Get all attachments from a specific card',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card'),
+        },
+      },
+      async ({ cardId }) => {
+        try {
+          const attachments = await this.trelloClient.getCardAttachments(cardId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ attachments }, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // ─── Get Card Checklists ──
+    this.server.registerTool(
+      'get_card_checklists',
+      {
+        title: 'Get Card Checklists',
+        description: 'Get all checklists on a card with their items and completion percentage',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card'),
+        },
+      },
+      async ({ cardId }) => {
+        try {
+          const checklists = await this.trelloClient.getCardChecklists(cardId);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ checklists }, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // List all boards
     this.server.registerTool(
       'list_boards',

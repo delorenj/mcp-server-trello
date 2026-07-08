@@ -8,6 +8,7 @@ import {
   attachImage,
   attachImageData,
   attachFile,
+  getCardAttachments,
   MIME_TYPES,
 } from '../../../src/trello/attachments.js';
 
@@ -296,6 +297,37 @@ describe('attachments', () => {
         '/cards/c1/attachments',
         expect.objectContaining({ name: 'cat' })
       );
+    });
+  });
+
+  describe('getCardAttachments', () => {
+    it('calls GET /cards/{cardId}/attachments with the cardId', async () => {
+      const axiosInstance = createAxiosMock();
+      const attachments = [{ id: 'a1', name: 'file.pdf' }];
+      (axiosInstance.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: attachments,
+      });
+
+      const result = await getCardAttachments(axiosInstance, 'card-456');
+
+      expect(axiosInstance.get).toHaveBeenCalledWith('/cards/card-456/attachments');
+      expect(result).toBe(attachments);
+    });
+
+    it('returns response.data unchanged', async () => {
+      const axiosInstance = createAxiosMock();
+      const attachments = [
+        { id: 'a1', name: 'one.png', mimeType: 'image/png' },
+        { id: 'a2', name: 'two.pdf', mimeType: 'application/pdf' },
+      ];
+      (axiosInstance.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: attachments,
+      });
+
+      const result = await getCardAttachments(axiosInstance, 'c1');
+
+      expect(result).toEqual(attachments);
+      expect(result).toBe(attachments);
     });
   });
 });

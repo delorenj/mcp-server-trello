@@ -226,3 +226,18 @@ export async function attachImage(
     name: name || 'Image Attachment',
   });
 }
+
+/**
+ * Get all attachments from a card
+ * 
+ * @param axiosInstance - Trello API client
+ * @param cardId - ID of the card
+ * @returns Array of attachments with full metadata
+ */
+export async function getCardAttachments(
+  axiosInstance: AxiosInstance,
+  cardId: string
+): Promise<TrelloAttachment[]> {
+  const response = await axiosInstance.get(`/cards/${cardId}/attachments`);
+  return response.data;
+}
