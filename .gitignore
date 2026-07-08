@@ -69,3 +69,6 @@ mcp-publisher
 .mcpregistry_registry_token
 .claude-flow/data/
 .claude-flow/metrics/**/*
+
+# pr-crusher runtime artifact (local backlog state, not tracked)
+.pr-snapshot.md
