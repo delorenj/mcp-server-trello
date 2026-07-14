@@ -301,6 +301,52 @@ class TrelloServer {
       }
     );
 
+    // ─── Watch Card (subscribe/unsubscribe) ──
+    this.server.registerTool(
+      'watch_card',
+      {
+        title: 'Watch Card',
+        description: 'Subscribe or unsubscribe from watching a card for activity notifications',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card to watch/unwatch'),
+          subscribed: z.boolean().describe('Set to true to start watching, false to stop'),
+        },
+      },
+      async ({ cardId, subscribed }) => {
+        try {
+          const card = await this.trelloClient.watchCard(cardId, subscribed);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // ─── Watch List (subscribe/unsubscribe) ──
+    this.server.registerTool(
+      'watch_list',
+      {
+        title: 'Watch List',
+        description: 'Subscribe or unsubscribe from watching a list for activity notifications',
+        inputSchema: {
+          listId: z.string().describe('ID of the list to watch/unwatch'),
+          subscribed: z.boolean().describe('Set to true to start watching, false to stop'),
+        },
+      },
+      async ({ listId, subscribed }) => {
+        try {
+          const list = await this.trelloClient.watchList(listId, subscribed);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Move a card
     this.server.registerTool(
       'move_card',
