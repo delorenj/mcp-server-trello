@@ -1170,6 +1170,33 @@ export class TrelloClient {
     });
   }
 
+  async searchLabels(boardId: string | undefined, query: string): Promise<TrelloLabelDetails[]> {
+    const effectiveBoardId = boardId || this.activeConfig.boardId || this.defaultBoardId;
+    if (!effectiveBoardId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'boardId is required when no default board is configured'
+      );
+    }
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/boards/${effectiveBoardId}/labels`);
+      const labels: TrelloLabelDetails[] = response.data;
+      const q = query.toLowerCase();
+      return labels.filter(
+        (l) =>
+          (l.name || '').toLowerCase().includes(q) ||
+          (l.color || '').toLowerCase().includes(q)
+      );
+    });
+  }
+
+  async removeLabelFromCard(cardId: string, labelId: string): Promise<boolean> {
+    return this.handleRequest(async () => {
+      await this.axiosInstance.delete(`/cards/${cardId}/idLabels/${labelId}`);
+      return true;
+    });
+  }
+
   /**
    * Copy a card (can copy across boards). Uses idCardSource to clone a card.
    */

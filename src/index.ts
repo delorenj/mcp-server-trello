@@ -1474,6 +1474,60 @@ class TrelloServer {
       }
     );
 
+    // ─── Search Labels ──
+    this.server.registerTool(
+      'search_labels',
+      {
+        title: 'Search Labels',
+        description: 'Search labels on a board by name or color',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+          query: z.string().describe('Search query to filter labels by name or color'),
+        },
+      },
+      async ({ boardId, query }) => {
+        try {
+          const labels = await this.trelloClient.searchLabels(boardId, query);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ labels }, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // ─── Remove Label from Card ──
+    this.server.registerTool(
+      'remove_label_from_card',
+      {
+        title: 'Remove Label from Card',
+        description: 'Remove a label from a specific card',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card'),
+          labelId: z.string().describe('ID of the label to remove'),
+        },
+      },
+      async ({ cardId, labelId }) => {
+        try {
+          const success = await this.trelloClient.removeLabelFromCard(cardId, labelId);
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: success ? 'Label removed successfully' : 'Failed to remove label',
+              },
+            ],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Copy a card (supports cross-board copy)
     this.server.registerTool(
       'copy_card',
