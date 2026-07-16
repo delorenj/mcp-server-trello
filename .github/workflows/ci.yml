@@ -34,6 +34,10 @@ jobs:
         # This step fails the build if coverage drops below the current watermark.
         run: bun run test:coverage
 
+      - name: Verify coverage baseline is committed
+        # autoUpdate may only strengthen the ratchet through a committed change.
+        run: git diff --exit-code -- vitest.config.ts
+
       - name: Build project
         run: bun run build
 

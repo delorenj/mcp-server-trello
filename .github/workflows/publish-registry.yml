@@ -8,7 +8,7 @@ on:
     paths: ['server.json', 'package.json']
 
 concurrency:
-  group: publish-registry-${{ github.ref }}
+  group: publish-registry-delorenj-mcp-server-trello
   cancel-in-progress: false
 
 env:

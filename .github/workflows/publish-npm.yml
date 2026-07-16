@@ -54,13 +54,7 @@ jobs:
             exit 1
           fi
 
-          dist_tag=$(PACKAGE_VERSION="$package_version" node -e '
-            const version = process.env.PACKAGE_VERSION;
-            const match = version.match(/^\d+\.\d+\.\d+(?:-([0-9A-Za-z-]+)(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z.-]+)?$/);
-            if (!match) process.exit(1);
-            const identifier = match[1];
-            process.stdout.write(identifier ? (/^\d/.test(identifier) ? `prerelease-${identifier}` : identifier.toLowerCase()) : "latest");
-          ')
+          dist_tag=$(node scripts/npm-dist-tag.js "$package_version")
           echo "dist_tag=$dist_tag" >> "$GITHUB_OUTPUT"
 
           published_versions=$(npm view "$package_name" versions --json)
