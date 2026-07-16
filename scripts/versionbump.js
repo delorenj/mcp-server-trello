@@ -1,63 +1,151 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
-import { execFileSync } from 'child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
-// Get the version bump type from command line arguments
-const args = process.argv.slice(2);
-const bumpType = args[0]?.replace('--', '');
+const BUMP_TYPES = new Set(['patch', 'minor', 'major']);
+const VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)(.*)$/;
 
-if (!bumpType || !['patch', 'minor', 'major'].includes(bumpType)) {
-  console.error('Usage: bun versionbump --[patch|minor|major]');
-  process.exit(1);
+export function bumpVersion(version, bumpType) {
+  const match = version.match(VERSION_PATTERN);
+  if (!match) throw new Error('Invalid version format in package.json');
+  if (!BUMP_TYPES.has(bumpType)) throw new Error(`Invalid bump type: ${bumpType}`);
+
+  const [, major, minor, patch, suffix] = match;
+  let nextMajor = Number(major);
+  let nextMinor = Number(minor);
+  let nextPatch = Number(patch);
+
+  if (bumpType === 'major') {
+    nextMajor += 1;
+    nextMinor = 0;
+    nextPatch = 0;
+  } else if (bumpType === 'minor') {
+    nextMinor += 1;
+    nextPatch = 0;
+  } else {
+    nextPatch += 1;
+  }
+
+  return `${nextMajor}.${nextMinor}.${nextPatch}${suffix}`;
 }
 
-// Read package.json
-const packageJsonPath = './package.json';
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+export function createVersionUpdate(packageJson, serverManifest, bumpType) {
+  const npmPackage = serverManifest.packages?.find(
+    entry => entry.registryType === 'npm' && entry.identifier === packageJson.name
+  );
+  if (!npmPackage) {
+    throw new Error(`server.json has no npm package entry for ${packageJson.name}`);
+  }
 
-// Parse current version
-const versionRegex = /^(\d+)\.(\d+)\.(\d+)(.*)$/;
-const match = packageJson.version.match(versionRegex);
-
-if (!match) {
-  console.error('Invalid version format in package.json');
-  process.exit(1);
+  const newVersion = bumpVersion(packageJson.version, bumpType);
+  return {
+    newVersion,
+    packageJson: { ...packageJson, version: newVersion },
+    serverManifest: {
+      ...serverManifest,
+      version: newVersion,
+      packages: serverManifest.packages.map(entry =>
+        entry === npmPackage ? { ...entry, version: newVersion } : entry
+      ),
+    },
+  };
 }
 
-const [, major, minor, patch, suffix] = match;
-let [newMajor, newMinor, newPatch] = [parseInt(major), parseInt(minor), parseInt(patch)];
+function replaceFilesAtomically(files) {
+  const nonce = `${process.pid}-${Date.now()}`;
+  const prepared = files.map(({ filePath, content }) => ({
+    filePath,
+    content,
+    temporaryPath: `${filePath}.${nonce}.tmp`,
+    backupPath: `${filePath}.${nonce}.bak`,
+  }));
+  const backedUp = [];
+  const installed = [];
 
-// Bump version based on type
-switch (bumpType) {
-  case 'major':
-    newMajor++;
-    newMinor = 0;
-    newPatch = 0;
-    break;
-  case 'minor':
-    newMinor++;
-    newPatch = 0;
-    break;
-  case 'patch':
-    newPatch++;
-    break;
+  try {
+    for (const file of prepared) fs.writeFileSync(file.temporaryPath, file.content);
+    for (const file of prepared) {
+      fs.renameSync(file.filePath, file.backupPath);
+      backedUp.push(file);
+    }
+    for (const file of prepared) {
+      fs.renameSync(file.temporaryPath, file.filePath);
+      installed.push(file);
+    }
+    for (const file of prepared) fs.rmSync(file.backupPath, { force: true });
+  } catch (error) {
+    for (const file of installed) fs.rmSync(file.filePath, { force: true });
+    for (const file of backedUp) {
+      if (fs.existsSync(file.backupPath)) fs.renameSync(file.backupPath, file.filePath);
+    }
+    throw error;
+  } finally {
+    for (const file of prepared) {
+      fs.rmSync(file.temporaryPath, { force: true });
+      fs.rmSync(file.backupPath, { force: true });
+    }
+  }
 }
 
-// Create new version string
-const newVersion = `${newMajor}.${newMinor}.${newPatch}${suffix || ''}`;
+export function runVersionBump({
+  cwd = process.cwd(),
+  bumpType,
+  dryRun = false,
+  noCommit = false,
+}) {
+  const packageJsonPath = path.join(cwd, 'package.json');
+  const serverManifestPath = path.join(cwd, 'server.json');
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const serverManifest = JSON.parse(fs.readFileSync(serverManifestPath, 'utf8'));
+  const update = createVersionUpdate(packageJson, serverManifest, bumpType);
 
-// Update package.json
-packageJson.version = newVersion;
-fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+  if (dryRun) {
+    console.log(`Version would be bumped to ${update.newVersion}`);
+    return update.newVersion;
+  }
 
-console.log(`Version bumped to ${newVersion}`);
+  replaceFilesAtomically([
+    { filePath: packageJsonPath, content: `${JSON.stringify(update.packageJson, null, 2)}\n` },
+    {
+      filePath: serverManifestPath,
+      content: `${JSON.stringify(update.serverManifest, null, 2)}\n`,
+    },
+  ]);
+  console.log(`Version bumped to ${update.newVersion}`);
 
-// Commit the change if git is available
-try {
-  execFileSync('git', ['add', 'package.json']);
-  execFileSync('git', ['commit', '-m', `Bump version to ${newVersion}`]);
-  console.log(`Committed version bump to ${newVersion}`);
-} catch (error) {
-  console.log('Git commit skipped or failed:', error.message);
+  try {
+    execFileSync('git', ['add', 'package.json', 'server.json'], { cwd });
+    if (!noCommit) {
+      execFileSync('git', ['commit', '-m', `Bump version to ${update.newVersion}`], { cwd });
+      console.log(`Committed version bump to ${update.newVersion}`);
+    }
+  } catch (error) {
+    console.log('Git commit skipped or failed:', error.message);
+  }
+
+  return update.newVersion;
+}
+
+function parseArguments(args) {
+  const bumpType = args.find(argument => /^--(patch|minor|major)$/.test(argument))?.slice(2);
+  if (!bumpType) {
+    throw new Error('Usage: bun versionbump --[patch|minor|major] [--no-commit|--dry-run]');
+  }
+  return {
+    bumpType,
+    dryRun: args.includes('--dry-run'),
+    noCommit: args.includes('--no-commit'),
+  };
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    runVersionBump(parseArguments(process.argv.slice(2)));
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 }

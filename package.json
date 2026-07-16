@@ -53,7 +53,7 @@
     "build/**/*"
   ],
   "bin": {
-    "mcp-server-trello": "src/index.ts"
+    "mcp-server-trello": "build/index.js"
   },
   "type": "module",
   "engines": {
