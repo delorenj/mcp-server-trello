@@ -127,14 +127,19 @@ jobs:
           PACKAGE_NAME: ${{ steps.version.outputs.package_name }}
           PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
         run: |
-          for attempt in 1 2 3 4 5; do
+          for delay in 1 2 4 8 15 30; do
             published_version=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null || true)
             if [ "$published_version" = "$PACKAGE_VERSION" ]; then
               echo "release_ready=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            sleep 3
+            sleep "$delay"
           done
+          published_version=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null || true)
+          if [ "$published_version" = "$PACKAGE_VERSION" ]; then
+            echo "release_ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           echo "$PACKAGE_NAME@$PACKAGE_VERSION is not available from npm" >&2
           exit 1
 

@@ -107,4 +107,18 @@ describe('version bumping', () => {
     ).toBe('Bump version to 1.3.0');
     expect(execFileSync('git', ['status', '--short'], { cwd, encoding: 'utf8' })).toBe('');
   });
+
+  it('propagates a git commit failure', () => {
+    const cwd = createFixture();
+    const hookPath = path.join(cwd, '.git', 'hooks', 'pre-commit');
+    fs.writeFileSync(hookPath, '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+
+    expect(() => runVersionBump({ cwd, bumpType: 'patch' })).toThrow();
+    expect(
+      execFileSync('git', ['diff', '--cached', '--name-only'], { cwd, encoding: 'utf8' })
+    ).toBe(`package.json\nserver.json\n`);
+    expect(
+      execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd, encoding: 'utf8' }).trim()
+    ).toBe('fixture');
+  });
 });

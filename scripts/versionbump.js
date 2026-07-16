@@ -116,14 +116,10 @@ export function runVersionBump({
   ]);
   console.log(`Version bumped to ${update.newVersion}`);
 
-  try {
-    execFileSync('git', ['add', 'package.json', 'server.json'], { cwd });
-    if (!noCommit) {
-      execFileSync('git', ['commit', '-m', `Bump version to ${update.newVersion}`], { cwd });
-      console.log(`Committed version bump to ${update.newVersion}`);
-    }
-  } catch (error) {
-    console.log('Git commit skipped or failed:', error.message);
+  execFileSync('git', ['add', 'package.json', 'server.json'], { cwd });
+  if (!noCommit) {
+    execFileSync('git', ['commit', '-m', `Bump version to ${update.newVersion}`], { cwd });
+    console.log(`Committed version bump to ${update.newVersion}`);
   }
 
   return update.newVersion;
