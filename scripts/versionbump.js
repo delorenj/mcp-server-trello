@@ -4,13 +4,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { formatThrowable } from './format-throwable.js';
 
 const BUMP_TYPES = new Set(['patch', 'minor', 'major']);
 const VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)(.*)$/;
 
 export function bumpVersion(version, bumpType) {
   const match = version.match(VERSION_PATTERN);
-  if (!match) throw new Error('Invalid version format in package.json');
+  if (!match) throw new Error('Invalid version format');
   if (!BUMP_TYPES.has(bumpType)) throw new Error(`Invalid bump type: ${bumpType}`);
 
   const [, major, minor, patch, suffix] = match;
@@ -54,7 +55,7 @@ export function createVersionUpdate(packageJson, serverManifest, bumpType) {
   };
 }
 
-function replaceFilesAtomically(files) {
+export function replaceFilesAtomically(files, fileSystem = fs) {
   const nonce = `${process.pid}-${Date.now()}`;
   const prepared = files.map(({ filePath, content }) => ({
     filePath,
@@ -63,30 +64,53 @@ function replaceFilesAtomically(files) {
     backupPath: `${filePath}.${nonce}.bak`,
   }));
   const backedUp = [];
-  const installed = [];
 
   try {
-    for (const file of prepared) fs.writeFileSync(file.temporaryPath, file.content);
+    for (const file of prepared) fileSystem.writeFileSync(file.temporaryPath, file.content);
     for (const file of prepared) {
-      fs.renameSync(file.filePath, file.backupPath);
+      fileSystem.renameSync(file.filePath, file.backupPath);
       backedUp.push(file);
     }
     for (const file of prepared) {
-      fs.renameSync(file.temporaryPath, file.filePath);
-      installed.push(file);
+      fileSystem.renameSync(file.temporaryPath, file.filePath);
     }
-    for (const file of prepared) fs.rmSync(file.backupPath, { force: true });
   } catch (error) {
-    for (const file of installed) fs.rmSync(file.filePath, { force: true });
+    const rollbackErrors = [];
     for (const file of backedUp) {
-      if (fs.existsSync(file.backupPath)) fs.renameSync(file.backupPath, file.filePath);
+      try {
+        if (fileSystem.existsSync(file.backupPath)) {
+          fileSystem.renameSync(file.backupPath, file.filePath);
+        }
+      } catch (rollbackError) {
+        rollbackErrors.push(
+          new Error(`Failed to restore backup ${file.backupPath}`, { cause: rollbackError })
+        );
+      }
+    }
+    for (const file of prepared) {
+      try {
+        fileSystem.rmSync(file.temporaryPath, { force: true });
+      } catch (cleanupError) {
+        rollbackErrors.push(
+          new Error(`Failed to remove temporary file ${file.temporaryPath}`, {
+            cause: cleanupError,
+          })
+        );
+      }
+    }
+
+    if (rollbackErrors.length > 0) {
+      throw new AggregateError(
+        [error, ...rollbackErrors],
+        'Version update failed and one or more backups could not be restored; backups were preserved'
+      );
     }
     throw error;
-  } finally {
-    for (const file of prepared) {
-      fs.rmSync(file.temporaryPath, { force: true });
-      fs.rmSync(file.backupPath, { force: true });
-    }
+  }
+
+  for (const file of prepared) {
+    fileSystem.rmSync(file.temporaryPath, { force: true });
+    fileSystem.rmSync(file.backupPath, { force: true });
   }
 }
 
@@ -141,7 +165,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   try {
     runVersionBump(parseArguments(process.argv.slice(2)));
   } catch (error) {
-    console.error(error.message);
+    console.error(formatThrowable(error));
     process.exit(1);
   }
 }

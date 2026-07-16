@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getNpmDistTag } from '../../scripts/npm-dist-tag.js';
+import { formatThrowable } from '../../scripts/format-throwable.js';
 
 describe('getNpmDistTag', () => {
   it('publishes stable versions under latest', () => {
@@ -15,5 +16,10 @@ describe('getNpmDistTag', () => {
 
   it('rejects invalid versions', () => {
     expect(() => getNpmDistTag('latest')).toThrow('Invalid semantic version');
+  });
+
+  it('formats non-Error CLI throwables safely', () => {
+    expect(formatThrowable({ code: 'INVALID_VERSION' })).toBe('{"code":"INVALID_VERSION"}');
+    expect(formatThrowable('plain failure')).toBe('plain failure');
   });
 });

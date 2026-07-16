@@ -65,9 +65,9 @@ jobs:
           echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
           echo "dist_tag=$(node scripts/npm-dist-tag.js "$package_version")" >> "$GITHUB_OUTPUT"
 
-          published_versions=$(npm view "$package_name" versions --json)
+          published_versions=$(node scripts/npm-published-versions.js "$package_name")
           if PUBLISHED_VERSIONS="$published_versions" PACKAGE_VERSION="$package_version" node -e \
-            'process.exit(JSON.parse(process.env.PUBLISHED_VERSIONS).flat(Infinity).includes(process.env.PACKAGE_VERSION) ? 0 : 1)'; then
+            'process.exit(JSON.parse(process.env.PUBLISHED_VERSIONS).includes(process.env.PACKAGE_VERSION) ? 0 : 1)'; then
             echo "$package_name@$package_version is already published; publication will be idempotent."
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
           else

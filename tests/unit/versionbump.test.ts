@@ -1,9 +1,15 @@
 import fs from 'node:fs';
+import type { PathLike } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
-import { bumpVersion, createVersionUpdate, runVersionBump } from '../../scripts/versionbump.js';
+import {
+  bumpVersion,
+  createVersionUpdate,
+  replaceFilesAtomically,
+  runVersionBump,
+} from '../../scripts/versionbump.js';
 
 const temporaryDirectories: string[] = [];
 
@@ -43,6 +49,10 @@ afterEach(() => {
 });
 
 describe('version bumping', () => {
+  it('uses a generic error for invalid version input', () => {
+    expect(() => bumpVersion('not-semver', 'patch')).toThrow('Invalid version format');
+  });
+
   it.each([
     ['patch', '1.2.4-beta.1'],
     ['minor', '1.3.0-beta.1'],
@@ -120,5 +130,75 @@ describe('version bumping', () => {
     expect(
       execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd, encoding: 'utf8' }).trim()
     ).toBe('fixture');
+  });
+
+  it('restores every original file after an injected installation failure', () => {
+    const cwd = createFixture();
+    const packagePath = path.join(cwd, 'package.json');
+    const serverPath = path.join(cwd, 'server.json');
+    const originalPackage = fs.readFileSync(packagePath, 'utf8');
+    const originalServer = fs.readFileSync(serverPath, 'utf8');
+    const injectedFs = {
+      ...fs,
+      renameSync(source: PathLike, destination: PathLike) {
+        if (String(source).endsWith('.tmp') && destination === serverPath) {
+          throw new Error('injected install failure');
+        }
+        return fs.renameSync(source, destination);
+      },
+    };
+
+    expect(() =>
+      replaceFilesAtomically(
+        [
+          { filePath: packagePath, content: '{"version":"new"}\n' },
+          { filePath: serverPath, content: '{"version":"new"}\n' },
+        ],
+        injectedFs
+      )
+    ).toThrow('injected install failure');
+    expect(fs.readFileSync(packagePath, 'utf8')).toBe(originalPackage);
+    expect(fs.readFileSync(serverPath, 'utf8')).toBe(originalServer);
+    expect(fs.readdirSync(cwd).some(file => file.endsWith('.bak'))).toBe(false);
+  });
+
+  it('preserves a sole backup and throws an aggregate error when restore fails', () => {
+    const cwd = createFixture();
+    const packagePath = path.join(cwd, 'package.json');
+    const serverPath = path.join(cwd, 'server.json');
+    const originalServer = fs.readFileSync(serverPath, 'utf8');
+    const injectedFs = {
+      ...fs,
+      renameSync(source: PathLike, destination: PathLike) {
+        const sourcePath = String(source);
+        if (sourcePath.endsWith('.tmp') && destination === serverPath) {
+          throw new Error('injected install failure');
+        }
+        if (sourcePath.endsWith('.bak') && destination === packagePath) {
+          throw new Error('injected restore failure');
+        }
+        return fs.renameSync(source, destination);
+      },
+    };
+
+    let thrown;
+    try {
+      replaceFilesAtomically(
+        [
+          { filePath: packagePath, content: '{"version":"new"}\n' },
+          { filePath: serverPath, content: '{"version":"new"}\n' },
+        ],
+        injectedFs
+      );
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).errors).toHaveLength(2);
+    expect(fs.readFileSync(serverPath, 'utf8')).toBe(originalServer);
+    const backups = fs.readdirSync(cwd).filter(file => file.endsWith('.bak'));
+    expect(backups).toHaveLength(1);
+    expect(fs.readFileSync(path.join(cwd, backups[0]), 'utf8')).toContain('"version": "1.2.3"');
   });
 });
