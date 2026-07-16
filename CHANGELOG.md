@@ -5,11 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.8.0] - 2026-07-16
 
 ### Added
 - **List Position Management**: `update_list_position(listId, position)` - Reorder lists on a board using Trello's fractional indexing ("top", "bottom", or a numeric position)
 - **List Management**: `update_list(listId, name?, closed?, subscribed?, idBoard?)` - Update a list's name, closed state, subscription, or move it to a different board
+- **Activity Subscriptions**: `watch_card(cardId, subscribed)` and `watch_list(listId, subscribed)` - Subscribe to (or unsubscribe from) a card or list so its activity surfaces in your Trello notifications
+
+### Fixed
+- Restored the TypeScript type-check gate (`npm run typecheck`) and hardened the build so type errors fail loudly instead of shipping silently — resolves a `tsc` out-of-memory triggered by a zod v3/v4 mismatch against the MCP SDK
+- Removed four never-released tools that referenced non-existent client methods and would have thrown on first use (`get_card_attachments`, `get_card_checklists`, `search_labels`, `remove_label_from_card`)
 
 ## [1.7.0] - 2025-12-17
 
