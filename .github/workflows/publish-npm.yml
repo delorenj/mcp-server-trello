@@ -1,14 +1,21 @@
 name: Publish to NPM
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version from package.json to publish (for example, 1.7.2)
+        required: true
+        type: string
+
+concurrency:
+  group: publish-npm-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish-npm:
-    # Only run if PR was merged (not just closed)
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,13 +36,43 @@ jobs:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Verify requested version is new
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          package_name=$(node -p "require('./package.json').name")
+          package_version=$(node -p "require('./package.json').version")
+          requested_version="${RELEASE_TAG#v}"
+          if [ -z "$requested_version" ]; then
+            requested_version="$MANUAL_VERSION"
+          fi
+
+          if [ "$requested_version" != "$package_version" ]; then
+            echo "Requested version $requested_version does not match package.json version $package_version" >&2
+            exit 1
+          fi
+
+          published_versions=$(npm view "$package_name" versions --json)
+          if PUBLISHED_VERSIONS="$published_versions" PACKAGE_VERSION="$package_version" node -e \
+            'process.exit(JSON.parse(process.env.PUBLISHED_VERSIONS).flat(Infinity).includes(process.env.PACKAGE_VERSION) ? 0 : 1)'; then
+            echo "$package_name@$package_version is already published; skipping."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
-        run: bun install
+        if: steps.version.outputs.should_publish == 'true'
+        run: bun install --frozen-lockfile
 
       - name: Build project
+        if: steps.version.outputs.should_publish == 'true'
         run: bun run build
 
       - name: Publish to NPM
+        if: steps.version.outputs.should_publish == 'true'
         run: npm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
