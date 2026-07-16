@@ -64,8 +64,9 @@
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir ./build --target node --format esm",
-    "build:types": "tsc --emitDeclarationOnly || echo 'Warning: Type declarations generation failed, but build succeeded'",
+    "build:types": "tsc --emitDeclarationOnly",
     "build:prod": "npm run build",
+    "typecheck": "tsc --noEmit",
     "dev": "bun --watch src/index.ts",
     "versionbump": "bun ./scripts/versionbump.js",
     "versionbump:patch": "bun run versionbump --patch",

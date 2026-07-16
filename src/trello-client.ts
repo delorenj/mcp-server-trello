@@ -32,23 +32,6 @@ import { validateExternalUrl } from './url-validator.js';
 const CONFIG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.trello-mcp');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
-type TrelloRequestReturn =
-  | TrelloAction
-  | TrelloAttachment
-  | TrelloBoard
-  | TrelloCard
-  | TrelloCheckItem
-  | TrelloChecklist
-  | TrelloComment
-  | EnhancedTrelloCard
-  | string
-  | boolean
-  | TrelloList
-  | TrelloWorkspace
-  | TrelloCustomFieldDefinition
-  | TrelloCustomFieldOption
-  | TrelloCustomFieldItem;
-
 export class TrelloClient {
   private axiosInstance: AxiosInstance;
   private rateLimiter;
@@ -205,10 +188,9 @@ export class TrelloClient {
 
   private static readonly MAX_RETRY_ATTEMPTS = 3;
 
-  private async handleRequest<T extends TrelloRequestReturn>(
-    requestFn: () => Promise<T>,
-    retryCount: number = 0
-  ): Promise<T> {
+  // T is unconstrained on purpose: it only threads the caller's return type through.
+  // A closed union here excluded every T[] and broke each new return shape.
+  private async handleRequest<T>(requestFn: () => Promise<T>, retryCount: number = 0): Promise<T> {
     try {
       return await requestFn();
     } catch (error) {
@@ -397,7 +379,7 @@ export class TrelloClient {
       name: string;
       description?: string;
       dueDate?: string;
-      dueReminder?: number;
+      dueReminder?: number | null;
       start?: string;
       labels?: string[];
     }
@@ -423,7 +405,7 @@ export class TrelloClient {
       name?: string;
       description?: string;
       dueDate?: string;
-      dueReminder?: number;
+      dueReminder?: number | null;
       start?: string;
       dueComplete?: boolean;
       labels?: string[];

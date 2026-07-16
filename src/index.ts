@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from 'zod';
+import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+// The SDK types its schemas against zod/v4; importing bare 'zod' yields the v3 API,
+// which makes registerTool's inference explode (TS2589) and OOMs tsc.
+import { z } from 'zod/v4';
 import { TrelloClient } from './trello-client.js';
 import { TrelloHealthEndpoints, HealthEndpointSchemas } from './health/health-endpoints.js';
 import { formatCardListResponse } from './card-list-preview.js';
@@ -723,50 +726,6 @@ class TrelloServer {
           );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
-          };
-        } catch (error) {
-          return this.handleError(error);
-        }
-      }
-    );
-
-    // ─── Get Card Attachments ──
-    this.server.registerTool(
-      'get_card_attachments',
-      {
-        title: 'Get Card Attachments',
-        description: 'Get all attachments from a specific card',
-        inputSchema: {
-          cardId: z.string().describe('ID of the card'),
-        },
-      },
-      async ({ cardId }) => {
-        try {
-          const attachments = await this.trelloClient.getCardAttachments(cardId);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ attachments }, null, 2) }],
-          };
-        } catch (error) {
-          return this.handleError(error);
-        }
-      }
-    );
-
-    // ─── Get Card Checklists ──
-    this.server.registerTool(
-      'get_card_checklists',
-      {
-        title: 'Get Card Checklists',
-        description: 'Get all checklists on a card with their items and completion percentage',
-        inputSchema: {
-          cardId: z.string().describe('ID of the card'),
-        },
-      },
-      async ({ cardId }) => {
-        try {
-          const checklists = await this.trelloClient.getCardChecklists(cardId);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ checklists }, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
@@ -1513,60 +1472,6 @@ class TrelloServer {
           await this.trelloClient.deleteLabel(labelId);
           return {
             content: [{ type: 'text' as const, text: 'Label deleted successfully' }],
-          };
-        } catch (error) {
-          return this.handleError(error);
-        }
-      }
-    );
-
-    // ─── Search Labels ──
-    this.server.registerTool(
-      'search_labels',
-      {
-        title: 'Search Labels',
-        description: 'Search labels on a board by name or color',
-        inputSchema: {
-          boardId: z
-            .string()
-            .optional()
-            .describe('ID of the Trello board (uses default if not provided)'),
-          query: z.string().describe('Search query to filter labels by name or color'),
-        },
-      },
-      async ({ boardId, query }) => {
-        try {
-          const labels = await this.trelloClient.searchLabels(boardId, query);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ labels }, null, 2) }],
-          };
-        } catch (error) {
-          return this.handleError(error);
-        }
-      }
-    );
-
-    // ─── Remove Label from Card ──
-    this.server.registerTool(
-      'remove_label_from_card',
-      {
-        title: 'Remove Label from Card',
-        description: 'Remove a label from a specific card',
-        inputSchema: {
-          cardId: z.string().describe('ID of the card'),
-          labelId: z.string().describe('ID of the label to remove'),
-        },
-      },
-      async ({ cardId, labelId }) => {
-        try {
-          const success = await this.trelloClient.removeLabelFromCard(cardId, labelId);
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: success ? 'Label removed successfully' : 'Failed to remove label',
-              },
-            ],
           };
         } catch (error) {
           return this.handleError(error);

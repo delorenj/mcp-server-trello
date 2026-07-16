@@ -52,17 +52,14 @@ Shared verbatim with `~/.agents/agents/pr-crusher.md` — that file is the SSOT;
 
 > **Every ceiling tool you design is worth exactly zero until 1.8.0 ships.** This is the first thing you say in any roadmap conversation, every time, until it's false.
 
-**The quality apparatus is dead, and that's why bugs ship.**
-- `npx tsc --noEmit` **does not complete** — OOM at 4GB, and still OOM at 8GB after 143s. There is no working typecheck.
-- `build:types` is `tsc --emitDeclarationOnly || echo 'Warning: ... but build succeeded'` — it **swallows** the failure.
-- `npm run typecheck`, which `CLAUDE.md` instructs agents to run, **is not defined in package.json.**
-- Consequence, VERIFIED by reproduction: `src/index.ts:468` throws `new McpError(ErrorCode.InvalidParams, …)` and **neither identifier is imported** (imports end at line 7). `update_list` with only a `listId` returns **`Error: McpError is not defined`** to the user instead of the validation message. A one-line import fixes it.
-  Every *other* file that uses `McpError` imports it correctly — `url-validator.ts:1`, `trello/attachments.ts:7`, `trello-client.ts:25`. `index.ts` uses it **once** and imports it **zero** times: a contributor copied the pattern without the import, and nothing caught it. **A working `tsc` would have found this in one second.** That is what a dead typechecker costs, and it is the argument for Tier 0 in a single fact.
-- `.claude/skills` is a **dangling symlink** (`.agents/skills` resolves relative to `.claude/`, i.e. `.claude/.agents/skills`, which doesn't exist).
-- Coverage is ~22% lines.
+**The quality apparatus WAS dead — fixed 2026-07-16 on branch `fix/typecheck-and-dead-tools`. Keep the lesson.**
+- Root cause of the OOM (`tsc` died at 4GB, still dead at 8GB/143s): the SDK types its schemas against `zod/v4`, but src imported bare `'zod'` — the v3 API in zod 3.25.x. Reconciling v3 schemas against v4 core types made `registerTool` inference explode (**TS2589**). Importing `zod/v4` → **604ms, flat at 61 tools.** *If you ever add a tool and tsc starts crawling, this is the first thing to check.*
+- **Now fixed:** `typecheck` script added; `build:types` no longer `|| echo`s its failure into a pass; `src/index.ts` imports `McpError`/`ErrorCode`. `update_list` with only a `listId` now returns its real validation message (verified end-to-end over stdio). `.claude/skills` dangling symlink repaired (`../.agents/skills`).
+- **What the resurrected typecheck immediately caught — the argument for Tier 0 in one screen:** 14 errors that had been invisible, including **four registered tools calling `TrelloClient` methods that do not exist** (`get_card_attachments`, `get_card_checklists`, `search_labels`, `remove_label_from_card` — all `TypeError` on first call, added in PRs #99/#100 and merged with no typecheck to catch them). All four dropped. **This is the standing proof that a dead gate doesn't just miss bugs — it lets the passthrough-adding PR flow ship *broken* passthroughs.**
+- Coverage is ~22% lines — and *tests passed the whole time these four tools were dead*, because the tests exercise the module functions, never the tool wiring. **Coverage of the wrong surface is worse than no coverage: it buys false confidence.** A ceiling tool ships with an eval that drives it end-to-end, or it doesn't ship.
 
 **The tool surface.**
-- **61 `registerTool` calls** (`grep -c "registerTool(" src/index.ts`).
+- **57 `registerTool` calls** as of 2026-07-16 (was 61; four dead tools removed). `grep -c "registerTool(" src/index.ts`.
 - Measured selection cliff is **~20 tools (95%→71% accuracy)** — BELIEVED, borrowed from published GitHub-MCP numbers, **never measured on this repo**. Measuring the real `tools/list` payload is a one-command experiment nobody has run. Do it before quoting the number again.
 - **Issue #50: Perplexity caps at 20 tools — this server is unusable there today.** VERIFIED as an open issue. That one is *ours*, not borrowed.
 - **Not one of 81 proposed tools retired anything.**
@@ -207,7 +204,7 @@ We don't win by *having* the action log. We win by being **the only people who e
 
 ## The roadmap (as of 2026-07-16 — argue with it, don't obey it)
 
-**TIER 0 — the gate. Nothing else counts.** Ship **1.8.0**. Then, all small and all verified: import `McpError`/`ErrorCode` (one line — shipped bug); move comment text from query string to request body (`client:633` — prerequisite for any structured writeback); `get_acceptance_criteria` synonyms + `{items, percentComplete, unmet[], matchedChecklistName}` + *say which checklists exist* when nothing matches (~5 lines, highest value-per-line in the repo); `.unref()` the health interval (#92 — 108 orphaned processes, 12-day uptimes); delete `src/index.ts.backup`. **Fix the typecheck** — it OOMs, which is why the `McpError` bug exists at all.
+**TIER 0 — the gate. Nothing else counts.** Ship **1.8.0**. ~~Fix the typecheck~~ and ~~import `McpError`/`ErrorCode`~~ and ~~drop the 4 dead tools~~ are **DONE** (branch `fix/typecheck-and-dead-tools`, 2026-07-16) — the gate that lets these bugs through is closed, so the rest of Tier 0 is now *catchable* if it regresses. Still open, all small: move comment text from query string to request body (`client:633` — prerequisite for any structured writeback); `get_acceptance_criteria` synonyms + `{items, percentComplete, unmet[], matchedChecklistName}` + *say which checklists exist* when nothing matches (~5 lines, highest value-per-line in the repo); `.unref()` the health interval (#92 — 108 orphaned processes, 12-day uptimes); delete `src/index.ts.backup`. **The 1.8.0 release itself is now the single highest-leverage action left** — every fix above is invisible until it ships.
 
 **Then the substrate** (verified absent, unblocks everything): `getBoardCards()` → `GET /boards/{id}/cards` (one call replaces a sweep); `getBoardActions(boardId, {filter, since, before})`; widen `TrelloAction.data` with `listBefore`/`listAfter`/`old`; extract `resolveLanes()` and `resolveChecklists()` (kills the 4× copy-paste and a bug class); memoized `getMe()`; `searchCards()` as a **private client method, not a tool** — search was rejected 3× as `search_trello(query)` (#18/#53/#73) while #72 stays open naming the prize. **The rejection is against the passthrough, not the capability.**
 
