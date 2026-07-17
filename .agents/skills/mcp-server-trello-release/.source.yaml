@@ -1,0 +1,6 @@
+# Provenance for this skill. Managed by skill_ssot.py.
+origin:
+  type: local
+  extracted_at: 2026-07-16T00:00:00+00:00
+  authored_in: "/home/delorenj/code/mcp-server-trello/.agents/skills/mcp-server-trello-release"
+modified_locally: false

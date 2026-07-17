@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { TrelloHealthMonitor, SystemHealthReport, HealthStatus } from './health-monitor.js';
 import { TrelloClient } from '../trello-client.js';
 
