@@ -187,6 +187,35 @@ Optionally confirm the MCP registry entry updated at
 
 ---
 
+## When a publish fails (triage)
+
+Both publish workflows can go red even when the code is perfect. The failures
+**chain from a single root cause**, so read them in order:
+
+- **`publish-npm.yml` → `npm error code E404` on the `PUT`.** The tarball built
+  fine — this is **auth, not packaging.** npm masks an invalid / expired /
+  under-permissioned token as a `404 Not Found` on an *existing* package (it
+  won't admit the package exists to a caller it can't authorize). Root cause is
+  almost always the **`NPM_TOKEN` GitHub secret**: npm tokens expire, and once
+  the automation/granular token lapses, *every* publish 404s until it's rotated.
+  This is what silently caused the 7-month release gap — not the `bin`/`files`
+  allowlist theory (the CI tarball proves `src/index.ts`, `package.json`,
+  `README`, `LICENSE`, and `build/index.js` all ship correctly).
+  **Fix:** as a package owner (`npm owner ls @delorenj/mcp-server-trello`),
+  mint a fresh token on npmjs.com with **write** access to the `@delorenj`
+  **org** scope (it's an org scope, not a user scope — grant the org, not just
+  the package), `gh secret set NPM_TOKEN`, then `gh run rerun <npm-run-id>`.
+  A local `npm publish` by the owner also works but loses CI provenance.
+- **`publish-registry.yml` → 400 `"version 'X.Y.Z' was not found (status 404)
+  … publish version 'X.Y.Z' before registering it"`.** This is **downstream, not
+  a registry bug** — the MCP registry validates that the npm version already
+  exists before it will register the server entry. It fails simply because the
+  npm publish above didn't land. **Fix npm first, then** re-run this job:
+  `gh run rerun <registry-run-id>`.
+
+**One root cause (npm auth), two red workflows.** Fix npm → re-run npm → re-run
+registry. Never chase the registry error in isolation.
+
 ## Anti-patterns (each has bitten this repo)
 
 - Running `versionbump` and assuming the release is versioned. → #2/#3/#4 drift.
