@@ -542,6 +542,15 @@ describe('TrelloClient', () => {
       expect(mockAxiosInstance.get).not.toHaveBeenCalled();
     });
 
+    it('searchLabels should return no matches for an empty query', async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: [{ id: 'lbl1', name: 'Release Blocker', color: 'red' }],
+      });
+
+      await expect(createClient({ defaultBoardId: 'b1' }).searchLabels(undefined, '   ')).resolves.toEqual([]);
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/boards/b1/labels');
+    });
+
     it('removeLabelFromCard should delete the card-label association', async () => {
       mockAxiosInstance.delete.mockResolvedValue({});
 

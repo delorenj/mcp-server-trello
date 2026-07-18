@@ -1151,6 +1151,9 @@ export class TrelloClient {
   async searchLabels(boardId: string | undefined, query: string): Promise<TrelloLabelDetails[]> {
     const labels = await this.getBoardLabels(boardId);
     const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return [];
+    }
 
     return labels.filter(label => {
       const normalizedName = label.name.toLowerCase();
