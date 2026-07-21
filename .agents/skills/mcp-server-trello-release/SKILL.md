@@ -254,3 +254,15 @@ chase the registry error in isolation.
 - `gh release create` under the current workflows. → duplicate/red registry publish.
 - Direct-pushing a bump to `main`. → registry publishes, npm doesn't; the two desync.
 - Cutting a release with red/absent `ci.yml` coverage. → merge blocked or main goes red.
+- **Naming a `package.json` script after an npm lifecycle event** (`publish`,
+  `prepare`, `pack`, `version`, …). The repo shipped `"publish": "bun run build
+  && npm publish"`; because `publish` is a lifecycle hook, CI's `npm publish`
+  re-invoked it → a **recursive second publish** that `E403`'d ("cannot publish
+  over previously published X.Y.Z") and **false-red'd every successful release**.
+  It was masked for months only because auth failed on the *first* publish. Fixed
+  2026-07-20 by renaming it to **`release`**. Local publish is now `npm run release`.
+- **Reading a green `publish-npm` run as proof a publish happened.** The publish
+  steps now self-skip an already-published version (guard → clean `exit 0`, still
+  green). Green means "npm/registry is at the package's declared version," not
+  "we uploaded just now." Always confirm the actual bytes with
+  `npm view @delorenj/mcp-server-trello version`.

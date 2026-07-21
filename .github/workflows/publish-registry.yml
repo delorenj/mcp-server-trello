@@ -40,4 +40,14 @@ jobs:
         run: ./mcp-publisher login github-oidc
 
       - name: Publish to MCP Registry
-        run: ./mcp-publisher publish
+        # Guard: skip cleanly if server.json's version is already registered, so a
+        # push touching package.json/server.json without a version bump doesn't
+        # fail on a duplicate registration.
+        run: |
+          VERSION=$(node -p "require('./server.json').version")
+          if curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.delorenj/mcp-server-trello" \
+             | tr -d ' \n' | grep -q "\"version\":\"${VERSION}\""; then
+            echo "io.github.delorenj/mcp-server-trello@${VERSION} is already registered — skipping."
+            exit 0
+          fi
+          ./mcp-publisher publish

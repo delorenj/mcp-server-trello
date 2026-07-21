@@ -45,4 +45,12 @@ jobs:
       - name: Publish to NPM (Trusted Publishing / OIDC)
         # No NODE_AUTH_TOKEN: auth is via the OIDC id-token above.
         # Provenance is generated and attested automatically under Trusted Publishing.
-        run: npm publish
+        # Guard: skip cleanly if this version is already on npm, so non-release
+        # merges (which also fire this workflow) don't fail on a duplicate publish.
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@delorenj/mcp-server-trello@${VERSION}" version >/dev/null 2>&1; then
+            echo "@delorenj/mcp-server-trello@${VERSION} is already published — skipping."
+            exit 0
+          fi
+          npm publish
