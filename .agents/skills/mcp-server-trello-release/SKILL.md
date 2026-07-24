@@ -68,7 +68,7 @@ into CI as a release gate.
 | Workflow | Fires on | Effect |
 |----------|----------|--------|
 | `ci.yml` | any PR/push to `main` | `bun run test:coverage` — the coverage **ratchet gate**. Must be green or the PR can't merge cleanly. |
-| `publish-npm.yml` | PR to `main` **closed AND merged**, **or** manual **`workflow_dispatch`** | `npm publish` via **Trusted Publishing (OIDC)** using **`package.json`** version. **No `NPM_TOKEN`** — auth is the workflow's OIDC `id-token`; provenance is generated automatically. |
+| `publish-npm.yml` | PR to `main` **closed AND merged**, **or** manual **`workflow_dispatch`** | `npm publish` via **Trusted Publishing (OIDC)** using **`package.json`** version. **No `NPM_TOKEN`** — auth is the workflow's OIDC `id-token`; the workflow intentionally omits `--provenance` because npm generates provenance automatically for this Trusted Publishing path. |
 | `publish-registry.yml` | **push to `main`** touching `server.json`/`package.json`, **or** a GitHub **Release** `published` | `mcp-publisher publish` (also OIDC, `github-oidc` login) using **`server.json`**. |
 
 > **Publishing is tokenless (Trusted Publishing / OIDC), since 2026-07.** npm's

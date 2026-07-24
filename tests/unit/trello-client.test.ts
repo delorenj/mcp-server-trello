@@ -323,6 +323,28 @@ describe('TrelloClient', () => {
     });
   });
 
+  describe('activity subscriptions', () => {
+    it('watchCard should update the card subscription', async () => {
+      const card = { id: 'c1', subscribed: true };
+      mockAxiosInstance.put.mockResolvedValue({ data: card });
+
+      const result = await createClient().watchCard('c1', true);
+
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith('/cards/c1', { subscribed: true });
+      expect(result).toEqual(card);
+    });
+
+    it('watchList should update the list subscription', async () => {
+      const list = { id: 'l1', subscribed: false };
+      mockAxiosInstance.put.mockResolvedValue({ data: list });
+
+      const result = await createClient().watchList('l1', false);
+
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith('/lists/l1', { subscribed: false });
+      expect(result).toEqual(list);
+    });
+  });
+
   describe('getMyCards', () => {
     it('should fetch current user cards', async () => {
       mockAxiosInstance.get.mockResolvedValue({ data: [] });
@@ -495,6 +517,45 @@ describe('TrelloClient', () => {
       await client.deleteLabel('lbl1');
 
       expect(mockAxiosInstance.delete).toHaveBeenCalledWith('/labels/lbl1');
+    });
+
+    it('searchLabels should match label names and colors case-insensitively', async () => {
+      const labels = [
+        { id: 'lbl1', name: 'Release Blocker', color: 'red' },
+        { id: 'lbl2', name: '', color: 'Blue' },
+        { id: 'lbl3', name: 'Docs', color: null },
+      ];
+      mockAxiosInstance.get.mockResolvedValue({ data: labels });
+
+      const client = createClient({ defaultBoardId: 'b1' });
+      await expect(client.searchLabels(undefined, 'BLUE')).resolves.toEqual([labels[1]]);
+      await expect(client.searchLabels('b2', 'release')).resolves.toEqual([labels[0]]);
+
+      expect(mockAxiosInstance.get).toHaveBeenNthCalledWith(1, '/boards/b1/labels');
+      expect(mockAxiosInstance.get).toHaveBeenNthCalledWith(2, '/boards/b2/labels');
+    });
+
+    it('searchLabels should require a board', async () => {
+      await expect(createClient().searchLabels(undefined, 'red')).rejects.toThrow(
+        'boardId is required when no default board is configured'
+      );
+      expect(mockAxiosInstance.get).not.toHaveBeenCalled();
+    });
+
+    it('searchLabels should return no matches for an empty query', async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: [{ id: 'lbl1', name: 'Release Blocker', color: 'red' }],
+      });
+
+      await expect(createClient({ defaultBoardId: 'b1' }).searchLabels(undefined, '   ')).resolves.toEqual([]);
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/boards/b1/labels');
+    });
+
+    it('removeLabelFromCard should delete the card-label association', async () => {
+      mockAxiosInstance.delete.mockResolvedValue({});
+
+      await expect(createClient().removeLabelFromCard('c1', 'lbl1')).resolves.toBe(true);
+      expect(mockAxiosInstance.delete).toHaveBeenCalledWith('/cards/c1/idLabels/lbl1');
     });
   });
 
