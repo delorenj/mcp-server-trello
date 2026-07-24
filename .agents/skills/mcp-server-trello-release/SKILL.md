@@ -68,14 +68,32 @@ into CI as a release gate.
 | Workflow | Fires on | Effect |
 |----------|----------|--------|
 | `ci.yml` | any PR/push to `main` | `bun run test:coverage` — the coverage **ratchet gate**. Must be green or the PR can't merge cleanly. |
-| `publish-npm.yml` | PR to `main` **closed AND merged** | `npm publish --provenance` using **`package.json`** version. |
-| `publish-registry.yml` | **push to `main`** touching `server.json`/`package.json`, **or** a GitHub **Release** `published` | `mcp-publisher publish` using **`server.json`**. |
+| `publish-npm.yml` | PR to `main` **closed AND merged**, **or** manual **`workflow_dispatch`** | `npm publish` via **Trusted Publishing (OIDC)** using **`package.json`** version. **No `NPM_TOKEN`** — auth is the workflow's OIDC `id-token`; provenance is generated automatically. |
+| `publish-registry.yml` | **push to `main`** touching `server.json`/`package.json`, **or** a GitHub **Release** `published` | `mcp-publisher publish` (also OIDC, `github-oidc` login) using **`server.json`**. |
+
+> **Publishing is tokenless (Trusted Publishing / OIDC), since 2026-07.** npm's
+> package settings list `delorenj / mcp-server-trello / publish-npm.yml` as a
+> trusted publisher, so CI mints a short-lived OIDC token per run instead of a
+> stored secret. This replaced the `NPM_TOKEN` path, which npm is deprecating:
+> 2FA-bypass tokens lose sensitive actions ~Aug 2026 and direct publish ~Jan
+> 2027. Requirements the workflow must keep satisfying: **`id-token: write`**,
+> **npm CLI ≥ 11.5.1** (we `npm install -g npm@latest`), **Node ≥ 22.14.0**, and
+> **no `NODE_AUTH_TOKEN`**. The trusted-publisher config fields are
+> **case-sensitive and exact** — org `delorenj`, repo `mcp-server-trello`,
+> workflow filename `publish-npm.yml` (no path, keep the `.yml`), environment
+> blank.
 
 Read the consequences carefully — they define the whole procedure:
 
 - **Merging the release PR is the publish event.** The merge closes the PR
   (→ npm publish) *and* pushes the version files to `main` (→ registry publish).
-  There is no separate "publish" step and no manual `npm publish`.
+  There is no separate "publish" step and no local `npm publish`.
+- **`workflow_dispatch` is the re-publish escape hatch.** If the npm job fails
+  for an infra reason (a bad CI run, a first-time trusted-publisher config), fix
+  it and re-run `publish-npm.yml` directly on `main` — `gh workflow run
+  publish-npm.yml` — instead of re-merging. It publishes whatever version
+  `package.json` on `main` currently declares. (npm rejects a re-publish of an
+  already-published version, so this is safe to retry.)
 - **Release only through a PR merge — never direct-push a bump to `main`.**
   A direct push fires the registry publish (paths match) but **not** the npm
   publish (needs a PR-close event). That desyncs the two registries. Always PR.
@@ -189,32 +207,44 @@ Optionally confirm the MCP registry entry updated at
 
 ## When a publish fails (triage)
 
-Both publish workflows can go red even when the code is perfect. The failures
-**chain from a single root cause**, so read them in order:
+Both publish workflows can go red even when the code is perfect. The npm and
+registry failures usually **chain from one root cause**, so read them in order.
 
-- **`publish-npm.yml` → `npm error code E404` on the `PUT`.** The tarball built
-  fine — this is **auth, not packaging.** npm masks an invalid / expired /
-  under-permissioned token as a `404 Not Found` on an *existing* package (it
-  won't admit the package exists to a caller it can't authorize). Root cause is
-  almost always the **`NPM_TOKEN` GitHub secret**: npm tokens expire, and once
-  the automation/granular token lapses, *every* publish 404s until it's rotated.
-  This is what silently caused the 7-month release gap — not the `bin`/`files`
-  allowlist theory (the CI tarball proves `src/index.ts`, `package.json`,
-  `README`, `LICENSE`, and `build/index.js` all ship correctly).
-  **Fix:** as a package owner (`npm owner ls @delorenj/mcp-server-trello`),
-  mint a fresh token on npmjs.com with **write** access to the `@delorenj`
-  **org** scope (it's an org scope, not a user scope — grant the org, not just
-  the package), `gh secret set NPM_TOKEN`, then `gh run rerun <npm-run-id>`.
-  A local `npm publish` by the owner also works but loses CI provenance.
-- **`publish-registry.yml` → 400 `"version 'X.Y.Z' was not found (status 404)
-  … publish version 'X.Y.Z' before registering it"`.** This is **downstream, not
-  a registry bug** — the MCP registry validates that the npm version already
-  exists before it will register the server entry. It fails simply because the
-  npm publish above didn't land. **Fix npm first, then** re-run this job:
-  `gh run rerun <registry-run-id>`.
+**npm side (`publish-npm.yml`), Trusted-Publishing era:**
 
-**One root cause (npm auth), two red workflows.** Fix npm → re-run npm → re-run
-registry. Never chase the registry error in isolation.
+- **`Unable to authenticate` / `unable to find a trusted publisher` / OIDC
+  mismatch.** The OIDC identity CI presented didn't match npm's trusted-publisher
+  record. The fields are **case-sensitive and exact** — re-check on npmjs.com
+  (package → Settings → Trusted Publisher): org `delorenj`, repo
+  `mcp-server-trello`, workflow filename `publish-npm.yml` (filename only, keep
+  `.yml`, no path), environment **blank** (the workflow declares no
+  `environment:`). A rename of the workflow file, or setting a GitHub
+  environment without adding it here, breaks the match.
+- **`npm error This command requires npm version 11.5.1 or greater` / OIDC not
+  attempted.** The runner's npm is too old or Node is < 22.14.0. The workflow
+  must keep `node-version: '22.x'` **and** the `npm install -g npm@latest` step,
+  and the job must keep `permissions: id-token: write`. If any of those regress,
+  npm silently falls back to token auth and fails.
+- **`EOTP` / `E404` on the `PUT`** — *historical, pre-2026-07.* These were the
+  **stored-`NPM_TOKEN`** failure modes (`E404` = expired/under-scoped token, npm
+  masks bad auth as 404; `EOTP` = the token type still demanded a 2FA one-time
+  password CI can't supply). Trusted Publishing removed the token entirely, so
+  these should not recur. If you see them, someone re-introduced
+  `NODE_AUTH_TOKEN` / `NPM_TOKEN` into the workflow — remove it; OIDC is the auth.
+- **Re-running after a fix:** trusted-publisher config changes take effect
+  immediately (no re-mint). Re-publish with `gh workflow run publish-npm.yml`
+  (dispatch on `main`) rather than re-merging.
+
+**registry side (`publish-registry.yml`):**
+
+- **400 `"version 'X.Y.Z' was not found (status 404) … publish version 'X.Y.Z'
+  before registering it"`.** **Downstream, not a registry bug** — the MCP
+  registry validates that the npm version already exists before registering the
+  server entry. It fails only because the npm publish above hasn't landed. **Fix
+  npm first, then** re-run: `gh run rerun <registry-run-id>`.
+
+**Fix npm → confirm `npm view … version` == X.Y.Z → re-run registry.** Never
+chase the registry error in isolation.
 
 ## Anti-patterns (each has bitten this repo)
 
@@ -224,3 +254,15 @@ registry. Never chase the registry error in isolation.
 - `gh release create` under the current workflows. → duplicate/red registry publish.
 - Direct-pushing a bump to `main`. → registry publishes, npm doesn't; the two desync.
 - Cutting a release with red/absent `ci.yml` coverage. → merge blocked or main goes red.
+- **Naming a `package.json` script after an npm lifecycle event** (`publish`,
+  `prepare`, `pack`, `version`, …). The repo shipped `"publish": "bun run build
+  && npm publish"`; because `publish` is a lifecycle hook, CI's `npm publish`
+  re-invoked it → a **recursive second publish** that `E403`'d ("cannot publish
+  over previously published X.Y.Z") and **false-red'd every successful release**.
+  It was masked for months only because auth failed on the *first* publish. Fixed
+  2026-07-20 by renaming it to **`release`**. Local publish is now `npm run release`.
+- **Reading a green `publish-npm` run as proof a publish happened.** The publish
+  steps now self-skip an already-published version (guard → clean `exit 0`, still
+  green). Green means "npm/registry is at the package's declared version," not
+  "we uploaded just now." Always confirm the actual bytes with
+  `npm view @delorenj/mcp-server-trello version`.

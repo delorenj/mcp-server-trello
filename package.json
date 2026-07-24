@@ -77,6 +77,6 @@
     "test:smoke": "vitest run tests/smoke",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "publish": "bun run build && npm publish"
+    "release": "bun run build && npm publish"
   }
 }
