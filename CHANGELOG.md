@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-07-25
+
+### Fixed
+- **npm package failed to start via npx/bunx** ([#108](https://github.com/delorenj/mcp-server-trello/issues/108), [#109](https://github.com/delorenj/mcp-server-trello/issues/109)): v1.8.0's `bin` pointed at `src/index.ts` while `files` only shipped `build/**`, so the published tarball couldn't resolve its own imports and the server crashed on startup. `bin` points to `build/index.js` again and the published tarball is self-contained. Every install of `@latest` was affected; upgrading to 1.8.1 is the fix.
+
+### Changed
+- npm publishing now uses **Trusted Publishing (OIDC)** — no stored `NPM_TOKEN` (#106)
+- Publish workflow: removed the recursive `publish` lifecycle-script trap and added skip-if-already-published guards (#107)
+- Test and release maintenance hardening (#104)
+
 ## [1.8.0] - 2026-07-16
 
 ### Added
