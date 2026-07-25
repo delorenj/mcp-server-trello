@@ -36,7 +36,7 @@ when selecting tools.
 - `get_checklist_items`: Get items from a checklist by name.
 - `add_checklist_item`: Add an item to a named checklist.
 - `find_checklist_items_by_description`: Search checklist item text.
-- `get_acceptance_criteria`: Get the `Acceptance Criteria` checklist.
+- `get_acceptance_criteria`: Get a card's acceptance criteria, matching a checklist named `Acceptance Criteria`, `AC`, `DoD`, or `Definition of Done` (case-insensitive, first match in that order wins). Returns a `{found: true|false}` union — on a match `items`, `unmet`, `percentComplete`, `matchedChecklistName`; otherwise `reason` and `availableChecklists`.
 - `get_checklist_by_name`: Get a checklist with items and completion percent.
 - `update_checklist_item`: Rename, complete, reorder, date, or assign an item.
 - `delete_checklist_item`: Remove a checklist item.

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **BREAKING — `get_acceptance_criteria` response shape**: the tool now returns a discriminated union instead of a bare `CheckListItem[]`. On a match it returns `{ found: true, items, unmet, percentComplete, matchedChecklistName }`; when no checklist matches it returns `{ found: false, reason, availableChecklists }` instead of an empty array. Callers that treated the result as an array (`.length`, `.map()`, iteration) must migrate to reading `.items` after checking `.found`. A checklist that matches but is empty returns `found: true` with `items: []`, so "no acceptance criteria" is now distinguishable from "the checklist is named something else"
+- **Acceptance criteria heading tolerance**: `get_acceptance_criteria` now recognizes checklists named `Acceptance Criteria`, `AC`, `DoD`, or `Definition of Done`, compared case-insensitively and whitespace-trimmed. Matching stays exact-equality against that alias set — no fuzzy, partial, or semantic matching. When several aliases are present the first in that precedence order wins, items from every checklist matching the winning alias are aggregated in Trello's order, and `matchedChecklistName` reports the board's own spelling. Previously only the literal name `Acceptance Criteria` was read, and any other heading silently returned an empty list
+
 ## [1.8.0] - 2026-07-16
 
 ### Added

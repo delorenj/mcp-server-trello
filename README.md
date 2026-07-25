@@ -267,16 +267,41 @@ nbsp; }
 
 #### get\_acceptance\_criteria
 
-Get all items from the "Acceptance Criteria" checklist.
+Get a card's (or board's) acceptance criteria, tolerating the common checklist headings teams actually use. A checklist matches if its name equals `Acceptance Criteria`, `AC`, `DoD`, or `Definition of Done` — compared case-insensitively and whitespace-trimmed. The first alias in that order with any match wins.
 
 ```typescript
 {
   name: 'get_acceptance_criteria',
   arguments: {
+    cardId?: string,  // Optional: ID of the card to scope the search to (recommended to avoid ambiguity)
     boardId?: string  // Optional: ID of the board (uses default if not provided)
   }
 }
 ```
+
+On a match, returns:
+
+```typescript
+{
+  found: true,
+  items: CheckListItem[],    // All items of the matching checklist(s), in Trello's order
+  unmet: CheckListItem[],    // The incomplete subset of items
+  percentComplete: number,  // Rounded percentage complete; 0 when there are no items
+  matchedChecklistName: string  // The checklist name as written on the board, original casing
+}
+```
+
+When nothing matches, the tool says so explicitly instead of returning an empty list — so "this card has no acceptance criteria" is never confused with "the checklist is named something else":
+
+```typescript
+{
+  found: false,
+  reason: string,    // Human-readable explanation naming the aliases that were tried
+  availableChecklists: string[]  // Names of the checklists that do exist in the searched scope
+}
+```
+
+A checklist that matches but has no items returns `found: true` with `items: []`, which is distinct from the not-found response above.
 
 #### get\_checklist\_by\_name
 

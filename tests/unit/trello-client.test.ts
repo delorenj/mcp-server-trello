@@ -552,6 +552,36 @@ describe('TrelloClient', () => {
       expect(result.unmet.every(item => item.complete === false)).toBe(true);
     });
 
+    // Pins the rounding mode: 2/3 = 66.67 rounds to 67, but floors to 66.
+    it('should round percentComplete up when the fraction exceeds .5 (kills a floor implementation)', async () => {
+      mockCardChecklists([
+        checklist('cl1', 'Acceptance Criteria', [
+          ['one', true],
+          ['two', true],
+          ['three', false],
+        ]),
+      ]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      expect(result).toMatchObject({ found: true, percentComplete: 67 });
+    });
+
+    // Pins the rounding mode: 1/3 = 33.33 rounds to 33, but ceils to 34.
+    it('should round percentComplete down when the fraction is below .5 (kills a ceil implementation)', async () => {
+      mockCardChecklists([
+        checklist('cl1', 'Acceptance Criteria', [
+          ['one', true],
+          ['two', false],
+          ['three', false],
+        ]),
+      ]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      expect(result).toMatchObject({ found: true, percentComplete: 33 });
+    });
+
     // AC4
     it('should return an explicit not-found with the checklists that do exist', async () => {
       mockCardChecklists([

@@ -1177,7 +1177,7 @@ class TrelloServer {
       {
         title: 'Get Acceptance Criteria',
         description:
-          'Get the acceptance criteria for a card (or board). Recognizes any checklist named "Acceptance Criteria", "AC", "DoD", or "Definition of Done" (case-insensitive, whitespace-trimmed); the first of those names present wins. On a match returns { found: true, items, unmet, percentComplete, matchedChecklistName }, where matchedChecklistName is the checklist name as written on the board and unmet is the incomplete subset. When no checklist matches, returns an explicit { found: false, reason, availableChecklists } listing the checklists that do exist — so "no acceptance criteria" is never confused with "the checklist is named something else". A matched-but-empty checklist returns found: true with items: [].',
+          'Get a card\'s (or board\'s) acceptance criteria. Matches a checklist named "Acceptance Criteria", "AC", "DoD", or "Definition of Done" (case-insensitive); first match in that order wins. Returns a {found: true|false} union; read reason when not found.',
         inputSchema: {
           cardId: z
             .string()
