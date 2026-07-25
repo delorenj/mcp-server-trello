@@ -6,30 +6,32 @@
 
 <a href="https://glama.ai/mcp/servers/klqkamy7wt"><img width="380" height="200" src="https://glama.ai/mcp/servers/klqkamy7wt/badge" alt="Server Trello MCP server" /></a>
 
-A Model Context Protocol (MCP) server that provides tools for interacting with Trello boards. This server enables seamless integration with Trello's API while handling rate limiting, type safety, and error handling automatically.
+A Model Context Protocol (MCP) server that gives AI agents full access to your Trello boards — cards, lists, checklists, attachments, comments, custom fields, and workspaces — with built-in rate limiting, type safety, and workflow-level tools you won't find in a plain API wrapper, like acceptance-criteria extraction and checklist dependency queries. 57 tools, one `npx` install, powered by Bun.
 
-## 🎉 New in v1.5.0: Now Powered by Bun! ⚡
+## Highlights
 
-**This project is now powered by Bun!** 🚀 We've migrated the entire project to the Bun runtime, resulting in a 2.8-4.4x performance boost. All existing `npx`, `pnpx`, and `npm` commands will **continue to work perfectly**.
-
-### ✨ New in This Release:
-
-  - 🚀 **Performance Boost**: Enjoy a faster, more responsive server.
-  - **Bun-Powered**: The project now runs on the lightning-fast Bun runtime.
-  - 📖 **Comprehensive Examples**: A new `examples` directory with detailed implementations in JavaScript, Python, and TypeScript.
-
-**Plus:** Modern MCP SDK architecture, enhanced type safety, and comprehensive documentation!
+- **Acceptance criteria, natively**: `get_acceptance_criteria` pulls a card's AC checklist straight into your agent's context — no competitor offers it.
+- **Watch anything**: `watch_card` and `watch_list` route card and list activity into your Trello notifications.
+- **Full list management**: create, update, reorder (`update_list_position`), and archive lists.
+- **Board and workspace switching on the fly**: no restarts, no config edits.
+- **Rate limiting handled for you**: respects Trello's API limits automatically (300 req/10s per key, 100 req/10s per token).
+- **Bun-powered**: fast startup and a 2.8-4.4x performance boost over the old Node build. `npx` and `npm` work too.
 
 ## Changelog
 
-For a detailed list of changes, please refer to the [CHANGELOG.md](CHANGELOG.md) file.
+For a detailed list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Features
 
   - **Full Trello Board Integration**: Interact with cards, lists, and board activities
-  - **🆕 Complete Card Data Extraction**: Fetch all card details including checklists, attachments, labels, members, and comments
+  - **Acceptance Criteria Extraction**: Pull a card's acceptance criteria checklist directly into agent context
+  - **Checklist Intelligence**: Query checklist items by name or description, track completion, manage items
+  - **Complete Card Data Extraction**: Fetch all card details including checklists, attachments, labels, members, and comments
   - **💬 Comment Management**: Add, update, delete, and retrieve comments on cards
+  - **Activity Subscriptions**: Watch cards and lists so their activity surfaces in Trello notifications
+  - **List Management**: Create, update, reorder, and archive lists
   - **File Attachments**: Attach any type of file to cards (PDFs, documents, videos, images, etc.) from URLs
+  - **Custom Fields**: Read board custom field definitions and update card values
   - **Built-in Rate Limiting**: Respects Trello's API limits (300 requests/10s per API key, 100 requests/10s per token)
   - **Type-Safe Implementation**: Written in TypeScript with comprehensive type definitions
   - **Input Validation**: Robust validation for all API inputs
@@ -39,7 +41,47 @@ For a detailed list of changes, please refer to the [CHANGELOG.md](CHANGELOG.md)
 
 ## Installation
 
-This repository is distributed as a **BMAD-compatible skill package** for the
+The server is published on npm as `@delorenj/mcp-server-trello`. Add it to your MCP client and you're done — no clone, no build.
+
+### Quickstart (Claude Desktop, Cursor, and other MCP clients)
+
+Add the server to your client's MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "bunx",
+      "args": ["@delorenj/mcp-server-trello"],
+      "env": {
+        "TRELLO_API_KEY": "your-trello-api-key",
+        "TRELLO_TOKEN": "your-trello-token"
+      }
+    }
+  }
+}
+```
+
+`bunx` starts fastest, but `npx` works identically. Get your API key at [trello.com/app-key](https://trello.com/app-key) and generate a token from the same page.
+
+### Claude Code
+
+Register the server with the CLI:
+
+```bash
+claude mcp add trello \
+  --env TRELLO_API_KEY=your-trello-api-key \
+  --env TRELLO_TOKEN=your-trello-token \
+  -- bunx @delorenj/mcp-server-trello
+```
+
+### MCP Registry
+
+The server is listed on the [official MCP Registry](https://registry.modelcontextprotocol.io/servers/io.github.delorenj/mcp-server-trello) as `io.github.delorenj/mcp-server-trello`, so registry-aware clients can discover and install it directly.
+
+### Agent skill package (optional)
+
+This repository also ships a **BMAD-compatible skill package** for the
 Trello MCP server. Install the `skill/` directory through your agent's skill
 management workflow, or place it in the agent's skills directory.
 
@@ -257,11 +299,11 @@ Search for checklist items containing specific text.
 
 ```typescript
 {
-nbsp; name: 'find_checklist_items_by_description',
+ name: 'find_checklist_items_by_description',
   arguments: {
     description: string,  // Text to search for in checklist item descriptions
     boardId?: string      // Optional: ID of the board (uses default if not provided)
-nbsp; }
+ }
 }
 ```
 
@@ -458,7 +500,7 @@ Add a new list to a board.
 
 ```typescript
 {
-nbsp; name: 'add_list_to_board',
+ name: 'add_list_to_board',
   arguments: {
     boardId?: string, // Optional: ID of the board (uses default if not provided)
     name: string      // Name of the new list
@@ -546,7 +588,7 @@ Attach an image to a card directly from a URL.
   name: 'attach_image_to_card',
   arguments: {
     boardId?: string, // Optional: ID of the board (uses default if not provided)
-    cardId: string,  nbsp; // ID of the card to attach the image to
+    cardId: string,   // ID of the card to attach the image to
     imageUrl: string, // URL of the image to attach
     name?: string     // Optional: Name for the attachment (defaults to "Image Attachment")
   }
@@ -560,7 +602,7 @@ Attach any type of file to a card from a URL or a local file path (e.g., `file:/
 ```typescript
 {
   name: 'attach_file_to_card',
-nbsp; arguments: {
+ arguments: {
     boardId?: string,  // Optional: ID of the board (uses default if not provided)
     cardId: string,s;   // ID of the card to attach the file to
     fileUrl: string,   // URL or local file path (using the file:// protocol) of the file to attach
@@ -814,7 +856,7 @@ Add both servers to your Claude Desktop configuration. Use `bunx` for the fastes
     "trello": {
       "command": "bunx",
       "args": ["@delorenj/mcp-server-trello"],
-nbsp;   "env": {
+   "env": {
         "TRELLO_API_KEY": "your-trello-api-key",
         "TRELLO_TOKEN": "your-trello-token"
       }
@@ -906,7 +948,7 @@ Contributions are welcome\!
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
