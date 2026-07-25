@@ -30,8 +30,13 @@ Use this sequence for task setup.
 Use the built-in acceptance criteria helper when a Trello card stores delivery
 criteria in a checklist.
 
-1. Run `get_acceptance_criteria`.
-2. Map each checklist item to the requested work.
+1. Run `get_acceptance_criteria`. It matches a checklist named `Acceptance
+   Criteria`, `AC`, `DoD`, or `Definition of Done` (case-insensitive), so you do
+   not need to know which heading the board uses.
+2. Check `found` on the result. When `true`, map each entry of `items` to the
+   requested work — `unmet` is the incomplete subset if that is all you need.
+   When `false`, do not assume the card has no criteria: read `reason` and
+   `availableChecklists` to see which checklists the card actually has.
 3. After implementation, run `update_checklist_item` to mark completed items
    only when the work has been verified.
 

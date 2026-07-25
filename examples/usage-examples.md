@@ -269,7 +269,9 @@ await use_mcp_tool({
 ### Example 11: Creating and managing checklists
 
 ```javascript
-// Get all items from "Acceptance Criteria" checklist
+// Get a card's acceptance criteria. Matches a checklist named "Acceptance Criteria",
+// "AC", "DoD", or "Definition of Done" (case-insensitive). Returns a {found} union:
+// on a match read items/unmet/percentComplete, otherwise read reason/availableChecklists.
 const acceptanceCriteria = await use_mcp_tool({
   server_name: "trello",
   tool_name: "get_acceptance_criteria",
