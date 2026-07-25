@@ -260,6 +260,9 @@ export class TrelloHealthEndpoints {
       // Check checklist accessibility (non-critical)
       try {
         const acceptanceCriteria = await this.trelloClient.getAcceptanceCriteria();
+        // Distinguishes "no acceptance-criteria checklist exists" (false) from
+        // "the checklist exists and is empty" (true) — both report zero items.
+        results.statistics.acceptance_criteria_found = acceptanceCriteria.found;
         // A not-found result counts as zero items, matching the previous empty-array behavior.
         results.statistics.acceptance_criteria_items = acceptanceCriteria.found
           ? acceptanceCriteria.items.length

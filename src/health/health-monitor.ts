@@ -391,6 +391,9 @@ export class TrelloHealthMonitor {
         duration_ms: Math.round(duration),
         timestamp: new Date().toISOString(),
         metadata: {
+          // Distinguishes "no acceptance-criteria checklist exists" (false) from
+          // "the checklist exists and is empty" (true) — both report a count of 0.
+          acceptance_criteria_found: criteria.found,
           acceptance_criteria_count: criteriaItems.length,
           completed_items: criteriaItems.filter(item => item.complete).length,
         },

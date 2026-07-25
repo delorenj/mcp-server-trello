@@ -21,10 +21,10 @@ export default defineConfig({
       // coverage below the best we've ever achieved. Goal: climb all four to 70.
       thresholds: {
         autoUpdate: true,
-        lines: 23.45,
-        statements: 22.75,
-        functions: 35.31,
-        branches: 22,
+        lines: 24.92,
+        statements: 24.4,
+        functions: 37.82,
+        branches: 23.67,
       },
     },
   },
