@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { TrelloHealthMonitor, SystemHealthReport, HealthStatus } from './health-monitor.js';
 import { TrelloClient } from '../trello-client.js';
 
@@ -260,7 +260,13 @@ export class TrelloHealthEndpoints {
       // Check checklist accessibility (non-critical)
       try {
         const acceptanceCriteria = await this.trelloClient.getAcceptanceCriteria();
-        results.statistics.acceptance_criteria_items = acceptanceCriteria.length;
+        // Distinguishes "no acceptance-criteria checklist exists" (false) from
+        // "the checklist exists and is empty" (true) — both report zero items.
+        results.statistics.acceptance_criteria_found = acceptanceCriteria.found;
+        // A not-found result counts as zero items, matching the previous empty-array behavior.
+        results.statistics.acceptance_criteria_items = acceptanceCriteria.found
+          ? acceptanceCriteria.items.length
+          : 0;
       } catch (error) {
         // This is not critical for consistency
         results.statistics.checklist_note =

@@ -379,18 +379,23 @@ export class TrelloHealthMonitor {
     try {
       // Try to get acceptance criteria as a test
       const criteria = await this.trelloClient.getAcceptanceCriteria();
+      // A not-found result counts as zero criteria, matching the previous empty-array behavior.
+      const criteriaItems = criteria.found ? criteria.items : [];
       const duration = performance.now() - startTime;
       this.recordPerformanceMetric(duration, true);
 
       return {
         name: checkName,
         status: HealthStatus.HEALTHY,
-        message: `Checklist operations functioning (${criteria.length} acceptance criteria found)`,
+        message: `Checklist operations functioning (${criteriaItems.length} acceptance criteria found)`,
         duration_ms: Math.round(duration),
         timestamp: new Date().toISOString(),
         metadata: {
-          acceptance_criteria_count: criteria.length,
-          completed_items: criteria.filter(item => item.complete).length,
+          // Distinguishes "no acceptance-criteria checklist exists" (false) from
+          // "the checklist exists and is empty" (true) — both report a count of 0.
+          acceptance_criteria_found: criteria.found,
+          acceptance_criteria_count: criteriaItems.length,
+          completed_items: criteriaItems.filter(item => item.complete).length,
         },
       };
     } catch (error) {

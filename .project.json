@@ -1,0 +1,26 @@
+{
+  "project_name": "Mcp Server Trello",
+  "project_description": "An MCP server for Trello boards, powered by Bun for maximum performance.",
+  "project_slug": "mcp-server-trello",
+  "repo_path": "/home/delorenj/code/mcp-server-trello",
+  "ticket_provider": {
+    "type": "plane",
+    "workspace": "33god",
+    "identifier": "MCPS",
+    "board_id": "19aa5f54-3c91-4e32-8c8c-9e91f625d162",
+    "state": "active"
+  },
+  "agents": {
+    "mcp-server-trello-pm": {
+      "role": "pm",
+      "role_dir": "agents/hermes/pm"
+    }
+  },
+  "automation": {
+    "reconcile": {
+      "enabled": false,
+      "grace_hours": 0,
+      "auto_review": true
+    }
+  }
+}

@@ -1,26 +1,9 @@
 # https://mise.jdx.dev/configuration.html
 
 [env]
-_.path = [".mise/scripts"]
+_.path = [".mise/scripts", "agents/hermes/pm"]
 _.file = [".env"]
 CODEX_HOME = { value = ".codex", path = true }
-
-# This block will handle the linking of
-# agent files to the main AGENTS.md file.
-#
-# TODO: Ensure this works for all levels of nesting.
-# i.e. All linked agent files MUST be siblings at
-# any given level of nesting.
-[hooks]
-enter = "{{config_root}}/.mise/scripts/link-agentfiles.sh"
-
-[[watch_files]]
-patterns = ["AGENTS.md"]
-task = "link-agentfiles"
-
-[tasks.link-agentfiles]
-description = "Symlink all agent files to AGENTS.md"
-run = "{{config_root}}/.mise/scripts/link-agentfiles.sh"
 
 [tasks.package]
 description = "Refresh skill assets for packaging"
@@ -32,3 +15,49 @@ run = [
   "npm run test",
   "{{config_root}}/scripts/build-skill-assets.sh",
 ]
+
+# This block will handle the linking of
+# agent files to the main AGENTS.md file.
+#
+# TODO: Ensure this works for all levels of nesting.
+# i.e. All linked agent files MUST be siblings at
+# any given level of nesting.
+[[hooks.enter]]
+script = "'{{config_root}}/.mise/scripts/link-agentfiles.sh'"
+[[hooks.enter]]
+script = "op inject -i .env.op > .env"
+
+[[watch_files]]
+patterns = ["AGENTS.md"]
+task = "link-agentfiles"
+
+[tasks.link-agentfiles]
+description = "Symlink all agent files to AGENTS.md"
+run = "'{{config_root}}/.mise/scripts/link-agentfiles.sh'"
+
+# >>> mise-versioning >>>  (managed block — do not edit by hand; re-run init to update)
+[tasks."version"]
+description = "Print the current version (vX.Y.Z)"
+run = "'{{config_root}}/.mise/scripts/versioning.sh' current"
+
+[tasks."version:bump"]
+description = "Bump patch version: vX.Y.Z -> vX.Y.(Z+1)"
+alias = "version:bump-patch"
+run = "'{{config_root}}/.mise/scripts/versioning.sh' bump patch"
+
+[tasks."version:bump-minor"]
+description = "Bump minor version: vX.Y.Z -> vX.(Y+1).0"
+run = "'{{config_root}}/.mise/scripts/versioning.sh' bump minor"
+
+[tasks."version:bump-major"]
+description = "Bump major version: vX.Y.Z -> v(X+1).0.0"
+run = "'{{config_root}}/.mise/scripts/versioning.sh' bump major"
+
+[tasks."version:check"]
+description = "Verify every versioned file is in parity"
+run = "'{{config_root}}/.mise/scripts/versioning.sh' check"
+
+[tasks."version:sync"]
+description = "Force every versioned file up to the highest version"
+run = "'{{config_root}}/.mise/scripts/versioning.sh' sync"
+# <<< mise-versioning <<<

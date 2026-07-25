@@ -11,12 +11,14 @@ Skill name is derived from the basename of the skill directory.
 
 Outputs merged JSON to stdout. Errors go to stderr.
 
-Requires Python 3.11+ (uses stdlib `tomllib`). No `uv`, no `pip install`,
-no virtualenv — plain `python3` is sufficient.
+Uses only the Python stdlib (`tomllib`) — no third-party dependencies.
+BMad is standardizing on `uv run` to invoke scripts (uv provisions a suitable
+interpreter for you); a plain `python3` on PATH still works during the
+transition. Either runner needs Python 3.11+ for `tomllib`.
 
-  python3 resolve_customization.py --skill /abs/path/to/skill-dir
-  python3 resolve_customization.py --skill ... --key agent
-  python3 resolve_customization.py --skill ... --key agent.menu
+  uv run resolve_customization.py --skill /abs/path/to/skill-dir
+  uv run resolve_customization.py --skill ... --key agent
+  uv run resolve_customization.py --skill ... --key agent.menu
 
 Merge rules (purely structural — no field-name special-casing):
   - Scalars (string, int, bool, float): override wins
@@ -177,6 +179,14 @@ def extract_key(data, dotted_key: str):
     return current
 
 
+def write_json_stdout(output):
+    """Write JSON as UTF-8 so Windows cp1252 stdout can carry emoji icons."""
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(encoding="utf-8")
+    sys.stdout.write(json.dumps(output, indent=2, ensure_ascii=False) + "\n")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Resolve customization for a BMad skill using three-layer TOML merge.",
@@ -223,7 +233,7 @@ def main():
     else:
         output = merged
 
-    sys.stdout.write(json.dumps(output, indent=2, ensure_ascii=False) + "\n")
+    write_json_stdout(output)
 
 
 if __name__ == "__main__":

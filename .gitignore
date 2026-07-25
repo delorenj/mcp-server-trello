@@ -72,3 +72,9 @@ mcp-publisher
 
 # pr-crusher runtime artifact (local backlog state, not tracked)
 .pr-snapshot.md
+
+# Secrets — .env is materialized by `op inject -i .env.op > .env` on mise enter.
+# NEVER commit it. .env.op holds only 1Password references or safe literals and IS committed.
+.env
+.env.*
+!.env.op

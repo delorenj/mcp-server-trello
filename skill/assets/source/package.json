@@ -1,7 +1,7 @@
 {
   "name": "@delorenj/mcp-server-trello",
   "mcpName": "io.github.delorenj/mcp-server-trello",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "description": "An MCP server for Trello boards, powered by Bun for maximum performance.",
   "keywords": [
     "mcp",
@@ -19,6 +19,10 @@
   ],
   "author": "Jarad DeLorenzo",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/delorenj/mcp-server-trello.git"
+  },
   "bugs": {
     "url": "https://github.com/delorenj/mcp-server-trello/issues"
   },
@@ -34,6 +38,7 @@
     "@ai-sdk/openai": "^1.3.24",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "@vitest/coverage-v8": "4.1.10",
     "bun-types": "latest",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.2",
@@ -42,7 +47,7 @@
     "prettier": "^3.7.4",
     "terser": "^5.44.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "4.1.10"
   },
   "files": [
     "build/**/*"
@@ -59,8 +64,9 @@
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir ./build --target node --format esm",
-    "build:types": "tsc --emitDeclarationOnly || echo 'Warning: Type declarations generation failed, but build succeeded'",
+    "build:types": "tsc --emitDeclarationOnly",
     "build:prod": "npm run build",
+    "typecheck": "tsc --noEmit",
     "dev": "bun --watch src/index.ts",
     "versionbump": "bun ./scripts/versionbump.js",
     "versionbump:patch": "bun run versionbump --patch",
@@ -69,7 +75,8 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:smoke": "vitest run tests/smoke",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "publish": "bun run build && npm publish"
+    "release": "bun run build && npm publish"
   }
 }

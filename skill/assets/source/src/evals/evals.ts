@@ -76,6 +76,30 @@ const mark_card_completeEval: EvalFunction = {
   },
 };
 
+const get_board_custom_fieldsEval: EvalFunction = {
+  name: 'get_board_custom_fields Tool Evaluation',
+  description: 'Evaluates the get_board_custom_fields tool by retrieving custom field definitions',
+  run: async () => {
+    const result = await grade(
+      openai('gpt-4'),
+      'Please retrieve all custom field definitions from the board with ID abc123, including any dropdown options.'
+    );
+    return JSON.parse(result);
+  },
+};
+
+const update_card_custom_fieldEval: EvalFunction = {
+  name: 'update_card_custom_field Tool Evaluation',
+  description: 'Evaluates the update_card_custom_field tool by setting a custom field value on a card',
+  run: async () => {
+    const result = await grade(
+      openai('gpt-4'),
+      "Please set the custom field with ID 'cf456' on card 'card789' to the text value 'High Priority'."
+    );
+    return JSON.parse(result);
+  },
+};
+
 const config: EvalConfig = {
   model: openai('gpt-4'),
   evals: [
@@ -85,6 +109,8 @@ const config: EvalConfig = {
     add_card_to_listEval,
     update_card_detailsEval,
     mark_card_completeEval,
+    get_board_custom_fieldsEval,
+    update_card_custom_fieldEval,
   ],
 };
 
@@ -97,4 +123,6 @@ export const evals = [
   add_card_to_listEval,
   update_card_detailsEval,
   mark_card_completeEval,
+  get_board_custom_fieldsEval,
+  update_card_custom_fieldEval,
 ];

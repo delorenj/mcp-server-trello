@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from 'zod';
+import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+// The SDK types its schemas against zod/v4; importing bare 'zod' yields the v3 API,
+// which makes registerTool's inference explode (TS2589) and OOMs tsc.
+import { z } from 'zod/v4';
 import { TrelloClient } from './trello-client.js';
 import { TrelloHealthEndpoints, HealthEndpointSchemas } from './health/health-endpoints.js';
+import { formatCardListResponse } from './card-list-preview.js';
 
 class TrelloServer {
   private server: McpServer;
@@ -14,23 +18,30 @@ class TrelloServer {
     const apiKey = process.env.TRELLO_API_KEY;
     const token = process.env.TRELLO_TOKEN;
     const defaultBoardId = process.env.TRELLO_BOARD_ID;
+    const allowedWorkspacesEnv = process.env.TRELLO_ALLOWED_WORKSPACES;
 
     if (!apiKey || !token) {
       throw new Error('TRELLO_API_KEY and TRELLO_TOKEN environment variables are required');
     }
+
+    // Parse allowed workspaces from comma-separated string
+    const allowedWorkspaceIds = allowedWorkspacesEnv
+      ? allowedWorkspacesEnv.split(',').map(id => id.trim()).filter(id => id.length > 0)
+      : undefined;
 
     this.trelloClient = new TrelloClient({
       apiKey,
       token,
       defaultBoardId,
       boardId: defaultBoardId,
+      allowedWorkspaceIds,
     });
 
     this.healthEndpoints = new TrelloHealthEndpoints(this.trelloClient);
 
     this.server = new McpServer({
       name: 'trello-server',
-      version: '1.7.1',
+      version: '1.8.0',
     });
 
     this.setupTools();
@@ -61,7 +72,8 @@ class TrelloServer {
       'get_cards_by_list_id',
       {
         title: 'Get Cards by List ID',
-        description: 'Fetch cards from a specific Trello list on a specific board',
+        description:
+          'Fetch cards from a specific Trello list on a specific board. Descriptions are previewed by default to keep responses compact; set fields without "desc" to omit descriptions, or increase descMaxLength/omitDescThresholdBytes and use get_card for full details.',
         inputSchema: {
           boardId: z
             .string()
@@ -72,14 +84,34 @@ class TrelloServer {
             .string()
             .optional()
             .describe('Comma-separated list of fields to return (e.g., "name,idShort,labels,due,dueComplete"). Omit for all fields.'),
+          nameFilter: z
+            .string()
+            .trim()
+            .min(1, 'nameFilter must not be empty')
+            .optional()
+            .describe('Optional substring to filter cards by name (case-insensitive)'),
+          descMaxLength: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe(
+              'Maximum description preview length per card. Defaults to 200. Increase for fuller descriptions.'
+            ),
+          omitDescThresholdBytes: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe(
+              'Approximate response size threshold before descriptions are omitted. Defaults to 50000 bytes.'
+            ),
         },
       },
-      async ({ listId, fields }) => {
+      async ({ listId, fields, nameFilter, descMaxLength, omitDescThresholdBytes }) => {
         try {
-          const cards = await this.trelloClient.getCardsByList(listId, fields);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify(cards, null, 2) }],
-          };
+          const cards = await this.trelloClient.getCardsByList(listId, fields, nameFilter);
+          return formatCardListResponse(cards, { descMaxLength, omitDescThresholdBytes });
         } catch (error) {
           return this.handleError(error);
         }
@@ -164,6 +196,14 @@ class TrelloServer {
           name: z.string().describe('Name of the card'),
           description: z.string().optional().describe('Description of the card'),
           dueDate: z.string().optional().describe('Due date for the card (ISO 8601 format)'),
+          dueReminder: z
+            .number()
+            .int()
+            .nullable()
+            .optional()
+            .describe(
+              'Due date reminder in minutes before due date (e.g., null to remove reminder, 0 at due time, 1440 one day before)'
+            ),
           start: z
             .string()
             .optional()
@@ -201,6 +241,14 @@ class TrelloServer {
           name: z.string().optional().describe('New name for the card'),
           description: z.string().optional().describe('New description for the card'),
           dueDate: z.string().optional().describe('New due date for the card (ISO 8601 format)'),
+          dueReminder: z
+            .number()
+            .int()
+            .nullable()
+            .optional()
+            .describe(
+              'New due date reminder in minutes before due date (e.g., null to remove reminder, 0 at due time, 1440 one day before)'
+            ),
           start: z
             .string()
             .optional()
@@ -210,6 +258,12 @@ class TrelloServer {
             .optional()
             .describe('Mark the due date as complete (true) or incomplete (false)'),
           labels: z.array(z.string()).optional().describe('New array of label IDs for the card'),
+          pos: z
+            .union([z.string(), z.number()])
+            .optional()
+            .describe(
+              'Position of the card in the list. Accepts "top", "bottom", or a positive number'
+            ),
         },
       },
       async args => {
@@ -250,6 +304,52 @@ class TrelloServer {
       }
     );
 
+    // ─── Watch Card (subscribe/unsubscribe) ──
+    this.server.registerTool(
+      'watch_card',
+      {
+        title: 'Watch Card',
+        description: 'Subscribe or unsubscribe from watching a card for activity notifications',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card to watch/unwatch'),
+          subscribed: z.boolean().describe('Set to true to start watching, false to stop'),
+        },
+      },
+      async ({ cardId, subscribed }) => {
+        try {
+          const card = await this.trelloClient.watchCard(cardId, subscribed);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // ─── Watch List (subscribe/unsubscribe) ──
+    this.server.registerTool(
+      'watch_list',
+      {
+        title: 'Watch List',
+        description: 'Subscribe or unsubscribe from watching a list for activity notifications',
+        inputSchema: {
+          listId: z.string().describe('ID of the list to watch/unwatch'),
+          subscribed: z.boolean().describe('Set to true to start watching, false to stop'),
+        },
+      },
+      async ({ listId, subscribed }) => {
+        try {
+          const list = await this.trelloClient.watchList(listId, subscribed);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Move a card
     this.server.registerTool(
       'move_card',
@@ -265,11 +365,17 @@ class TrelloServer {
             ),
           cardId: z.string().describe('ID of the card to move'),
           listId: z.string().describe('ID of the target list'),
+          pos: z
+            .union([z.string(), z.number()])
+            .optional()
+            .describe(
+              'Position of the card in the target list. Accepts "top", "bottom", or a positive number'
+            ),
         },
       },
-      async ({ boardId, cardId, listId }) => {
+      async ({ boardId, cardId, listId, pos }) => {
         try {
-          const card = await this.trelloClient.moveCard(boardId, cardId, listId);
+          const card = await this.trelloClient.moveCard(boardId, cardId, listId, pos);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(card, null, 2) }],
           };
@@ -331,6 +437,52 @@ class TrelloServer {
       }
     );
 
+    // Update a list
+    this.server.registerTool(
+      'update_list',
+      {
+        title: 'Update List',
+        description:
+          'Update a list name, archive state, subscription state, or board. Use update_list_position for moving a list within a board.',
+        inputSchema: {
+          listId: z.string().describe('ID of the Trello list to update'),
+          name: z.string().optional().describe('New name for the list'),
+          closed: z.boolean().optional().describe('Whether to close (archive) the list'),
+          subscribed: z
+            .boolean()
+            .optional()
+            .describe('Whether the authenticated user is subscribed to the list'),
+          idBoard: z.string().optional().describe('ID of a board to move the list to'),
+        },
+      },
+      async ({ listId, name, closed, subscribed, idBoard }) => {
+        try {
+          const params: {
+            name?: string;
+            closed?: boolean;
+            subscribed?: boolean;
+            idBoard?: string;
+          } = {};
+          if (name !== undefined) params.name = name;
+          if (closed !== undefined) params.closed = closed;
+          if (subscribed !== undefined) params.subscribed = subscribed;
+          if (idBoard !== undefined) params.idBoard = idBoard;
+          if (Object.keys(params).length === 0) {
+            throw new McpError(
+              ErrorCode.InvalidParams,
+              'At least one of name, closed, subscribed, or idBoard must be provided'
+            );
+          }
+          const list = await this.trelloClient.updateList(listId, params);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Update list position
     this.server.registerTool(
       'update_list_position',
@@ -359,7 +511,8 @@ class TrelloServer {
       },
       async ({ listId, position }) => {
         try {
-          const parsedPosition = position === 'top' || position === 'bottom' ? position : Number(position);
+          const parsedPosition =
+            position === 'top' || position === 'bottom' ? position : Number(position);
           const list = await this.trelloClient.updateListPosition(listId, parsedPosition);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
@@ -483,12 +636,65 @@ class TrelloServer {
       }
     );
 
-    // Attach image data to card (for base64/data URL uploads)
+    // Attach arbitrary binary data to a card (base64 or data URL)
+    this.server.registerTool(
+      'attach_data_to_card',
+      {
+        title: 'Attach Data to Card',
+        description:
+          'Attach binary data (image, markdown, PDF, text, etc.) to a card from base64-encoded data or a data URL. Use this for any non-image content. For image/screenshot uploads with PNG defaults, see attach_image_data_to_card.',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe(
+              'ID of the Trello board where the card exists (uses default if not provided)'
+            ),
+          cardId: z.string().describe('ID of the card to attach the data to'),
+          data: z
+            .string()
+            .describe(
+              'Base64-encoded data or a data URL (e.g. data:text/markdown;base64,...). Any content type, not just images.'
+            ),
+          name: z
+            .string()
+            .optional()
+            .describe(
+              'Filename for the attachment, including extension (e.g. "notes.md", "report.pdf"). Defaults to "attachment-<timestamp>".'
+            ),
+          mimeType: z
+            .string()
+            .optional()
+            .describe(
+              'MIME type of the data (e.g. "text/markdown", "application/pdf", "image/png"). Recommended for correct rendering in Trello. If omitted, inferred from a data URL prefix or the filename extension; falls back to "application/octet-stream".'
+            ),
+        },
+      },
+      async ({ boardId, cardId, data, name, mimeType }) => {
+        try {
+          const attachment = await this.trelloClient.attachDataToCard(
+            boardId,
+            cardId,
+            data,
+            name,
+            mimeType
+          );
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    // Attach image data to card (image-flavored convenience over attach_data_to_card)
     this.server.registerTool(
       'attach_image_data_to_card',
       {
         title: 'Attach Image Data to Card',
-        description: 'Attach an image to a card from base64 data or data URL (for screenshot uploads)',
+        description:
+          'Attach an image to a card from base64 data or a data URL. Image-flavored convenience over attach_data_to_card: defaults assume PNG when mimeType/name are omitted, suitable for screenshot pasting. For non-image content, use attach_data_to_card.',
         inputSchema: {
           boardId: z
             .string()
@@ -579,7 +785,8 @@ class TrelloServer {
       'list_workspaces',
       {
         title: 'List Workspaces',
-        description: 'List all workspaces the user has access to',
+        description:
+          'List workspaces the user has access to. If TRELLO_ALLOWED_WORKSPACES is configured, only allowed workspaces are returned.',
         inputSchema: {},
       },
       async () => {
@@ -969,7 +1176,8 @@ class TrelloServer {
       'get_acceptance_criteria',
       {
         title: 'Get Acceptance Criteria',
-        description: 'Get all items from the "Acceptance Criteria" checklist',
+        description:
+          'Get a card\'s (or board\'s) acceptance criteria. Matches a checklist named "Acceptance Criteria", "AC", "DoD", or "Definition of Done" (case-insensitive); first match in that order wins. Returns a {found: true|false} union; read reason when not found.',
         inputSchema: {
           cardId: z
             .string()
@@ -983,9 +1191,9 @@ class TrelloServer {
       },
       async ({ cardId, boardId }) => {
         try {
-          const items = await this.trelloClient.getAcceptanceCriteria(cardId, boardId);
+          const result = await this.trelloClient.getAcceptanceCriteria(cardId, boardId);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
@@ -1412,6 +1620,108 @@ class TrelloServer {
       }
     );
 
+    // Custom field management tools
+    this.server.registerTool(
+      'get_board_custom_fields',
+      {
+        title: 'Get Board Custom Fields',
+        description:
+          'Get all custom field definitions on a board. Returns field IDs, names, and types. ' +
+          'For dropdown/list fields, also returns available options with their IDs. ' +
+          'Requires Trello Standard plan or higher.',
+        inputSchema: {
+          boardId: z
+            .string()
+            .optional()
+            .describe('ID of the Trello board (uses default if not provided)'),
+        },
+      },
+      async ({ boardId }) => {
+        try {
+          const fields = await this.trelloClient.getBoardCustomFields(boardId);
+
+          const fieldsWithOptions = await Promise.all(
+            fields.map(async (field) => {
+              if (field.type !== 'list') {
+                return field;
+              }
+
+              try {
+                const options = await this.trelloClient.getCustomFieldOptions(field.id);
+                return { ...field, options };
+              } catch (error) {
+                return {
+                  ...field,
+                  optionsError: error instanceof Error ? error.message : 'Failed to fetch options',
+                };
+              }
+            })
+          );
+
+          return {
+            content: [
+              { type: 'text' as const, text: JSON.stringify(fieldsWithOptions, null, 2) },
+            ],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
+    this.server.registerTool(
+      'update_card_custom_field',
+      {
+        title: 'Update Card Custom Field',
+        description:
+          'Set or clear a custom field value on a card. Requires Trello Standard plan or higher. ' +
+          'Use get_board_custom_fields first to find field IDs and types. ' +
+          'Value format depends on type: text=any string, number=numeric string, ' +
+          'checkbox="true"/"false", date=ISO 8601 string, list=option ID from get_board_custom_fields. ' +
+          'To clear a field, set type to "clear" and omit value.',
+        inputSchema: {
+          cardId: z.string().describe('ID of the card to update'),
+          customFieldId: z.string().describe('ID of the custom field definition'),
+          type: z
+            .enum(['text', 'number', 'checkbox', 'date', 'list', 'clear'])
+            .describe('The custom field type. Use "clear" to remove the value from the field.'),
+          value: z
+            .string()
+            .optional()
+            .describe(
+              'The value to set. For text: any string. For number: numeric string (e.g. "42.5"). ' +
+                'For checkbox: "true" or "false". For date: ISO 8601 (e.g. "2025-12-31T00:00:00.000Z"). ' +
+                'For list: the option ID. Not needed when type is "clear".'
+            ),
+        },
+      },
+      async ({ cardId, customFieldId, type, value }) => {
+        try {
+          if (type !== 'clear' && !value) {
+            return {
+              content: [
+                {
+                  type: 'text' as const,
+                  text: 'Error: value is required when type is not "clear"',
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          const result = await this.trelloClient.updateCardCustomField(cardId, customFieldId, {
+            type,
+            value,
+          });
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+          };
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Card history tool
     this.server.registerTool(
       'get_card_history',
@@ -1459,7 +1769,6 @@ class TrelloServer {
         try {
           const result = await this.trelloClient.downloadAttachment(cardId, attachmentId);
 
-          // For images, return as image content type for direct viewing
           if (result.mimeType.startsWith('image/')) {
             return {
               content: [
@@ -1476,16 +1785,15 @@ class TrelloServer {
             };
           }
 
-          // For non-images, return base64 data as text
           return {
             content: [
               {
                 type: 'text' as const,
-                text: JSON.stringify({
-                  fileName: result.fileName,
-                  mimeType: result.mimeType,
-                  data: result.data,
-                }, null, 2),
+                text: JSON.stringify(
+                  { fileName: result.fileName, mimeType: result.mimeType, data: result.data },
+                  null,
+                  2
+                ),
               },
             ],
           };

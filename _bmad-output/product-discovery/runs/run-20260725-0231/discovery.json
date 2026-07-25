@@ -1,0 +1,39 @@
+{
+  "runId": "run-20260725-0231",
+  "generatedAt": "2026-07-25T02:50Z",
+  "runFocus": "",
+  "doctrine": {
+    "lastVerified": "2026-07-16 (release block 2026-07-21); ground-truth block self-flagged overdue",
+    "unblockedTiers": ["all tiers nominally unblocked by 1.8.0 ship — BUT see demand signal #1: the published 1.8.0 artifact is broken, so ceiling work is worth zero again until 1.8.1"],
+    "vein": [
+      "1. Interpretation of the transition log (ambient, zero convention, Butler-impossible, Atlassian will ship a passthrough)",
+      "2. The session loop (third parties hand-assembling it: sdlcnext 11 calls, Composio docs)",
+      "3. get_acceptance_criteria itself (zero competitors, two lines, currently lies silently)"
+    ],
+    "falsifiedConstraints": [
+      "/search is NOT a permanent moat — Atlassian ships keyword search today",
+      "Custom fields are on Atlassian's announced coming-soon list — not uncopyable",
+      "The 'modal npx installer is a solo dev on a free board' persona was fabricated — do not reuse",
+      "'Zero complaint threads' is false — 20+ open issues include complaints"
+    ],
+    "openBlindSpots": ["transport/SSE (#5)", "latency budget (10 req/s)", "write-safety ACL gap", "onboarding (#21)", "distribution (#70/#39/#47)", "human-agent collaboration", "Trello plan matrix (free-board action lookback)", "i18n", "Butler-as-target", "agent-action audit trail"]
+  },
+  "demandSignals": [
+    {"signal": "#109 + #108: published 1.8.0 FAILS TO START via npx/bunx — bin pointed to src/index.ts while files only ships build/**; tarball confirmed broken via npm pack; fix (bin→build/index.js) is VERIFIED present on main, unreleased", "kind": "issue", "marker": "VERIFIED", "evidence": "gh issue list; gh issue view 109 (npm pack analysis); local package.json bin=build/index.js", "contaminated": false, "note": "INCIDENT, not a feature idea — the entire ~73k/mo install funnel currently lands on a broken package"},
+    {"signal": "#102: label filter for card retrieval (2026-07-02) — exactly the doctrine's labelFilter compression case (zero-slot param on hottest read)", "kind": "issue", "marker": "VERIFIED", "evidence": "gh issue list", "contaminated": false},
+    {"signal": "#101: download/read attachment contents for LLM analysis — doctrine Tier 2 planned", "kind": "issue", "marker": "VERIFIED", "evidence": "gh issue list", "contaminated": false},
+    {"signal": "#92: orphan processes — un-unref'd health interval (108 orphans, 12-day uptimes); doctrine Tier 0 open item", "kind": "issue", "marker": "VERIFIED", "evidence": "gh issue list + doctrine", "contaminated": false},
+    {"signal": "#72: global search open since 2026-02; search PRs rejected 3x (#18/#53/#73) — rejection of the passthrough, not the capability", "kind": "issue", "marker": "VERIFIED", "evidence": "gh issue list + doctrine", "contaminated": false},
+    {"signal": "Third parties hand-assemble the session loop: sdlcnext tutorial (11 calls, invokes get_acceptance_criteria BY NAME); Composio documents the identical loop independently", "kind": "third-party", "marker": "BELIEVED", "evidence": "carried from doctrine (VERIFIED there historically); not re-fetched this session", "contaminated": false},
+    {"signal": "#50: Perplexity caps at 20 tools — server unusable there; 57 tools registered today", "kind": "issue", "marker": "VERIFIED", "evidence": "gh issue list; grep -c registerTool src/index.ts = 57", "contaminated": false},
+    {"signal": "Distribution asks: #70 Claude marketplace, #39 Power-Up marketplace, #47 Smithery broken", "kind": "issue", "marker": "VERIFIED", "evidence": "gh issue list", "contaminated": false},
+    {"signal": "Smaller feature asks: #74 list ordering, #55 fields/filters for list_boards, #38 member assignment, #15 card by id/slug, #5 SSE transport", "kind": "issue", "marker": "VERIFIED", "evidence": "gh issue list", "contaminated": false},
+    {"signal": "Release-gap artifacts (requests for features that now exist): #37, #31, #30 (create_checklist), #41, #95 — measure the publish failure, not demand", "kind": "issue", "marker": "VERIFIED", "evidence": "gh issue list + doctrine contamination warning", "contaminated": true},
+    {"signal": "Adoption baseline: 72,981 downloads LAST MONTH (npm API, 2026-06-24→07-23); 427 stars, 140 forks — the doctrine's '9.3k/mo' figure is stale by ~8x", "kind": "community", "marker": "VERIFIED", "evidence": "api.npmjs.org/downloads/point/last-month; gh repo view", "contaminated": false}
+  ],
+  "marketPulse": [
+    {"claim": "Atlassian's official Trello MCP is live and documented (support.atlassian.com doc current as of 2026-06-30)", "marker": "VERIFIED", "evidence": "web search 2026-07-25"},
+    {"claim": "No evidence Atlassian has shipped the doctrine's DEPRECATING list (activity/history, comments, attachments, custom fields) yet", "marker": "BELIEVED", "evidence": "absence of evidence in quick search; not probed"},
+    {"claim": "No first-party Trello connector in Anthropic's Connectors Directory — users wire custom MCP servers (funnels to this server)", "marker": "BELIEVED", "evidence": "usecarly.com blog 2026-06-26, secondary source"}
+  ]
+}

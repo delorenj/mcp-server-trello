@@ -1,0 +1,11 @@
+# Hermes agent role manifest — minimal install for the momo/tp board adapter.
+repo: mcp-server-trello
+role: pm
+agent_id: mcp-server-trello-pm
+display_name: "MCP Server Trello PM"
+purpose: "pm role scaffold for board adapter (momo/tp) access"
+
+ticket_provider:
+  type: plane
+  workspace: "33god"
+  identifier: "MCPS"

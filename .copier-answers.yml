@@ -1,0 +1,5 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_src_path: /home/delorenj/.local/share/mise/installs/node/26.5.0/lib/node_modules/@delorenj/pjangler/templates/commonproject
+project_description: An MCP server for Trello boards, powered by Bun for maximum performance.
+project_name: Mcp Server Trello
+ticket_provider: plane
