@@ -447,6 +447,234 @@ describe('TrelloClient', () => {
     });
   });
 
+  describe('getAcceptanceCriteria', () => {
+    // Builds a Trello checklist payload; `items` is a list of [name, complete] tuples.
+    function checklist(id: string, name: string, items: Array<[string, boolean]> = []) {
+      return {
+        id,
+        name,
+        idCard: 'c1',
+        pos: 1,
+        checkItems: items.map(([itemName, complete], index) => ({
+          id: `${id}-i${index + 1}`,
+          name: itemName,
+          state: complete ? 'complete' : 'incomplete',
+          pos: index + 1,
+        })),
+      };
+    }
+
+    // Card-scoped path: GET /cards/{id}?checklists=all
+    function mockCardChecklists(checklists: ReturnType<typeof checklist>[]) {
+      mockAxiosInstance.get.mockResolvedValue({ data: { id: 'c1', checklists } });
+    }
+
+    // Board-scoped path: GET /boards/{id}/checklists
+    function mockBoardChecklists(checklists: ReturnType<typeof checklist>[]) {
+      mockAxiosInstance.get.mockResolvedValue({ data: checklists });
+    }
+
+    // AC1
+    it('should match a checklist named "AC" and report its board spelling', async () => {
+      mockCardChecklists([checklist('cl1', 'AC', [['ships behind a flag', false]])]);
+
+      const client = createClient();
+      const result = await client.getAcceptanceCriteria('c1');
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/cards/c1', {
+        params: { checklists: 'all' },
+      });
+      expect(result).toEqual({
+        found: true,
+        matchedChecklistName: 'AC',
+        percentComplete: 0,
+        items: [
+          { id: 'cl1-i1', text: 'ships behind a flag', complete: false, parentCheckListId: 'cl1' },
+        ],
+        unmet: [
+          { id: 'cl1-i1', text: 'ships behind a flag', complete: false, parentCheckListId: 'cl1' },
+        ],
+      });
+    });
+
+    // AC2
+    it('should match "DoD"', async () => {
+      mockCardChecklists([checklist('cl1', 'DoD', [['tests pass', true]])]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      expect(result).toMatchObject({ found: true, matchedChecklistName: 'DoD', items: [{ text: 'tests pass' }] });
+    });
+
+    // AC2
+    it('should match "Definition of Done"', async () => {
+      mockCardChecklists([checklist('cl1', 'Definition of Done', [['docs updated', false]])]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      expect(result).toMatchObject({
+        found: true,
+        matchedChecklistName: 'Definition of Done',
+        items: [{ text: 'docs updated' }],
+      });
+    });
+
+    // AC2 — case-insensitive, whitespace-trimmed; matchedChecklistName keeps original casing
+    it('should match mixed-case and padded alias spellings without canonicalizing the name', async () => {
+      mockCardChecklists([checklist('cl1', '  dod  ', [['reviewed', false]])]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      expect(result).toMatchObject({ found: true, matchedChecklistName: '  dod  ' });
+
+      mockCardChecklists([checklist('cl2', 'acceptance CRITERIA', [['reviewed', false]])]);
+      const mixed = await createClient().getAcceptanceCriteria('c1');
+      expect(mixed).toMatchObject({ found: true, matchedChecklistName: 'acceptance CRITERIA' });
+    });
+
+    // AC3
+    it('should compute percentComplete and unmet for 4 items with 2 complete', async () => {
+      mockCardChecklists([
+        checklist('cl1', 'Acceptance Criteria', [
+          ['one', true],
+          ['two', false],
+          ['three', true],
+          ['four', false],
+        ]),
+      ]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      expect(result).toMatchObject({ found: true, percentComplete: 50 });
+      if (!result.found) throw new Error('expected found');
+      expect(result.items).toHaveLength(4);
+      expect(result.unmet.map(item => item.text)).toEqual(['two', 'four']);
+      expect(result.unmet.every(item => item.complete === false)).toBe(true);
+    });
+
+    // AC4
+    it('should return an explicit not-found with the checklists that do exist', async () => {
+      mockCardChecklists([
+        checklist('cl1', 'Backlog', [['someday', false]]),
+        checklist('cl2', 'QA', [['smoke test', false]]),
+      ]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      expect(result.found).toBe(false);
+      if (result.found) throw new Error('expected not found');
+      expect(result.availableChecklists).toEqual(['Backlog', 'QA']);
+      expect(result.reason).toContain('Acceptance Criteria');
+      expect(result.reason).toContain('AC');
+      expect(result.reason).toContain('DoD');
+      expect(result.reason).toContain('Definition of Done');
+      expect(result.reason).toMatch(/card/);
+      expect(result).not.toHaveProperty('items');
+    });
+
+    it('should return an empty availableChecklists array when the card has no checklists at all', async () => {
+      mockCardChecklists([]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      expect(result).toMatchObject({ found: false, availableChecklists: [] });
+    });
+
+    // AC5 — matched-but-empty is distinguishable from not-found
+    it('should distinguish a matched-but-empty checklist from not-found', async () => {
+      mockCardChecklists([checklist('cl1', 'AC', [])]);
+      const empty = await createClient().getAcceptanceCriteria('c1');
+
+      expect(empty).toEqual({
+        found: true,
+        items: [],
+        unmet: [],
+        percentComplete: 0,
+        matchedChecklistName: 'AC',
+      });
+
+      mockCardChecklists([checklist('cl9', 'Backlog', [])]);
+      const missing = await createClient().getAcceptanceCriteria('c1');
+
+      expect(missing.found).toBe(false);
+      expect(empty.found).toBe(true);
+      expect(empty).not.toEqual(missing);
+    });
+
+    it('should prefer the highest-precedence alias when several are present', async () => {
+      mockCardChecklists([
+        checklist('cl1', 'DoD', [['dod item', false]]),
+        checklist('cl2', 'AC', [['ac item', false]]),
+        checklist('cl3', 'Acceptance Criteria', [['canonical item', false]]),
+      ]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      expect(result).toMatchObject({ found: true, matchedChecklistName: 'Acceptance Criteria' });
+      if (!result.found) throw new Error('expected found');
+      expect(result.items.map(item => item.text)).toEqual(['canonical item']);
+    });
+
+    it('should aggregate every checklist matching the winning alias in API order', async () => {
+      mockCardChecklists([
+        checklist('cl1', 'ac', [['first', true]]),
+        checklist('cl2', 'AC', [['second', false]]),
+        checklist('cl3', 'DoD', [['ignored', false]]),
+      ]);
+
+      const result = await createClient().getAcceptanceCriteria('c1');
+
+      if (!result.found) throw new Error('expected found');
+      expect(result.matchedChecklistName).toBe('ac');
+      expect(result.items.map(item => item.text)).toEqual(['first', 'second']);
+      expect(result.items.map(item => item.parentCheckListId)).toEqual(['cl1', 'cl2']);
+      expect(result.percentComplete).toBe(50);
+    });
+
+    it('should resolve aliases on the board-scoped path with an explicit boardId', async () => {
+      mockBoardChecklists([
+        checklist('cl1', 'Backlog', [['nope', false]]),
+        checklist('cl2', 'Definition of Done', [
+          ['board item', true],
+          ['board item 2', false],
+        ]),
+      ]);
+
+      const client = createClient();
+      const result = await client.getAcceptanceCriteria(undefined, 'board123');
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/boards/board123/checklists');
+      expect(result).toMatchObject({
+        found: true,
+        matchedChecklistName: 'Definition of Done',
+        percentComplete: 50,
+      });
+      if (!result.found) throw new Error('expected found');
+      expect(result.unmet.map(item => item.text)).toEqual(['board item 2']);
+    });
+
+    it('should fall back to the active board and report board scope in the not-found reason', async () => {
+      mockBoardChecklists([checklist('cl1', 'Backlog', [])]);
+
+      const client = createClient({ boardId: 'active-board' });
+      const result = await client.getAcceptanceCriteria();
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/boards/active-board/checklists');
+      expect(result).toMatchObject({ found: false, availableChecklists: ['Backlog'] });
+      if (result.found) throw new Error('expected not found');
+      expect(result.reason).toContain('board');
+    });
+
+    it('should throw when neither a card, a board, nor an active board is available', async () => {
+      const client = createClient();
+
+      await expect(client.getAcceptanceCriteria()).rejects.toThrow(
+        'No board ID or card ID provided and no active board set'
+      );
+      expect(mockAxiosInstance.get).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Members', () => {
     it('getBoardMembers should fetch members', async () => {
       mockAxiosInstance.get.mockResolvedValue({ data: [] });

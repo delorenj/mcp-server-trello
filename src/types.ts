@@ -287,3 +287,34 @@ export interface CheckListItem {
   complete: boolean;
   parentCheckListId: string;
 }
+
+/**
+ * Result of a successful acceptance-criteria lookup: a checklist whose name matched
+ * one of the recognized aliases was found. `items` may still be empty — that is a
+ * real answer ("the checklist exists and is empty"), distinct from `found: false`.
+ */
+export interface AcceptanceCriteriaFound {
+  found: true;
+  /** All items of the matching checklist(s), in API order. */
+  items: CheckListItem[];
+  /** Rounded percentage of `items` that are complete; exactly 0 when `items` is empty. */
+  percentComplete: number;
+  /** The incomplete subset of `items`, source order preserved. */
+  unmet: CheckListItem[];
+  /** Checklist name exactly as written on the board (original casing). */
+  matchedChecklistName: string;
+}
+
+/**
+ * Result when no checklist in the searched scope matched a recognized
+ * acceptance-criteria name. Explicit, never a bare empty list.
+ */
+export interface AcceptanceCriteriaNotFound {
+  found: false;
+  /** Human-readable explanation, naming the aliases that were tried. */
+  reason: string;
+  /** Names (original casing) of the checklists that do exist in the searched scope. */
+  availableChecklists: string[];
+}
+
+export type AcceptanceCriteriaResult = AcceptanceCriteriaFound | AcceptanceCriteriaNotFound;

@@ -1176,7 +1176,8 @@ class TrelloServer {
       'get_acceptance_criteria',
       {
         title: 'Get Acceptance Criteria',
-        description: 'Get all items from the "Acceptance Criteria" checklist',
+        description:
+          'Get the acceptance criteria for a card (or board). Recognizes any checklist named "Acceptance Criteria", "AC", "DoD", or "Definition of Done" (case-insensitive, whitespace-trimmed); the first of those names present wins. On a match returns { found: true, items, unmet, percentComplete, matchedChecklistName }, where matchedChecklistName is the checklist name as written on the board and unmet is the incomplete subset. When no checklist matches, returns an explicit { found: false, reason, availableChecklists } listing the checklists that do exist — so "no acceptance criteria" is never confused with "the checklist is named something else". A matched-but-empty checklist returns found: true with items: [].',
         inputSchema: {
           cardId: z
             .string()
@@ -1190,9 +1191,9 @@ class TrelloServer {
       },
       async ({ cardId, boardId }) => {
         try {
-          const items = await this.trelloClient.getAcceptanceCriteria(cardId, boardId);
+          const result = await this.trelloClient.getAcceptanceCriteria(cardId, boardId);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
           };
         } catch (error) {
           return this.handleError(error);
