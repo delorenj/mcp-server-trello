@@ -22,7 +22,7 @@ node -e "const f='$ROOT/package.json',j=require(f);j.version='$NEW';require('fs'
 node -e "const f='$ROOT/server.json',j=require(f);j.version='$NEW';if(j.packages&&j.packages[0])j.packages[0].version='$NEW';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
 
 # 4. src/index.ts McpServer info literal (anchored on the trello-server name).
-perl -0pi -e "s/(name: 'trello-server',\s*\n\s*version: ')[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(')/\${1}$NEW\${2}/" src/index.ts
+perl -0pi -e "s/(name: 'trello-server',\s*\n\s*version: ')[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(')/\${1}$NEW\${2}/" src/index.ts
 
 # 5. CHANGELOG heading: [Unreleased] -> [X.Y.Z] - DATE (first occurrence only).
 if grep -q '## \[Unreleased\]' CHANGELOG.md; then
