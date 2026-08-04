@@ -70,6 +70,7 @@ export class TrelloHealthMonitor {
   private lastHealthCheck?: SystemHealthReport;
   private readonly trelloClient: TrelloClient;
   private rateLimiter: any; // Will get injected from TrelloClient
+  private performanceTimer?: ReturnType<typeof setInterval>;
 
   constructor(trelloClient: TrelloClient) {
     this.trelloClient = trelloClient;
@@ -615,13 +616,35 @@ export class TrelloHealthMonitor {
    */
   private startPerformanceMonitoring(): void {
     // Simple monitoring - in a real implementation, this might be more sophisticated
-    setInterval(() => {
+    this.performanceTimer = setInterval(() => {
       // Clean up old metrics to prevent memory leaks
       const fiveMinutesAgo = Date.now() - 300000;
       this.performanceTracker.requests = this.performanceTracker.requests.filter(
         r => r.timestamp > fiveMinutesAgo
       );
     }, 60000); // Clean up every minute
+
+    // Never let this timer hold the event loop open. The server runs over stdio,
+    // so when the client disconnects its stdin EOFs and there is no work left to
+    // do -- but a referenced timer keeps Node alive indefinitely, leaving the
+    // process reparented to init and running forever. This is purely opportunistic
+    // cleanup of an in-memory array, so it should not by itself keep the process
+    // alive. See #92.
+    this.performanceTimer.unref?.();
+  }
+
+  /**
+   * Stop background performance monitoring and release its timer.
+   *
+   * Not required for the process to exit (the timer is unref'd), but lets an
+   * embedding host tear the monitor down deterministically, and keeps tests from
+   * leaking timers between cases.
+   */
+  stopPerformanceMonitoring(): void {
+    if (this.performanceTimer) {
+      clearInterval(this.performanceTimer);
+      this.performanceTimer = undefined;
+    }
   }
 
   /**
