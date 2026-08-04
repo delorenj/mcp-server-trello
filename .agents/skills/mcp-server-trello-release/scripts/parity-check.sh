@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # parity-check.sh — assert the 5 version-bearing locations in mcp-server-trello
-# all read the same X.Y.Z. Exit 0 if in parity, 1 otherwise.
+# all read the same X.Y.Z[-prerelease]. Exit 0 if in parity, 1 otherwise.
 # Safe to run anywhere inside the repo, and safe as a CI gate.
 set -euo pipefail
 
@@ -11,9 +11,9 @@ pkg=$(node -p "require('$ROOT/package.json').version")
 srv_top=$(node -p "require('$ROOT/server.json').version")
 srv_pkg=$(node -p "require('$ROOT/server.json').packages[0].version")
 # McpServer info literal — anchored on the server name so it can't match elsewhere.
-mcp=$(grep -A1 "name: 'trello-server'" src/index.ts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+mcp=$(grep -A1 "name: 'trello-server'" src/index.ts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?' | head -1)
 # Newest changelog heading.
-chlog=$(grep -m1 -oE '## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+chlog=$(grep -m1 -oE '## \[[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?\]' CHANGELOG.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?')
 
 printf '%-28s %s\n' "package.json version"          "$pkg"
 printf '%-28s %s\n' "server.json version"           "$srv_top"

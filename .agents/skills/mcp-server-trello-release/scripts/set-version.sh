@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# set-version.sh <X.Y.Z> — set ALL four version literals in mcp-server-trello at
+# set-version.sh <X.Y.Z[-prerelease]> — set ALL four version literals in mcp-server-trello at
 # once (package.json, server.json ×2, src/index.ts McpServer info) and flip the
 # CHANGELOG "[Unreleased]" heading to the versioned one. Does NOT commit.
 # This exists because `bun run versionbump` only touches package.json.
 set -euo pipefail
 
 NEW="${1:-}"
-if [[ ! "$NEW" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "usage: set-version.sh <X.Y.Z>   (e.g. set-version.sh 1.8.0)" >&2
+if [[ ! "$NEW" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+  echo "usage: set-version.sh <X.Y.Z[-prerelease]>   (e.g. set-version.sh 1.8.0 or 2.0.0-beta.0)" >&2
   exit 1
 fi
 
@@ -22,7 +22,7 @@ node -e "const f='$ROOT/package.json',j=require(f);j.version='$NEW';require('fs'
 node -e "const f='$ROOT/server.json',j=require(f);j.version='$NEW';if(j.packages&&j.packages[0])j.packages[0].version='$NEW';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
 
 # 4. src/index.ts McpServer info literal (anchored on the trello-server name).
-perl -0pi -e "s/(name: 'trello-server',\s*\n\s*version: ')[0-9]+\.[0-9]+\.[0-9]+(')/\${1}$NEW\${2}/" src/index.ts
+perl -0pi -e "s/(name: 'trello-server',\s*\n\s*version: ')[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(')/\${1}$NEW\${2}/" src/index.ts
 
 # 5. CHANGELOG heading: [Unreleased] -> [X.Y.Z] - DATE (first occurrence only).
 if grep -q '## \[Unreleased\]' CHANGELOG.md; then

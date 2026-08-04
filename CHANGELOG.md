@@ -5,11 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0-beta.0] - 2026-08-04
 
 ### Changed
 - **BREAKING — `get_acceptance_criteria` response shape**: the tool now returns a discriminated union instead of a bare `CheckListItem[]`. On a match it returns `{ found: true, items, unmet, percentComplete, matchedChecklistName }`; when no checklist matches it returns `{ found: false, reason, availableChecklists }` instead of an empty array. Callers that treated the result as an array (`.length`, `.map()`, iteration) must migrate to reading `.items` after checking `.found`. A checklist that matches but is empty returns `found: true` with `items: []`, so "no acceptance criteria" is now distinguishable from "the checklist is named something else"
 - **Acceptance criteria heading tolerance**: `get_acceptance_criteria` now recognizes checklists named `Acceptance Criteria`, `AC`, `DoD`, or `Definition of Done`, compared case-insensitively and whitespace-trimmed. Matching stays exact-equality against that alias set — no fuzzy, partial, or semantic matching. When several aliases are present the first in that precedence order wins, items from every checklist matching the winning alias are aggregated in Trello's order, and `matchedChecklistName` reports the board's own spelling. Previously only the literal name `Acceptance Criteria` was read, and any other heading silently returned an empty list
+## [1.8.1] - 2026-07-25
+
+### Fixed
+- **npm package failed to start via npx/bunx** ([#108](https://github.com/delorenj/mcp-server-trello/issues/108), [#109](https://github.com/delorenj/mcp-server-trello/issues/109)): v1.8.0's `bin` pointed at `src/index.ts` while `files` only shipped `build/**`, so the published tarball couldn't resolve its own imports and the server crashed on startup. `bin` points to `build/index.js` again and the published tarball is self-contained. Every install of `@latest` was affected; upgrading to 1.8.1 is the fix.
+
+### Changed
+- npm publishing now uses **Trusted Publishing (OIDC)** — no stored `NPM_TOKEN` (#106)
+- Publish workflow: removed the recursive `publish` lifecycle-script trap and added skip-if-already-published guards (#107)
+- Test and release maintenance hardening (#104)
 
 ## [1.8.0] - 2026-07-16
 

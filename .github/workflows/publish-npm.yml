@@ -27,6 +27,7 @@ jobs:
     outputs:
       package_version: ${{ steps.version.outputs.package_version }}
       release_ready: ${{ steps.verify-npm.outputs.release_ready }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
 
     steps:
       - name: Checkout repository
@@ -69,6 +70,11 @@ jobs:
           echo "package_name=$package_name" >> "$GITHUB_OUTPUT"
           echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
           echo "dist_tag=$(node scripts/npm-dist-tag.js "$package_version")" >> "$GITHUB_OUTPUT"
+          if node -e "process.exit(/^\d+\.\d+\.\d+-[0-9A-Za-z-]/.test('$package_version') ? 0 : 1)"; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
 
           published_versions=$(node scripts/npm-published-versions.js "$package_name")
           if PUBLISHED_VERSIONS="$published_versions" PACKAGE_VERSION="$package_version" node -e \
@@ -148,7 +154,9 @@ jobs:
           exit 1
 
   publish-registry:
-    if: github.event_name == 'release' && needs.publish-npm.outputs.release_ready == 'true'
+    # Prereleases (beta/rc) publish to npm under the `next` dist-tag only;
+    # the official MCP Registry lists stable releases only.
+    if: github.event_name == 'release' && needs.publish-npm.outputs.release_ready == 'true' && needs.publish-npm.outputs.is_prerelease == 'false'
     needs: publish-npm
     runs-on: ubuntu-latest
     permissions:
