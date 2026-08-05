@@ -1,5 +1,7 @@
 # MCP Server Trello
 
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.delorenj%2Fmcp-server-trello.svg)](https://mcptoplist.com/server/io.github.delorenj%2Fmcp-server-trello)
+
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/27359682-7632-4ba7-981d-7dfecadf1c4b)
 [![MCP Registry](https://img.shields.io/badge/MCP-Registry-blue)](https://registry.modelcontextprotocol.io/servers/io.github.delorenj/mcp-server-trello)
 [![npm version](https://badge.fury.io/js/%40delorenj%2Fmcp-server-trello.svg)](https://badge.fury.io/js/%40delorenj%2Fmcp-server-trello)
