@@ -212,6 +212,12 @@ class TrelloServer {
             .array(z.string())
             .optional()
             .describe('Array of label IDs to apply to the card'),
+          pos: z
+            .union([z.string(), z.number()])
+            .optional()
+            .describe(
+              'Position of the card in the list. Accepts "top", "bottom", or a positive number. Defaults to "bottom" (Trello API default)'
+            ),
         },
       },
       async args => {
@@ -1597,6 +1603,12 @@ class TrelloServer {
                   .array(z.string())
                   .optional()
                   .describe('Array of label IDs to apply to the card'),
+                pos: z
+                  .union([z.string(), z.number()])
+                  .optional()
+                  .describe(
+                    'Position of the card in the list. Accepts "top", "bottom", or a positive number. Defaults to "bottom" (Trello API default)'
+                  ),
               })
             )
             .describe('Array of cards to create (max 50)'),

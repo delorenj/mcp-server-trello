@@ -382,6 +382,7 @@ export class TrelloClient {
       dueReminder?: number | null;
       start?: string;
       labels?: string[];
+      pos?: string | number;
     }
   ): Promise<TrelloCard> {
     return this.handleRequest(async () => {
@@ -393,6 +394,7 @@ export class TrelloClient {
         dueReminder: params.dueReminder,
         start: params.start,
         idLabels: params.labels,
+        pos: params.pos,
       });
       return response.data;
     });
@@ -1231,6 +1233,7 @@ export class TrelloClient {
       dueDate?: string;
       start?: string;
       labels?: string[];
+      pos?: string | number;
     }>
   ): Promise<{ created: TrelloCard[]; errors: Array<{ index: number; name: string; error: string }> }> {
     if (cards.length > TrelloClient.BATCH_ADD_CARDS_LIMIT) {
@@ -1250,6 +1253,7 @@ export class TrelloClient {
           dueDate: cards[i].dueDate,
           start: cards[i].start,
           labels: cards[i].labels,
+          pos: cards[i].pos,
         });
         created.push(result);
       } catch (error) {
