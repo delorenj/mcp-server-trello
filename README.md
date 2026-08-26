@@ -6,6 +6,11 @@
 
 <a href="https://glama.ai/mcp/servers/klqkamy7wt"><img width="380" height="200" src="https://glama.ai/mcp/servers/klqkamy7wt/badge" alt="Server Trello MCP server" /></a>
 
+<p align="center">
+  <a href="https://discord.gg/stack-trace-cafe"><strong>☕ Stack Trace Café</strong></a><br/>
+  Discord server for developers — <a href="https://discord.gg/stack-trace-cafe">https://discord.gg/stack-trace-cafe</a>
+</p>
+
 A Model Context Protocol (MCP) server that gives AI agents full access to your Trello boards — cards, lists, checklists, attachments, comments, custom fields, and workspaces — with built-in rate limiting, type safety, and workflow-level tools you won't find in a plain API wrapper, like acceptance-criteria extraction and checklist dependency queries. 57 tools, one `npx` install, powered by Bun.
 
 ## Highlights
