@@ -12,7 +12,11 @@ CODEX_HOME = { value = ".codex", path = true }
 # i.e. All linked agent files MUST be siblings at
 # any given level of nesting.
 [[hooks.enter]]
-script = "'{{config_root}}/.mise/scripts/link-agentfiles.sh'"
+script = "'{{config_root}}/.mise/scripts/link-agentfiles.sh' '{{config_root}}'"
+[[hooks.enter]]
+script = "python3 '{{config_root}}/.mise/scripts/provision-packs.py' --root '{{config_root}}'"
+[[hooks.enter]]
+script = "python3 '{{config_root}}/.mise/scripts/sync-skills.py' --scope project --root '{{config_root}}'"
 [[hooks.enter]]
 script = "'{{config_root}}/.mise/scripts/materialize-env.sh'"
 
@@ -29,11 +33,24 @@ run = [
 
 [[watch_files]]
 patterns = ["AGENTS.md"]
-task = "link-agentfiles"
+task = "link:agentfiles"
 
-[tasks.link-agentfiles]
+[[watch_files]]
+patterns = [".agents/skills.json"]
+task = "skills:sync"
+
+[tasks."link:agentfiles"]
 description = "Symlink all agent files to AGENTS.md"
-run = "'{{config_root}}/.mise/scripts/link-agentfiles.sh'"
+run = "'{{config_root}}/.mise/scripts/link-agentfiles.sh' '{{config_root}}'"
+
+[tasks."skills:sync"]
+description = "Sync skills from manifest to local CLI dirs"
+depends = ["skills:provision:packs"]
+run = "python3 '{{config_root}}/.mise/scripts/sync-skills.py' --scope project --root '{{config_root}}'"
+
+[tasks."skills:provision:packs"]
+description = "Provision every Skillex pack declared in .agents/skills.json"
+run = "python3 '{{config_root}}/.mise/scripts/provision-packs.py' --root '{{config_root}}'"
 
 # >>> mise-versioning >>>  (managed block — do not edit by hand; re-run init to update)
 [tasks."version"]
