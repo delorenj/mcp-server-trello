@@ -2,8 +2,8 @@
 # Provider-agnostic autonomous adversarial-review decision gate (act, don't wait).
 #
 # The rigorous, INDEPENDENT ADVERSARIAL review is the normal per-pass path: an
-# adversarial microscope that couples the close gate, an independent-reviewer
-# drift attestation, and the BloodBank decision event. A clean adversarial
+# adversarial microscope that couples the close gate with an independent-reviewer
+# drift attestation. A clean adversarial
 # verdict is acted on AUTONOMOUSLY -- the loop treats the ticket as done and
 # moves on; it never parks the ticket waiting on the operator for approval or
 # sign-off. Every adversarial check stays at full strength (locked-intent
@@ -40,17 +40,14 @@ ROLE_YAML="$ROLE_DIR/role.yaml"
 ROOT="$(git -C "$ROLE_DIR" rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"
 
-EMIT="$BIN_DIR/emit-event.py"
 CLOSE_GATE="$BIN_DIR/issue-close-gate.sh"
 EVIDENCE="_bmad-output/implementation-artifacts/issue-evidence/$ISSUE.md"
 
 yget() { sed -n "s/^[[:space:]]*$1:[[:space:]]*//p" "$ROLE_YAML" 2>/dev/null | head -n1 | tr -d '"' | tr -d '\r'; }
-REPO="$(yget repo)"; REPO="${REPO:-unknown}"
-# Informational only: recorded in the decision event/comment, never a blocking
+# Informational only: recorded in the ticket comment, never a blocking
 # wait. Default 0 (no grace); an operator may set grace_hours>0 to reintroduce one.
 GRACE_HOURS="${RECONCILE_GRACE_HOURS:-$(yget grace_hours)}"; GRACE_HOURS="${GRACE_HOURS:-0}"
 AUTO="$(yget auto_review)"; AUTO="${AUTO:-true}"
-EVT="bloodbank.v1.repo.$REPO.issue.autonomous_review.decided"
 
 if [[ "${RECONCILE_AUTO_REVIEW:-$AUTO}" == "false" || "${RECONCILE_AUTO_REVIEW:-}" == "off" ]]; then
   printf 'Autonomous review is disabled (reconcile.auto_review=false).\n' >&2; exit 3
@@ -85,13 +82,6 @@ if sh "$CLOSE_GATE" "$ISSUE" "$ROOT" >/dev/null 2>&1 </dev/null; then GATE=pass;
 
 if [[ -n "$HOLD" ]]; then DECISION=held; else DECISION=accepted; fi
 
-python3 "$EMIT" "$EVT" --root "$ROOT" \
-  --source "repo://sentinel/bin/issue-autonomous-review.sh" --actor-id "$REVIEWER" \
-  --field issue="$ISSUE" --field decision="$DECISION" --field drift="$DRIFT" \
-  --field close_gate="$GATE" --field reviewer_agent="$REVIEWER" \
-  --field evidence_file="$EVIDENCE" --field report_file="$REPORT" \
-  --field grace_hours="$GRACE_HOURS" --field hold_reasons="${HOLD:-none}" \
-  --quiet </dev/null || printf 'WARN: decision event emission failed; event trail incomplete.\n' >&2
 
 if [[ "$DECISION" == "held" ]]; then
   printf 'AUTONOMOUS REVIEW: HOLD for %s\nReasons: %s\n' "$ISSUE" "$HOLD" >&2
@@ -109,7 +99,7 @@ if [[ "$CLOSE" -eq 1 ]]; then
     TICKET_PROVIDER="$PROV" bash -c '. "$1"; tp comment "$2" "$3"' _ "$SCRIPTS_DIR/lib/ticket-provider.sh" "$ISSUE" \
       "Autonomously accepted by $REVIEWER under the independent adversarial-review protocol (drift: $DRIFT, gate: $GATE, grace ${GRACE_HOURS}h informational). Treated as done; review report: $REPORT." >/dev/null 2>&1 || true
   else
-    printf 'Adapter transition failed; decision event recorded, issue left open.\n' >&2
+    printf 'Adapter transition failed; issue left open.\n' >&2
     exit 1
   fi
 else
