@@ -138,7 +138,7 @@ describe('getCardsByList nameFilter', () => {
     const cards = await client.getCardsByList('list1', 'name,idList', 'FEAT');
     expect(cards).toHaveLength(2);
     expect((client as any).axiosInstance.get).toHaveBeenCalledWith('/lists/list1/cards', {
-      params: { fields: 'name,idList' },
+      params: { pluginData: true, fields: 'name,idList' },
     });
   });
 });

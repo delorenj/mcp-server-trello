@@ -20,7 +20,13 @@ import {
   TrelloCustomFieldDefinition,
   TrelloCustomFieldOption,
   TrelloCustomFieldItem,
+  TrelloBoardPlugin,
 } from './types.js';
+import {
+  withResolvedPowerUps,
+  hasCardScopedPluginData,
+  boardsNeedingPluginNames,
+} from './power-ups.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
@@ -37,6 +43,10 @@ export class TrelloClient {
   private rateLimiter;
   private defaultBoardId?: string;
   private activeConfig: TrelloConfig;
+  /** boardId -> (idPlugin -> plugin name). Power-Up rosters change rarely; cache for the process. */
+  private boardPluginNames = new Map<string, Map<string, string>>();
+  /** listId -> boardId, so listings can resolve plugin names without the caller passing a board. */
+  private listBoardIds = new Map<string, string>();
 
   constructor(private config: TrelloConfig) {
     this.defaultBoardId = config.defaultBoardId;
@@ -324,10 +334,14 @@ export class TrelloClient {
   async getCardsByList(
     listId: string,
     fields?: string,
-    nameFilter?: string
+    nameFilter?: string,
+    boardId?: string
   ): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
-      const params = fields ? { fields } : {};
+      const params: Record<string, string | boolean> = { pluginData: true };
+      if (fields) {
+        params.fields = fields;
+      }
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`, { params });
       let cards: TrelloCard[] = response.data;
       const trimmed = nameFilter?.trim();
@@ -335,8 +349,93 @@ export class TrelloClient {
         const searchTerm = trimmed.toLowerCase();
         cards = cards.filter((card) => card.name.toLowerCase().includes(searchTerm));
       }
-      return cards;
+      return this.attachPowerUps(cards, () => this.resolveListBoardId(listId, boardId, cards));
     });
+  }
+
+  /**
+   * Replace raw `pluginData` with a `powerUps` object keyed by plugin name.
+   * Boards with no card-scoped Power-Up data cost no extra request, so the
+   * common case stays a single API call.
+   */
+  private async attachPowerUps(
+    cards: TrelloCard[],
+    resolveFallbackBoardId?: () => Promise<string | undefined>
+  ): Promise<TrelloCard[]> {
+    if (!hasCardScopedPluginData(cards)) {
+      return withResolvedPowerUps(cards, new Map()) as TrelloCard[];
+    }
+
+    const fallbackBoardId = resolveFallbackBoardId ? await resolveFallbackBoardId() : undefined;
+    const boardIds = boardsNeedingPluginNames(cards, fallbackBoardId);
+    const namesByBoard = new Map<string, Map<string, string>>();
+    await Promise.all(
+      boardIds.map(async id => {
+        namesByBoard.set(id, await this.getBoardPluginNames(id));
+      })
+    );
+    return withResolvedPowerUps(cards, namesByBoard, fallbackBoardId) as TrelloCard[];
+  }
+
+  /**
+   * Power-Up names live on the board, but `get_cards_by_list_id` is addressed by
+   * list. Prefer an explicit boardId, then `idBoard` on the cards themselves
+   * (absent when the caller narrowed `fields`), and only then ask Trello.
+   */
+  private async resolveListBoardId(
+    listId: string,
+    explicitBoardId: string | undefined,
+    cards: TrelloCard[]
+  ): Promise<string | undefined> {
+    if (explicitBoardId) {
+      return explicitBoardId;
+    }
+    const fromCards = cards.find(card => card.idBoard)?.idBoard;
+    if (fromCards) {
+      return fromCards;
+    }
+    const cached = this.listBoardIds.get(listId);
+    if (cached) {
+      return cached;
+    }
+    try {
+      const response = await this.axiosInstance.get(`/lists/${listId}`, {
+        params: { fields: 'idBoard' },
+      });
+      const boardId: string | undefined = response.data?.idBoard;
+      if (boardId) {
+        this.listBoardIds.set(listId, boardId);
+      }
+      return boardId;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Map idPlugin -> plugin name for a board. A failure here must not fail the
+   * listing: unresolved plugins fall back to their idPlugin as the key.
+   * (The plugins endpoint ignores `fields`, so this fetches full records.)
+   */
+  private async getBoardPluginNames(boardId: string): Promise<Map<string, string>> {
+    const cached = this.boardPluginNames.get(boardId);
+    if (cached) {
+      return cached;
+    }
+    try {
+      const response = await this.axiosInstance.get(`/boards/${boardId}/plugins`);
+      const plugins: TrelloBoardPlugin[] = response.data ?? [];
+      const names = new Map<string, string>();
+      for (const plugin of plugins) {
+        if (plugin?.id && plugin.name) {
+          names.set(plugin.id, plugin.name);
+        }
+      }
+      this.boardPluginNames.set(boardId, names);
+      return names;
+    } catch {
+      return new Map();
+    }
   }
 
   async getLists(boardId?: string): Promise<TrelloList[]> {
@@ -516,8 +615,11 @@ export class TrelloClient {
 
   async getMyCards(): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
-      const response = await this.axiosInstance.get('/members/me/cards');
-      return response.data;
+      // Cards here span boards, so plugin names are resolved per card via idBoard.
+      const response = await this.axiosInstance.get('/members/me/cards', {
+        params: { pluginData: true },
+      });
+      return this.attachPowerUps(response.data);
     });
   }
 

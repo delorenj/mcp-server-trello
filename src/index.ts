@@ -73,7 +73,7 @@ class TrelloServer {
       {
         title: 'Get Cards by List ID',
         description:
-          'Fetch cards from a specific Trello list on a specific board. Descriptions are previewed by default to keep responses compact; set fields without "desc" to omit descriptions, or increase descMaxLength/omitDescThresholdBytes and use get_card for full details.',
+          'Fetch cards from a specific Trello list on a specific board. Power-Up data (e.g. Story Points) is included as a "powerUps" object keyed by plugin name. Descriptions are previewed by default to keep responses compact; set fields without "desc" to omit descriptions, or increase descMaxLength/omitDescThresholdBytes and use get_card for full details.',
         inputSchema: {
           boardId: z
             .string()
@@ -108,9 +108,9 @@ class TrelloServer {
             ),
         },
       },
-      async ({ listId, fields, nameFilter, descMaxLength, omitDescThresholdBytes }) => {
+      async ({ boardId, listId, fields, nameFilter, descMaxLength, omitDescThresholdBytes }) => {
         try {
-          const cards = await this.trelloClient.getCardsByList(listId, fields, nameFilter);
+          const cards = await this.trelloClient.getCardsByList(listId, fields, nameFilter, boardId);
           return formatCardListResponse(cards, { descMaxLength, omitDescThresholdBytes });
         } catch (error) {
           return this.handleError(error);
@@ -528,7 +528,8 @@ class TrelloServer {
       'get_my_cards',
       {
         title: 'Get My Cards',
-        description: 'Fetch all cards assigned to the current user',
+        description:
+          'Fetch all cards assigned to the current user, including Power-Up data (e.g. Story Points) as a "powerUps" object keyed by plugin name',
         inputSchema: {},
       },
       async () => {
