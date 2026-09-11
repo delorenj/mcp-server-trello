@@ -37,6 +37,33 @@ export interface TrelloCard {
   closed: boolean;
   url: string;
   dateLastActivity: string;
+  idBoard?: string;
+  /** Raw Power-Up records as Trello returns them; resolved into `powerUps` for listings. */
+  pluginData?: TrelloPluginData[];
+  /** Power-Up payloads keyed by plugin name, e.g. `{ "Story Points": { storyPoints: 5 } }`. */
+  powerUps?: PowerUpValues;
+}
+
+/** A Power-Up record attached to a card (or board) by a plugin. */
+export interface TrelloPluginData {
+  id: string;
+  idPlugin: string;
+  /** 'card' for per-card data, 'board' for board-level plugin config. */
+  scope?: string;
+  idModel: string;
+  /** JSON-encoded payload, e.g. '{"storyPoints":5}'. */
+  value: string;
+  access?: string;
+  dateLastUpdated?: string;
+}
+
+/** Power-Up payloads keyed by plugin name (or idPlugin when the name is unknown). */
+export type PowerUpValues = Record<string, unknown>;
+
+/** A Power-Up enabled on a board. The plugins endpoint ignores `fields`, so this is a partial view. */
+export interface TrelloBoardPlugin {
+  id: string;
+  name?: string;
 }
 
 export interface TrelloList {

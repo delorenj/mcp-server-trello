@@ -352,7 +352,9 @@ describe('TrelloClient', () => {
       const client = createClient();
       await client.getMyCards();
 
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/members/me/cards');
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/members/me/cards', {
+        params: { pluginData: true },
+      });
     });
   });
 

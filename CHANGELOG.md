@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Power-Up data in card listings**: `get_cards_by_list_id` and `get_my_cards` now return a `powerUps` object on each card, keyed by plugin name (e.g. `{ "Story Points for Trello": { "storyPoints": 5 } }`). Trello's raw `pluginData` is decoded from its JSON-string form and the opaque `idPlugin` is resolved against the board's plugin roster, which is cached per board. Listings whose cards carry no Power-Up data make no extra API call, and a failed plugin lookup degrades to `idPlugin` keys rather than failing the listing.
+
+### Fixed
+- `get_cards_by_list_id` now honours its documented `boardId` argument, which the tool schema accepted and the handler discarded.
+
 ## [1.8.1] - 2026-07-25
 
 ### Fixed

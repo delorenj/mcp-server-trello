@@ -414,6 +414,22 @@ Fetch all cards from a specific list.
 }
 ```
 
+Cards include Power-Up data as a `powerUps` object keyed by plugin name, so values such as
+story points are visible without a `get_card` call per card:
+
+```json
+{
+  "id": "6a3c5b63359c24569ebefa35",
+  "name": "Prose -> Structured (JSON) version 2",
+  "powerUps": { "Story Points for Trello": { "storyPoints": 5 } }
+}
+```
+
+The key is `powerUps`, not Trello's raw `pluginData`: the payload is decoded from its
+JSON-string form and the opaque `idPlugin` is resolved to the plugin's name. Cards with no
+Power-Up data have no `powerUps` key and cost no extra API call. When a plugin name cannot be
+resolved, its `idPlugin` is used as the key instead.
+
 ### get\_lists
 
 Retrieve all lists from a board.
@@ -555,7 +571,8 @@ Update the position of a list on the board. Trello uses fractional indexing: eac
 
 ### get\_my\_cards
 
-Fetch all cards assigned to the current user.
+Fetch all cards assigned to the current user. Cards include Power-Up data as a `powerUps`
+object keyed by plugin name, resolved per board (see `get_cards_by_list_id` above).
 
 ```typescript
 {
