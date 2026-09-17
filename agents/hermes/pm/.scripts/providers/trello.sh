@@ -6,7 +6,8 @@
 #   name: trello
 #   board: <board-id>                 (set by create_board / 42-ticket-provider)
 #   state_map: { backlog:"Backlog", unstarted:"To Do", started:"In Progress",
-#                in_review:"Review", completed:"Done" }   optional
+#                in_review:"Review", completed:"Done", cancelled:"Cancelled" }
+#                                              optional
 #
 # Trello model:  board = project & milestone, list = state, card = issue.
 # Trello has no milestone primitive, so active_milestone returns the board.
@@ -61,6 +62,7 @@ list_name_for() {
     started)   v="$(tp_cfg started)";   printf '%s' "${v:-In Progress}" ;;
     in_review) v="$(tp_cfg in_review)"; printf '%s' "${v:-Review}" ;;
     completed) v="$(tp_cfg completed)"; printf '%s' "${v:-Done}" ;;
+    cancelled) v="$(tp_cfg cancelled)"; printf '%s' "${v:-Cancelled}" ;;
     *) die "invalid normalized state: $1" ;;
   esac
 }
@@ -79,8 +81,14 @@ list_id_for() {
   [ -n "$BOARD" ] || die "ticket_provider.board not set"
   want="$(list_name_for "$1")"
   api GET "boards/$BOARD/lists" | NM="$want" python3 -c 'import sys,json,os
-rows=json.load(sys.stdin); nm=os.environ["NM"].lower()
-print(next((l["id"] for l in rows if l.get("name","").lower()==nm), ""))'
+rows=json.load(sys.stdin); nm=os.environ["NM"].strip().casefold()
+matches=[row for row in rows if str(row.get("name") or "").strip().casefold()==nm]
+if len(matches) != 1:
+    raise SystemExit("trello: exact list name %r resolved %d lists; exactly one is required" % (os.environ["NM"], len(matches)))
+list_id=str(matches[0].get("id") or "")
+if not list_id:
+    raise SystemExit("trello: resolved list omitted its id")
+print(list_id)'
 }
 
 # All Trello ops require credentials; fail fast and clean before any pipe.
@@ -132,14 +140,52 @@ print(json.dumps({"id":c.get("id",""),"key":c.get("id",""),"title":c.get("name",
   comment)
     ID="${1:?usage: comment <id> <body>}"; BODY="${2:?}"
     api POST "cards/$ID/actions/comments" "text=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))' "$BODY")" \
-      | python3 -c 'import sys,json; print(json.load(sys.stdin).get("id",""))'
+      | EXPECTED_ID="$ID" python3 -c 'import sys,json,os
+action=json.load(sys.stdin)
+if not isinstance(action,dict):
+    raise SystemExit("trello: comment response was not an action object")
+action_id=action.get("id")
+if not isinstance(action_id,str) or not action_id.strip():
+    raise SystemExit("trello: comment response omitted its action id")
+data=action.get("data")
+card=data.get("card") if isinstance(data,dict) else None
+if not isinstance(card,dict) or str(card.get("id") or "").strip()!=os.environ["EXPECTED_ID"]:
+    raise SystemExit("trello: comment response did not identify the requested card")
+print(action_id.strip())'
     ;;
 
   transition)
     ID="${1:?usage: transition <id> <normalized-state>}"; TARGET="${2:?}"
     LID="$(list_id_for "$TARGET")"
     [ -n "$LID" ] || die "no Trello list mapped for normalized '$TARGET' (check state_map)"
-    api PUT "cards/$ID" "idList=$LID" | python3 -c 'import sys,json; c=json.load(sys.stdin); print("ok "+c.get("id",""))'
+    api PUT "cards/$ID" "idList=$LID" >/dev/null
+    api GET "cards/$ID" "fields=id,idList" \
+      | EXPECTED_ID="$ID" EXPECTED_LIST_ID="$LID" python3 -c 'import sys,json,os
+card=json.load(sys.stdin)
+if str(card.get("id") or "") != os.environ["EXPECTED_ID"]:
+    raise SystemExit("trello: transition read-back did not identify the requested card")
+if str(card.get("idList") or "") != os.environ["EXPECTED_LIST_ID"]:
+    raise SystemExit("trello: transition read-back did not confirm the exact target list")
+print("ok " + str(card.get("id") or ""))'
+    ;;
+
+  describe_board)
+    # Read-only board lookup against an EXPLICIT workspace argument, mirroring
+    # the Plane op, so no ambient binding can send the query somewhere else.
+    # Trello mints NO project key, so `identifier` is ALWAYS empty here: an
+    # empty identifier is this provider's authoritative answer, not a lookup
+    # failure, and callers must never promote it to a confirmed value.
+    DWS="${1:?usage: describe_board <workspace> <board_id>}"
+    DBID="${2:?usage: describe_board <workspace> <board_id>}"
+    api GET "boards/$DBID" "fields=id,name,idOrganization" \
+      | WS="$DWS" BID="$DBID" python3 -c 'import sys, json, os
+b = json.load(sys.stdin)
+print(json.dumps({
+    "board_id": str(b.get("id") or os.environ["BID"]),
+    "identifier": "",
+    "workspace": str(b.get("idOrganization") or os.environ["WS"]),
+    "name": str(b.get("name") or ""),
+}))'
     ;;
 
   create_board)
@@ -152,8 +198,43 @@ print(next((b["id"] for b in rows if b.get("name","").lower()==nm), ""))')"
         | python3 -c 'import sys,json; print(json.load(sys.stdin).get("id",""))')"
     fi
     [ -n "$BID" ] || die "create_board failed"
-    api GET "boards/$BID" "fields=url" | BID="$BID" python3 -c 'import sys,json,os
-b=json.load(sys.stdin); print(json.dumps({"board_id":os.environ["BID"],"board_url":b.get("url","")}))'
+    # Trello assigns no project key, so the caller's prefix IS the identity and
+    # this adapter is the only thing that can confirm it. Echo it back: the
+    # create_board envelope always carries the identifier the board is bound
+    # under, so no caller ever has to invent one.
+    api GET "boards/$BID" "fields=url" | BID="$BID" IDENT="${2:-}" python3 -c 'import sys,json,os
+b=json.load(sys.stdin); print(json.dumps({"board_id":os.environ["BID"],"board_url":b.get("url",""),"identifier":os.environ.get("IDENT","")}))'
+    ;;
+
+  create_issue)
+    # File a new card on the bound board. Board comes from resolved config,
+    # never from an argument. Deliberately NOT idempotent by default: two cards
+    # may legitimately share a title. Pass --if-absent to reuse a card whose
+    # name already matches exactly (case-insensitive) instead.
+    IF_ABSENT=0
+    case "${1:-}" in --if-absent) IF_ABSENT=1; shift ;; esac
+    TITLE="${1:?usage: create_issue [--if-absent] <title> [description]}"; DESC="${2:-}"
+    [ -n "$BOARD" ] || die "board not set (run 42-ticket-provider.sh)"
+    CID=""; CREATED=true
+    if [ "$IF_ABSENT" = 1 ]; then
+      CID="$(api GET "boards/$BOARD/cards" "fields=name" | NM="$TITLE" python3 -c 'import sys,json,os
+rows=json.load(sys.stdin); nm=os.environ["NM"].strip().lower()
+print(next((c["id"] for c in rows if (c.get("name") or "").strip().lower()==nm), ""))')"
+      [ -z "$CID" ] || CREATED=false
+    fi
+    if [ -z "$CID" ]; then
+      # New cards land in the backlog list, falling back to the unstarted one.
+      LID="$(list_id_for backlog)"
+      [ -n "$LID" ] || LID="$(list_id_for unstarted)"
+      [ -n "$LID" ] || die "no Trello list mapped for 'backlog' or 'unstarted' (check state_map)"
+      CID="$(api POST "cards" "idList=$LID&name=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))' "$TITLE")&desc=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))' "$DESC")" \
+        | python3 -c 'import sys,json; print(json.load(sys.stdin).get("id",""))')"
+    fi
+    [ -n "$CID" ] || die "create_issue failed"
+    api GET "cards/$CID" "fields=url,shortLink" | CID="$CID" CREATED="$CREATED" python3 -c 'import sys,json,os
+c=json.load(sys.stdin)
+print(json.dumps({"issue_id":os.environ["CID"],"key":c.get("shortLink",""),
+                  "issue_url":c.get("url",""),"created":os.environ["CREATED"]=="true"}))'
     ;;
 
   *) die "unknown op: $OP" ;;
