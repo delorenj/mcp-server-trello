@@ -422,9 +422,31 @@ export class TrelloClient {
       dueComplete?: boolean;
       labels?: string[];
       pos?: string | number;
+      coverAttachmentId?: string | null;
+      coverSize?: 'normal' | 'full';
+      coverBrightness?: 'light' | 'dark';
     }
   ): Promise<TrelloCard> {
     return this.handleRequest(async () => {
+      const cover: {
+        idAttachment?: string | null;
+        size?: 'normal' | 'full';
+        brightness?: 'light' | 'dark';
+      } = {};
+      if (params.coverAttachmentId !== undefined) {
+        cover.idAttachment = params.coverAttachmentId;
+      }
+      if (params.coverSize !== undefined) {
+        cover.size = params.coverSize;
+      }
+      if (params.coverBrightness !== undefined) {
+        cover.brightness = params.coverBrightness;
+      }
+      const hasCover =
+        params.coverAttachmentId !== undefined ||
+        params.coverSize !== undefined ||
+        params.coverBrightness !== undefined;
+
       const response = await this.axiosInstance.put(`/cards/${params.cardId}`, {
         name: params.name,
         desc: params.description,
@@ -434,6 +456,7 @@ export class TrelloClient {
         dueComplete: params.dueComplete,
         idLabels: params.labels,
         pos: params.pos,
+        ...(hasCover ? { cover } : {}),
       });
       return response.data;
     });
@@ -537,13 +560,14 @@ export class TrelloClient {
     boardId: string | undefined,
     cardId: string,
     imageUrl: string,
-    name?: string
+    name?: string,
+    setCover?: boolean
   ): Promise<TrelloAttachment> {
     if (!imageUrl.startsWith('file://')) {
       validateExternalUrl(imageUrl);
     }
     return this.handleRequest(() =>
-      attachments.attachImage(this.axiosInstance, { cardId, imageUrl, name })
+      attachments.attachImage(this.axiosInstance, { cardId, imageUrl, name, setCover })
     );
   }
 
@@ -552,10 +576,11 @@ export class TrelloClient {
     cardId: string,
     data: string,
     name?: string,
-    mimeType?: string
+    mimeType?: string,
+    setCover?: boolean
   ): Promise<TrelloAttachment> {
     return this.handleRequest(() =>
-      attachments.attachData(this.axiosInstance, { cardId, data, name, mimeType })
+      attachments.attachData(this.axiosInstance, { cardId, data, name, mimeType, setCover })
     );
   }
 
@@ -564,10 +589,17 @@ export class TrelloClient {
     cardId: string,
     imageData: string,
     name?: string,
-    mimeType?: string
+    mimeType?: string,
+    setCover?: boolean
   ): Promise<TrelloAttachment> {
     return this.handleRequest(() =>
-      attachments.attachImageData(this.axiosInstance, { cardId, imageData, name, mimeType })
+      attachments.attachImageData(this.axiosInstance, {
+        cardId,
+        imageData,
+        name,
+        mimeType,
+        setCover,
+      })
     );
   }
 
@@ -576,13 +608,14 @@ export class TrelloClient {
     cardId: string,
     fileUrl: string,
     name?: string,
-    mimeType?: string
+    mimeType?: string,
+    setCover?: boolean
   ): Promise<TrelloAttachment> {
     if (!fileUrl.startsWith('file://')) {
       validateExternalUrl(fileUrl);
     }
     return this.handleRequest(() =>
-      attachments.attachFile(this.axiosInstance, { cardId, fileUrl, name, mimeType })
+      attachments.attachFile(this.axiosInstance, { cardId, fileUrl, name, mimeType, setCover })
     );
   }
 
@@ -1032,6 +1065,13 @@ export class TrelloClient {
         });
         markdown += '\n';
       });
+    }
+
+    const coverAttachment = card.attachments?.find(
+      attachment => attachment.id === card.cover?.idAttachment
+    );
+    if (coverAttachment) {
+      markdown += `🎨 **Cover**: ${coverAttachment.name}\n\n`;
     }
 
     // Attachments

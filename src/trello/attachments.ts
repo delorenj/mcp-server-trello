@@ -83,11 +83,21 @@ export interface AttachDataParams {
   data: string;
   name?: string;
   mimeType?: string;
+  /** When true, Trello uses the new attachment as the card's front image. */
+  setCover?: boolean;
+}
+
+function attachmentPostConfig(
+  base: { headers: Record<string, string> } | undefined,
+  setCover?: boolean
+): { headers?: Record<string, string>; params?: { setCover: true } } | undefined {
+  if (!setCover) return base;
+  return { ...base, params: { setCover: true } };
 }
 
 export async function attachData(
   axiosInstance: AxiosInstance,
-  { cardId, data, name, mimeType }: AttachDataParams
+  { cardId, data, name, mimeType, setCover }: AttachDataParams
 ): Promise<TrelloAttachment> {
   let buffer: Buffer;
   let effectiveMimeType = mimeType;
@@ -112,9 +122,11 @@ export async function attachData(
   form.append('name', fileName);
   form.append('mimeType', effectiveMimeType);
 
-  const response = await axiosInstance.post(`/cards/${cardId}/attachments`, form, {
-    headers: { ...form.getHeaders() },
-  });
+  const response = await axiosInstance.post(
+    `/cards/${cardId}/attachments`,
+    form,
+    attachmentPostConfig({ headers: { ...form.getHeaders() } }, setCover)
+  );
   return response.data;
 }
 
@@ -123,17 +135,19 @@ export interface AttachImageDataParams {
   imageData: string;
   name?: string;
   mimeType?: string;
+  setCover?: boolean;
 }
 
 export async function attachImageData(
   axiosInstance: AxiosInstance,
-  { cardId, imageData, name, mimeType }: AttachImageDataParams
+  { cardId, imageData, name, mimeType, setCover }: AttachImageDataParams
 ): Promise<TrelloAttachment> {
   return attachData(axiosInstance, {
     cardId,
     data: imageData,
     name: name || `screenshot-${Date.now()}.png`,
     mimeType: mimeType || 'image/png',
+    setCover,
   });
 }
 
@@ -142,21 +156,22 @@ export interface AttachFileParams {
   fileUrl: string;
   name?: string;
   mimeType?: string;
+  setCover?: boolean;
 }
 
 export async function attachFile(
   axiosInstance: AxiosInstance,
-  { cardId, fileUrl, name, mimeType }: AttachFileParams
+  { cardId, fileUrl, name, mimeType, setCover }: AttachFileParams
 ): Promise<TrelloAttachment> {
   if (fileUrl.startsWith('file://')) {
-    return uploadLocalFile(axiosInstance, { cardId, fileUrl, name, mimeType });
+    return uploadLocalFile(axiosInstance, { cardId, fileUrl, name, mimeType, setCover });
   }
-  return attachRemoteUrl(axiosInstance, { cardId, fileUrl, name, mimeType });
+  return attachRemoteUrl(axiosInstance, { cardId, fileUrl, name, mimeType, setCover });
 }
 
 async function uploadLocalFile(
   axiosInstance: AxiosInstance,
-  { cardId, fileUrl, name, mimeType }: AttachFileParams
+  { cardId, fileUrl, name, mimeType, setCover }: AttachFileParams
 ): Promise<TrelloAttachment> {
   let localPath: string;
   try {
@@ -182,15 +197,17 @@ async function uploadLocalFile(
   form.append('name', fileName);
   form.append('mimeType', effectiveMimeType);
 
-  const response = await axiosInstance.post(`/cards/${cardId}/attachments`, form, {
-    headers: { ...form.getHeaders() },
-  });
+  const response = await axiosInstance.post(
+    `/cards/${cardId}/attachments`,
+    form,
+    attachmentPostConfig({ headers: { ...form.getHeaders() } }, setCover)
+  );
   return response.data;
 }
 
 async function attachRemoteUrl(
   axiosInstance: AxiosInstance,
-  { cardId, fileUrl, name, mimeType }: AttachFileParams
+  { cardId, fileUrl, name, mimeType, setCover }: AttachFileParams
 ): Promise<TrelloAttachment> {
   let remoteUrlPath: string;
   try {
@@ -201,11 +218,15 @@ async function attachRemoteUrl(
   const effectiveMimeType =
     mimeType || mimeFromFilename(remoteUrlPath) || DEFAULT_MIME_TYPE;
 
-  const response = await axiosInstance.post(`/cards/${cardId}/attachments`, {
+  const body = {
     url: fileUrl,
     name: name || 'File Attachment',
     mimeType: effectiveMimeType,
-  });
+  };
+  const config = attachmentPostConfig(undefined, setCover);
+  const response = config
+    ? await axiosInstance.post(`/cards/${cardId}/attachments`, body, config)
+    : await axiosInstance.post(`/cards/${cardId}/attachments`, body);
   return response.data;
 }
 
@@ -213,17 +234,19 @@ export interface AttachImageParams {
   cardId: string;
   imageUrl: string;
   name?: string;
+  setCover?: boolean;
 }
 
 export async function attachImage(
   axiosInstance: AxiosInstance,
-  { cardId, imageUrl, name }: AttachImageParams
+  { cardId, imageUrl, name, setCover }: AttachImageParams
 ): Promise<TrelloAttachment> {
   // attachFile auto-detects MIME type for images via the URL extension
   return attachFile(axiosInstance, {
     cardId,
     fileUrl: imageUrl,
     name: name || 'Image Attachment',
+    setCover,
   });
 }
 

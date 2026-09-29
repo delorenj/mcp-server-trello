@@ -78,3 +78,6 @@ mcp-publisher
 .env
 .env.*
 !.env.op
+
+# Local MCP config. May hold credentials.
+.cursor/mcp.json

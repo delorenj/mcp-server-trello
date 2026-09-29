@@ -501,6 +501,9 @@ Update an existing card's details.
     start?: string,       // Optional: New start date (YYYY-MM-DD format, date only)
     dueComplete?: boolean,// Optional: Mark the due date as complete (true) or incomplete (false)
     labels?: string[]     // Optional: New array of label IDs
+    coverAttachmentId?: string | null, // Optional: attachment ID to use as the card front image; null removes the image cover
+    coverSize?: 'normal' | 'full',      // Optional: normal is a banner above the title; full fills the card face
+    coverBrightness?: 'light' | 'dark'  // Optional: light uses dark text on the cover; dark uses light text
   }
 }
 ```
@@ -616,9 +619,12 @@ Attach an image to a card directly from a URL.
     cardId: string,   // ID of the card to attach the image to
     imageUrl: string, // URL of the image to attach
     name?: string     // Optional: Name for the attachment (defaults to "Image Attachment")
+    setCover?: boolean // Optional: true makes this image the card front (cover). Sent only when true. Trello may still cover a card with its first uploaded image.
   }
 }
 ```
+
+`attach_image_data_to_card` accepts the same `setCover` flag when the image is base64 or a data URL. `attach_data_to_card` accepts it too; only an image attachment can become the card front.
 
 ### attach\_file\_to\_card
 
@@ -633,6 +639,7 @@ Attach any type of file to a card from a URL or a local file path (e.g., `file:/
     fileUrl: string,   // URL or local file path (using the file:// protocol) of the file to attach
     name?: string,     // Optional: Name for the attachment (defaults to the file name for local files)
     mimeType?: string  // Optional: MIME type (e.g., "application/pdf", "text/plain", "video/mp4")
+    setCover?: boolean // Optional: true makes this image the card front (cover). Sent only when true. Trello may still cover a card with its first uploaded image.
   }
 }
 ```

@@ -264,6 +264,25 @@ class TrelloServer {
             .describe(
               'Position of the card in the list. Accepts "top", "bottom", or a positive number'
             ),
+          coverAttachmentId: z
+            .string()
+            .nullable()
+            .optional()
+            .describe(
+              'ID of an image attachment already on the card to use as the card front (cover). Pass null to remove the image cover. Omitted leaves the cover unchanged.'
+            ),
+          coverSize: z
+            .enum(['normal', 'full'])
+            .optional()
+            .describe(
+              'Cover size. "normal" is a banner above the card title. "full" fills the card face and the title sits on the image. Omitted leaves the size unchanged.'
+            ),
+          coverBrightness: z
+            .enum(['light', 'dark'])
+            .optional()
+            .describe(
+              'Cover text brightness. "light" uses dark text on the cover; "dark" uses light text. Omitted leaves brightness unchanged.'
+            ),
         },
       },
       async args => {
@@ -563,15 +582,22 @@ class TrelloServer {
             .optional()
             .default('Image Attachment')
             .describe('Optional name for the attachment (defaults to "Image Attachment")'),
+          setCover: z
+            .boolean()
+            .optional()
+            .describe(
+              'When true, use this new image as the card front (cover). The flag is sent only when true. Trello may still use the first uploaded image as the cover when the card has none.'
+            ),
         },
       },
-      async ({ boardId, cardId, imageUrl, name }) => {
+      async ({ boardId, cardId, imageUrl, name, setCover }) => {
         try {
           const attachment = await this.trelloClient.attachImageToCard(
             boardId,
             cardId,
             imageUrl,
-            name
+            name,
+            setCover
           );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
@@ -608,16 +634,23 @@ class TrelloServer {
             .describe(
               'Optional MIME type of the file (e.g., "application/pdf", "text/plain", "video/mp4")'
             ),
+          setCover: z
+            .boolean()
+            .optional()
+            .describe(
+              'When true, use this new file as the card front (cover). Only an image can be a cover. The flag is sent only when true. Trello may still use the first uploaded image as the cover when the card has none.'
+            ),
         },
       },
-      async ({ boardId, cardId, fileUrl, name, mimeType }) => {
+      async ({ boardId, cardId, fileUrl, name, mimeType, setCover }) => {
         try {
           const attachment = await this.trelloClient.attachFileToCard(
             boardId,
             cardId,
             fileUrl,
             name,
-            mimeType
+            mimeType,
+            setCover
           );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
@@ -668,16 +701,23 @@ class TrelloServer {
             .describe(
               'MIME type of the data (e.g. "text/markdown", "application/pdf", "image/png"). Recommended for correct rendering in Trello. If omitted, inferred from a data URL prefix or the filename extension; falls back to "application/octet-stream".'
             ),
+          setCover: z
+            .boolean()
+            .optional()
+            .describe(
+              'When true, use this new attachment as the card front (cover). Only an image can be a cover. The flag is sent only when true. Trello may still use the first uploaded image as the cover when the card has none.'
+            ),
         },
       },
-      async ({ boardId, cardId, data, name, mimeType }) => {
+      async ({ boardId, cardId, data, name, mimeType, setCover }) => {
         try {
           const attachment = await this.trelloClient.attachDataToCard(
             boardId,
             cardId,
             data,
             name,
-            mimeType
+            mimeType,
+            setCover
           );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],
@@ -713,16 +753,23 @@ class TrelloServer {
             .optional()
             .default('image/png')
             .describe('Optional MIME type (default: image/png)'),
+          setCover: z
+            .boolean()
+            .optional()
+            .describe(
+              'When true, use this new image as the card front (cover). The flag is sent only when true. Trello may still use the first uploaded image as the cover when the card has none.'
+            ),
         },
       },
-      async ({ boardId, cardId, imageData, name, mimeType }) => {
+      async ({ boardId, cardId, imageData, name, mimeType, setCover }) => {
         try {
           const attachment = await this.trelloClient.attachImageDataToCard(
             boardId,
             cardId,
             imageData,
             name,
-            mimeType
+            mimeType,
+            setCover
           );
           return {
             content: [{ type: 'text' as const, text: JSON.stringify(attachment, null, 2) }],

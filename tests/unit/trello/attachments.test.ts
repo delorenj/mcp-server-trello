@@ -147,6 +147,36 @@ describe('attachments', () => {
       expect(form.getBuffer().toString()).toMatch(/attachment-\d+(?!\.)/);
     });
 
+    it('sends setCover as a query param and keeps it out of the form body', async () => {
+      const axiosInstance = createAxiosMock();
+
+      await attachData(axiosInstance, {
+        cardId: 'c1',
+        data: Buffer.from('png').toString('base64'),
+        name: 'red.png',
+        mimeType: 'image/png',
+        setCover: true,
+      });
+
+      const [, form, config] = (axiosInstance.post as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(config.params).toEqual({ setCover: true });
+      expect(form.getBuffer().toString()).not.toContain('setCover');
+    });
+
+    it('omits setCover when the flag is not passed', async () => {
+      const axiosInstance = createAxiosMock();
+
+      await attachData(axiosInstance, {
+        cardId: 'c1',
+        data: Buffer.from('png').toString('base64'),
+        name: 'red.png',
+        mimeType: 'image/png',
+      });
+
+      const config = (axiosInstance.post as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(config.params).toBeUndefined();
+    });
+
     it('rejects a malformed data URL without uploading', async () => {
       const axiosInstance = createAxiosMock();
 
@@ -207,6 +237,28 @@ describe('attachments', () => {
       });
     });
 
+    it('sends setCover as a query param for a remote URL and not in the JSON body', async () => {
+      const axiosInstance = createAxiosMock();
+
+      await attachFile(axiosInstance, {
+        cardId: 'c1',
+        fileUrl: 'https://example.com/cat.png',
+        name: 'cat.png',
+        mimeType: 'image/png',
+        setCover: true,
+      });
+
+      expect(axiosInstance.post).toHaveBeenCalledWith(
+        '/cards/c1/attachments',
+        {
+          url: 'https://example.com/cat.png',
+          name: 'cat.png',
+          mimeType: 'image/png',
+        },
+        { params: { setCover: true } }
+      );
+    });
+
     it('infers mime type from a remote URL extension', async () => {
       const axiosInstance = createAxiosMock();
 
@@ -239,10 +291,11 @@ describe('attachments', () => {
           expect.objectContaining({ headers: expect.any(Object) })
         );
         // Form contains a stream so getBuffer() is unavailable; assert on form fields directly.
-        const form = (axiosInstance.post as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        const [, form, config] = (axiosInstance.post as ReturnType<typeof vi.fn>).mock.calls[0];
         const fields = (form as unknown as { _streams: unknown[] })._streams.join('\n');
         expect(fields).toContain('text/markdown');
         expect(fields).toContain(path.basename(tmpFile));
+        expect(config.params).toBeUndefined();
       } finally {
         await fs.unlink(tmpFile).catch(() => {});
       }
@@ -282,6 +335,26 @@ describe('attachments', () => {
         name: 'Image Attachment',
         mimeType: 'image/png',
       });
+    });
+
+    it('forwards setCover when making an image the card front', async () => {
+      const axiosInstance = createAxiosMock();
+
+      await attachImage(axiosInstance, {
+        cardId: 'c1',
+        imageUrl: 'https://example.com/cat.png',
+        setCover: true,
+      });
+
+      expect(axiosInstance.post).toHaveBeenCalledWith(
+        '/cards/c1/attachments',
+        {
+          url: 'https://example.com/cat.png',
+          name: 'Image Attachment',
+          mimeType: 'image/png',
+        },
+        { params: { setCover: true } }
+      );
     });
 
     it('respects a caller-supplied name', async () => {
