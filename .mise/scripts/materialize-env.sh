@@ -23,6 +23,13 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 
-op inject -i "$source_file" -o "$temp_file" --force
+# op opens /dev/tty for prompts. This hook runs inside whatever terminal
+# entered the project (often an agent's pane), so op is detached from it:
+# a prompt must fail, never read the user's keystrokes. macOS has no setsid.
+if command -v setsid >/dev/null 2>&1; then
+  setsid -w op inject -i "$source_file" -o "$temp_file" --force </dev/null
+else
+  op inject -i "$source_file" -o "$temp_file" --force </dev/null
+fi
 mv -f -- "$temp_file" "$target_file"
 trap - EXIT HUP INT TERM
