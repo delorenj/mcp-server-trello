@@ -232,6 +232,46 @@ describe('TrelloClient', () => {
         idLabels: undefined,
       });
     });
+
+    it('should omit cover on a name-only update', async () => {
+      mockAxiosInstance.put.mockResolvedValue({ data: { id: 'c1' } });
+
+      const client = createClient();
+      await client.updateCard(undefined, { cardId: 'c1', name: 'Renamed' });
+
+      const body = mockAxiosInstance.put.mock.calls[0][1];
+      expect(body).not.toHaveProperty('cover');
+      expect(body.name).toBe('Renamed');
+    });
+
+    it('should send an image cover without a color', async () => {
+      mockAxiosInstance.put.mockResolvedValue({ data: { id: 'c1' } });
+
+      const client = createClient();
+      await client.updateCard(undefined, {
+        cardId: 'c1',
+        coverAttachmentId: 'att-red',
+        coverSize: 'full',
+        coverBrightness: 'light',
+      });
+
+      const body = mockAxiosInstance.put.mock.calls[0][1];
+      expect(body.cover).toEqual({
+        idAttachment: 'att-red',
+        size: 'full',
+        brightness: 'light',
+      });
+      expect(body.cover).not.toHaveProperty('color');
+    });
+
+    it('should clear an image cover with a null attachment id', async () => {
+      mockAxiosInstance.put.mockResolvedValue({ data: { id: 'c1' } });
+
+      const client = createClient();
+      await client.updateCard(undefined, { cardId: 'c1', coverAttachmentId: null });
+
+      expect(mockAxiosInstance.put.mock.calls[0][1].cover).toEqual({ idAttachment: null });
+    });
   });
 
   describe('archiveCard', () => {
@@ -1007,6 +1047,28 @@ describe('TrelloClient', () => {
           labels: true,
         }),
       });
+    });
+
+    it('should name the cover attachment in markdown', async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          id: 'c1',
+          name: 'Card',
+          url: 'https://trello.com/c/c1',
+          shortUrl: 'https://trello.com/c/c1',
+          dateLastActivity: '2026-01-01T00:00:00.000Z',
+          cover: { idAttachment: 'att-blue', size: 'normal', brightness: 'light' },
+          attachments: [
+            { id: 'att-red', name: 'red.png', url: 'https://example.com/red.png', date: '2026-01-01T00:00:00.000Z' },
+            { id: 'att-blue', name: 'blue.png', url: 'https://example.com/blue.png', date: '2026-01-01T00:00:00.000Z' },
+          ],
+        },
+      });
+
+      const client = createClient();
+      const markdown = await client.getCard('c1', true);
+
+      expect(markdown).toContain('🎨 **Cover**: blue.png');
     });
   });
 
