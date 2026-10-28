@@ -62,7 +62,7 @@ Add the server to your client's MCP configuration:
 }
 ```
 
-`bunx` starts fastest, but `npx` works identically. Get your API key at [trello.com/app-key](https://trello.com/app-key) and generate a token from the same page.
+`bunx` starts fastest, but `npx` works identically. See [Getting your API key and token](#getting-your-api-key-and-token) below for credentials.
 
 ### Claude Code
 
@@ -144,10 +144,33 @@ TRELLO_ALLOWED_WORKSPACES=workspace-id-1,workspace-id-2
 
 > **Proxy Support:** If you're behind a corporate proxy or in an environment that routes traffic through a proxy, set the `https_proxy` or `HTTPS_PROXY` environment variable. The server will automatically route all Trello API requests through the specified proxy.
 
-You can get these values from:
+#### Getting your API key and token
 
-  - API Key: [https://trello.com/app-key](https://trello.com/app-key)
-  - Token: Generate using your API key
+Trello no longer issues standalone API keys, and `trello.com/app-key` now redirects
+to the Power-Up admin. An API key is issued against a Power-Up, so you create one
+first — even if you are only using the REST API and will never render UI in Trello.
+
+1. Go to [trello.com/power-ups/admin](https://trello.com/power-ups/admin) and click **New**.
+2. Give it a name (it appears only on your own authorization screen) and pick a Workspace.
+3. **Leave "Iframe connector URL" blank.** It is only needed by Power-Ups that render
+   inside a board; a REST API client does not use it and does not need a public server.
+4. Open the new Power-Up, go to the **API Key** tab, and generate a key. That is
+   `TRELLO_API_KEY`.
+5. Authorize yourself against that key to mint `TRELLO_TOKEN`, replacing `YOUR_API_KEY`:
+
+   ```
+   https://trello.com/1/authorize?expiration=never&scope=read,write&response_type=token&name=mcp-server-trello&key=YOUR_API_KEY
+   ```
+
+   Approve the prompt and copy the token it displays.
+
+> **The "Secret" next to your API key is not the token.** It is the OAuth 1.0 client
+> secret, used only for signing three-legged OAuth handshakes. Both values are 64
+> lowercase hex characters, so they are easy to confuse; putting the Secret in
+> `TRELLO_TOKEN` fails authentication.
+
+Other values:
+
   - Board ID (optional, deprecated): Found in the board URL (e.g., `https://trello.com/b/abc123/example-board`)
   - Workspace ID: Found in workspace settings or using `list_workspaces` tool
 
