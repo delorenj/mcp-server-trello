@@ -39,6 +39,23 @@ export interface TrelloCard {
   dateLastActivity: string;
 }
 
+/**
+ * A card returned by search_cards: the card's own fields plus the board and
+ * list it is on, so a match can be placed without another call.
+ */
+export interface TrelloSearchCard extends TrelloCard {
+  idBoard: string;
+  shortUrl: string;
+  board?: {
+    id: string;
+    name: string;
+  };
+  list?: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface TrelloList {
   id: string;
   name: string;

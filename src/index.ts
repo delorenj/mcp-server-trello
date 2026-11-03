@@ -543,6 +543,68 @@ class TrelloServer {
       }
     );
 
+    // Search cards across boards with Trello's search
+    this.server.registerTool(
+      'search_cards',
+      {
+        title: 'Search Cards',
+        description:
+          'Search cards by keyword with Trello\'s own search, across every board the token can read unless boardId is given. The query takes Trello search operators, e.g. "board:Roadmap", "list:Doing", "label:bug", "@me", "is:open", "is:archived", "due:week", "has:attachments", "created:30", "edited:7". Archived cards are included unless the query says "is:open". Each match includes its board and list name. Descriptions are previewed; use get_card for full details.',
+        inputSchema: {
+          query: z
+            .string()
+            .trim()
+            .min(1, 'query must not be empty')
+            .max(16384)
+            .describe('Search text, optionally with Trello search operators'),
+          boardId: z
+            .string()
+            .optional()
+            .describe('Limit the search to one board (searches all boards if not provided)'),
+          limit: z
+            .number()
+            .int()
+            .min(1)
+            .max(1000)
+            .optional()
+            .describe('Maximum number of cards to return. Defaults to 25.'),
+          page: z
+            .number()
+            .int()
+            .min(0)
+            .max(100)
+            .optional()
+            .describe('Page of results, starting at 0, in steps of limit'),
+          partial: z
+            .boolean()
+            .optional()
+            .describe(
+              'Match words that start with a query word ("deploy" finds "deployment"). Defaults to false: whole words only.'
+            ),
+          descMaxLength: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe('Maximum description preview length per card. Defaults to 200.'),
+        },
+      },
+      async ({ query, boardId, limit, page, partial, descMaxLength }) => {
+        try {
+          const cards = await this.trelloClient.searchCards({
+            query,
+            boardId,
+            limit,
+            page,
+            partial,
+          });
+          return formatCardListResponse(cards, { descMaxLength });
+        } catch (error) {
+          return this.handleError(error);
+        }
+      }
+    );
+
     // Attach image to card (kept for backward compatibility)
     this.server.registerTool(
       'attach_image_to_card',

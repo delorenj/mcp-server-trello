@@ -6,7 +6,7 @@
 
 <a href="https://glama.ai/mcp/servers/klqkamy7wt"><img width="380" height="200" src="https://glama.ai/mcp/servers/klqkamy7wt/badge" alt="Server Trello MCP server" /></a>
 
-A Model Context Protocol (MCP) server that gives AI agents full access to your Trello boards — cards, lists, checklists, attachments, comments, custom fields, and workspaces — with built-in rate limiting, type safety, and workflow-level tools you won't find in a plain API wrapper, like acceptance-criteria extraction and checklist dependency queries. 57 tools, one `npx` install, powered by Bun.
+A Model Context Protocol (MCP) server that gives AI agents full access to your Trello boards — cards, lists, checklists, attachments, comments, custom fields, and workspaces — with built-in rate limiting, type safety, and workflow-level tools you won't find in a plain API wrapper, like acceptance-criteria extraction and checklist dependency queries. 58 tools, one `npx` install, powered by Bun.
 
 ## Highlights
 
@@ -586,6 +586,24 @@ Fetch all cards assigned to the current user.
 {
   name: 'get_my_cards',
   arguments: {}
+}
+```
+
+### search\_cards
+
+Search cards by keyword with Trello's own search, across every board the token can read. The query takes [Trello's search operators](https://support.atlassian.com/trello/docs/searching-for-cards-all-boards/) (`board:`, `list:`, `label:`, `@member`, `is:open`, `is:archived`, `due:week`, `has:attachments`, `created:30`, `edited:7`, …). Archived cards are included unless the query says `is:open`. Each match includes its board and list name, and descriptions are previewed. With `TRELLO_ALLOWED_WORKSPACES` set, only boards in those workspaces are searched.
+
+```typescript
+{
+  name: 'search_cards',
+  arguments: {
+    query: string,          // Search text, optionally with operators, e.g. "invoice label:bug is:open"
+    boardId?: string,       // Optional: limit to one board (searches all boards if not provided)
+    limit?: number,         // Optional: maximum cards to return, 1-1000 (default: 25)
+    page?: number,          // Optional: page of results, 0-100 (default: 0)
+    partial?: boolean,      // Optional: match words that start with a query word (default: false)
+    descMaxLength?: number  // Optional: description preview length (default: 200)
+  }
 }
 ```
 
