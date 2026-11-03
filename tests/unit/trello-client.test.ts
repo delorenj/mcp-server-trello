@@ -356,6 +356,89 @@ describe('TrelloClient', () => {
     });
   });
 
+  describe('searchCards', () => {
+    const match = (id: string, idBoard: string) => ({
+      id,
+      name: `Card ${id}`,
+      idBoard,
+      board: { id: idBoard, name: `Board ${idBoard}` },
+      list: { id: 'l1', name: 'Planned' },
+    });
+
+    it('should search cards only, with board and list names, across all boards', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { cards: [match('c1', 'b1')] } });
+
+      const client = createClient({ boardId: 'active-board' });
+      const result = await client.searchCards({ query: 'invoice label:bug' });
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/search', {
+        params: expect.objectContaining({
+          query: 'invoice label:bug',
+          modelTypes: 'cards',
+          card_board: true,
+          card_list: true,
+          cards_limit: 25,
+          cards_page: 0,
+          partial: false,
+        }),
+      });
+      const params = mockAxiosInstance.get.mock.calls[0][1].params;
+      expect(params).not.toHaveProperty('idBoards');
+      expect(params).not.toHaveProperty('idOrganizations');
+      expect(result).toEqual([match('c1', 'b1')]);
+    });
+
+    it('should pass boardId, limit, page and partial through', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { cards: [] } });
+
+      const client = createClient();
+      await client.searchCards({
+        query: 'deploy',
+        boardId: 'b9',
+        limit: 5,
+        page: 2,
+        partial: true,
+      });
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/search', {
+        params: expect.objectContaining({
+          idBoards: 'b9',
+          cards_limit: 5,
+          cards_page: 2,
+          partial: true,
+        }),
+      });
+    });
+
+    it('should return an empty list when Trello returns no cards key', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: {} });
+
+      const client = createClient();
+      await expect(client.searchCards({ query: 'nothing' })).resolves.toEqual([]);
+    });
+
+    it('should keep a workspace restriction: search allowed workspaces and drop other boards', async () => {
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({
+          data: { cards: [match('c1', 'b-allowed'), match('c2', 'b-blocked')] },
+        })
+        .mockResolvedValueOnce({
+          data: [
+            { id: 'b-allowed', idOrganization: 'ws-allowed' },
+            { id: 'b-blocked', idOrganization: 'ws-blocked' },
+          ],
+        });
+
+      const client = createClient({ allowedWorkspaceIds: ['ws-allowed'] });
+      const result = await client.searchCards({ query: 'roadmap' });
+
+      expect(mockAxiosInstance.get).toHaveBeenNthCalledWith(1, '/search', {
+        params: expect.objectContaining({ idOrganizations: 'ws-allowed' }),
+      });
+      expect(result.map(card => card.id)).toEqual(['c1']);
+    });
+  });
+
   describe('Comments', () => {
     it('addCommentToCard should post comment', async () => {
       mockAxiosInstance.post.mockResolvedValue({ data: { id: 'comment1' } });

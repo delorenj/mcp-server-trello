@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Card search**: `search_cards(query, boardId?, limit?, page?, partial?, descMaxLength?)` - Search cards by keyword across every board with Trello's own search (`GET /1/search`), including its operators (`board:`, `list:`, `label:`, `@member`, `is:open`, `due:`, `has:`, …). Each match carries its board and list name, and descriptions are previewed like `get_cards_by_list_id`. Respects `TRELLO_ALLOWED_WORKSPACES`: the search is limited to the allowed workspaces, and matches on any other board are dropped
+
 ## [2.0.0-beta.0] - 2026-08-04
 
 ### Changed

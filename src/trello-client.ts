@@ -3,6 +3,7 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import {
   TrelloConfig,
   TrelloCard,
+  TrelloSearchCard,
   TrelloList,
   TrelloAction,
   TrelloAttachment,
@@ -524,6 +525,46 @@ export class TrelloClient {
 
   async watchList(listId: string, subscribed: boolean): Promise<TrelloList> {
     return this.updateList(listId, { subscribed });
+  }
+
+  /**
+   * Search cards with Trello's own search (GET /search), which understands its
+   * operators: board:, list:, label:, @member, is:open, is:archived, due:, has:...
+   * Searches every board the token can read unless boardId is given. With a
+   * workspace restriction, matches on boards outside the allowed workspaces are dropped.
+   */
+  async searchCards(params: {
+    query: string;
+    boardId?: string;
+    limit?: number;
+    page?: number;
+    partial?: boolean;
+  }): Promise<TrelloSearchCard[]> {
+    return this.handleRequest(async () => {
+      const searchParams: Record<string, string | number | boolean> = {
+        query: params.query,
+        modelTypes: 'cards',
+        card_fields: 'name,desc,due,idBoard,idList,idLabels,closed,url,shortUrl,dateLastActivity',
+        card_board: true,
+        card_list: true,
+        cards_limit: params.limit ?? 25,
+        cards_page: params.page ?? 0,
+        partial: params.partial ?? false,
+      };
+      if (params.boardId) {
+        searchParams.idBoards = params.boardId;
+      } else if (this.hasWorkspaceRestriction) {
+        searchParams.idOrganizations = this.config.allowedWorkspaceIds!.join(',');
+      }
+      const response = await this.axiosInstance.get('/search', { params: searchParams });
+      const cards: TrelloSearchCard[] = response.data.cards ?? [];
+
+      if (!this.hasWorkspaceRestriction) {
+        return cards;
+      }
+      const allowedBoards = new Set((await this.listBoards()).map(board => board.id));
+      return cards.filter(card => allowedBoards.has(card.idBoard));
+    });
   }
 
   async getMyCards(): Promise<TrelloCard[]> {
