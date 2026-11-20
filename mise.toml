@@ -1,7 +1,7 @@
 # https://mise.jdx.dev/configuration.html
 
 [env]
-_.path = [".mise/scripts", "agents/hermes/pm"]
+_.path = [".mise/scripts"]
 _.file = [".env"]
 CODEX_HOME = { value = ".codex", path = true }
 
@@ -34,11 +34,6 @@ task = "link:agentfiles"
 [tasks."link:agentfiles"]
 description = "Symlink all agent files to AGENTS.md"
 run = "'{{config_root}}/.mise/scripts/link-agentfiles.sh' '{{config_root}}'"
-
-[tasks."skills:sync"]
-description = "Reconcile this project's selected skills"
-tools = { "npm:@delorenj/skillex" = { version = "0.1.1", allow_low_downloads = true }, node = "24" }
-run = "skillex sync --scope project --project '{{config_root}}'"
 
 # >>> mise-versioning >>>  (managed block — do not edit by hand; re-run init to update)
 [tasks."version"]
